@@ -32,7 +32,7 @@ Uploads and outputs are served as static files from:
 - `POST /api/projects` - create project from multipart form data
 - `GET /api/projects` - list projects
 - `GET /api/projects/{project_id}` - get project detail
-- `POST /api/projects/{project_id}/analyze` - generate Product Intelligence Brief
+- `POST /api/projects/{project_id}/analyze` - generate Product Intelligence, Product Brief, and Vision Analysis
 - `POST /api/projects/{project_id}/angles` - generate 5 creative angles
 - `POST /api/projects/{project_id}/generate-variants` - generate ad variants
 - `POST /api/projects/{project_id}/mock-render` - create mock video output files and URLs
@@ -53,6 +53,17 @@ Reusable prompt templates for future real providers live in `app/prompts/`:
 - `demo_coin_scanner.md`
 
 The current MVP still uses rule-based mock services. These files define the future LLM contract without requiring external API calls.
+
+## Product Intelligence Layer
+
+The analyze flow calls:
+
+1. `MockVisionProvider`
+2. `ProductIntelligenceService`
+3. `PlaybookEngine`
+4. compatibility mapper to `ProductBrief`
+
+Supported product types: `mobile_app`, `skincare`, `fnb`, `ecommerce`, `education`, and `general`.
 
 ## Example flow
 

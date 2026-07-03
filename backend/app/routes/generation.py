@@ -1,14 +1,14 @@
 from fastapi import APIRouter
 
-from app.models.schemas import CreativeAngle, GenerateVariantsRequest, ProductBrief, Project, Variant
+from app.models.schemas import AnalyzeProjectResponse, CreativeAngle, GenerateVariantsRequest, Project, Variant
 from app.routes.projects import project_service
 
 
 router = APIRouter(prefix="/api/projects", tags=["generation"])
 
 
-@router.post("/{project_id}/analyze", response_model=ProductBrief)
-def analyze_project(project_id: str) -> ProductBrief:
+@router.post("/{project_id}/analyze", response_model=AnalyzeProjectResponse)
+def analyze_project(project_id: str) -> AnalyzeProjectResponse:
     return project_service.analyze_project(project_id)
 
 

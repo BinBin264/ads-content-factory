@@ -52,3 +52,14 @@ http://127.0.0.1:5173
 Shared FE/BE contract: `../API_CONTRACT.md`
 
 The Product Brief response uses arrays for `target_audience`, `emotional_triggers`, `functional_benefits`, `proof_elements`, `safe_claims`, `claims_to_avoid`, and `recommended_ad_formats`.
+
+The UI also displays the richer `product_intelligence` response when available, with fallback to the legacy Product Brief.
+
+## Demo samples
+
+The homepage includes a "Try Sample Inputs" panel for:
+
+- Coin Scanner App
+- Acne Serum
+- Coffee Shop
+- Language Learning App

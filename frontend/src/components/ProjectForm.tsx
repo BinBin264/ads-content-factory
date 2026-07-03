@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import UploadBox from "./UploadBox";
 import type { CreateProjectValues } from "../types";
 
@@ -19,11 +19,18 @@ const initialValues: CreateProjectValues = {
 
 interface ProjectFormProps {
   loading: boolean;
+  sampleValues?: CreateProjectValues | null;
   onSubmit: (values: CreateProjectValues) => Promise<void>;
 }
 
-export default function ProjectForm({ loading, onSubmit }: ProjectFormProps) {
+export default function ProjectForm({ loading, sampleValues, onSubmit }: ProjectFormProps) {
   const [values, setValues] = useState<CreateProjectValues>(initialValues);
+
+  useEffect(() => {
+    if (sampleValues) {
+      setValues(sampleValues);
+    }
+  }, [sampleValues]);
 
   const update = (key: keyof CreateProjectValues, value: string | File[]) => {
     setValues((current) => ({ ...current, [key]: value }));

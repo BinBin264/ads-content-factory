@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import ProjectForm from "../components/ProjectForm";
+import SampleInputsPanel from "../components/SampleInputsPanel";
 import { createProject, listProjects } from "../api/projects";
 import { getApiErrorMessage } from "../api/client";
 import type { CreateProjectValues, Project } from "../types";
@@ -11,6 +12,7 @@ export default function HomePage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sampleValues, setSampleValues] = useState<CreateProjectValues | null>(null);
 
   const loadProjects = async () => {
     try {
@@ -39,10 +41,11 @@ export default function HomePage() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
-      <ProjectForm loading={loading} onSubmit={handleCreateProject} />
+      <ProjectForm loading={loading} sampleValues={sampleValues} onSubmit={handleCreateProject} />
 
       <aside className="space-y-4">
         {error ? <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">{error}</div> : null}
+        <SampleInputsPanel onSelect={setSampleValues} />
         <section className="card p-5">
           <div className="mb-4 flex items-center justify-between">
             <div>

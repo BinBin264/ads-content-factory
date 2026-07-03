@@ -18,6 +18,7 @@ Shared project shape for backend and frontend integration.
     "claims_to_avoid": ["guaranteed value", "100% accurate appraisal"],
     "brand_colors": ["#1E88E5", "#FFFFFF"],
     "uploaded_files": [],
+    "product_intelligence": {},
     "product_brief": {},
     "creative_angles": [],
     "variants": [],
@@ -41,6 +42,43 @@ The backend also accepts comma, semicolon, or newline-separated values for compa
 ## Product Brief Shape
 
 `POST /api/projects/{project_id}/analyze` returns:
+
+```json
+{
+  "product_intelligence": {},
+  "product_brief": {},
+  "vision_analysis": {}
+}
+```
+
+`product_intelligence` shape:
+
+```json
+{
+  "detected_product": "Coin Scanner App",
+  "product_category": "mobile app",
+  "product_type": "mobile_app",
+  "core_use_case": "Scan old coins, identify coin details, and view estimated reference value.",
+  "target_audience_segments": ["people who find old coins at home"],
+  "primary_audience": "people who find old coins at home",
+  "pain_points": ["Users do not know whether an old coin is worth researching."],
+  "emotional_triggers": ["curiosity", "surprise"],
+  "functional_benefits": ["scan old coins", "identify coin details"],
+  "proof_points": ["screen demo", "result screen"],
+  "demo_moments": ["Show the object or problem", "Open the app", "Use the key feature", "Show the result screen"],
+  "visual_assets_detected": ["old coin", "phone"],
+  "brand_style_notes": "phone-in-hand UGC",
+  "safe_claims": ["estimated reference value"],
+  "claims_to_avoid": ["guaranteed value", "100% accurate appraisal"],
+  "recommended_ad_playbooks": [],
+  "recommended_video_formats": ["9:16 UGC app demo"],
+  "recommended_hooks": ["I almost spent this old coin..."],
+  "recommended_cta": "Download now",
+  "confidence_score": 0.85
+}
+```
+
+`product_brief` compatibility shape:
 
 ```json
 {

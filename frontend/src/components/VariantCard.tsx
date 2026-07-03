@@ -48,7 +48,13 @@ export default function VariantCard({ variant }: VariantCardProps) {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h3 className="text-base font-bold text-slate-950">{variant.name}</h3>
-            <p className="mt-1 max-w-3xl text-sm text-slate-600">{variant.hook}</p>
+            <div className="mt-3 rounded-lg bg-slate-950 p-4 text-white">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <p className="text-xs font-bold uppercase tracking-wide text-slate-300">Hook</p>
+                <CopyButton value={variant.hook} />
+              </div>
+              <p className="text-xl font-bold leading-snug">{variant.hook}</p>
+            </div>
           </div>
           <span className="rounded-md bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-600">{variant.video_status}</span>
         </div>
@@ -78,6 +84,14 @@ export default function VariantCard({ variant }: VariantCardProps) {
             <div>
               <dt className="field-label">Format</dt>
               <dd className="mt-1 text-sm text-slate-800">{variant.format}</dd>
+            </div>
+            <div>
+              <dt className="field-label">Angle type</dt>
+              <dd className="mt-1 text-sm text-slate-800">{variant.angle_type || "Not specified"}</dd>
+            </div>
+            <div>
+              <dt className="field-label">Selected playbook</dt>
+              <dd className="mt-1 text-sm text-slate-800">{variant.selected_playbook || "Not specified"}</dd>
             </div>
             <div className="md:col-span-2">
               <dt className="field-label">Hook</dt>

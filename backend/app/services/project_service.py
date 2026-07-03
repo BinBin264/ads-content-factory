@@ -1,6 +1,6 @@
 from fastapi import UploadFile
 
-from app.models.schemas import CreativeAngle, GenerateVariantsRequest, ProductBrief, Project, Variant
+from app.models.schemas import AnalyzeProjectResponse, CreativeAngle, GenerateVariantsRequest, ProductBrief, Project, Variant
 from app.services.angle_generator import CreativeAngleGenerator, RuleBasedCreativeAngleGenerator
 from app.services.product_analyzer import ProductAnalyzer, RuleBasedProductAnalyzer
 from app.services.script_generator import RuleBasedVariantScriptGenerator, VariantScriptGenerator
@@ -63,29 +63,37 @@ class ProjectService:
     def get_project(self, project_id: str) -> Project:
         return self.storage.get_project(project_id)
 
-    def analyze_project(self, project_id: str) -> ProductBrief:
+    def analyze_project(self, project_id: str) -> AnalyzeProjectResponse:
         project = self.storage.get_project(project_id)
-        project.product_brief = self.analyzer.analyze(project)
+        analysis = self.analyzer.analyze(project)
+        project.product_intelligence = analysis.product_intelligence
+        project.product_brief = analysis.product_brief
         self.storage.save_project(project)
-        return project.product_brief
+        return analysis
 
     def generate_angles(self, project_id: str) -> list[CreativeAngle]:
         project = self.storage.get_project(project_id)
-        brief = project.product_brief or self.analyzer.analyze(project)
+        analysis = self._ensure_analysis(project)
+        brief = analysis.product_brief
+        intelligence = analysis.product_intelligence
         project.product_brief = brief
-        project.creative_angles = self.angle_generator.generate(project, brief)
+        project.product_intelligence = intelligence
+        project.creative_angles = self.angle_generator.generate(project, brief, intelligence)
         self.storage.save_project(project)
         return project.creative_angles
 
     def generate_variants(self, project_id: str, request: GenerateVariantsRequest) -> list[Variant]:
         project = self.storage.get_project(project_id)
-        brief = project.product_brief or self.analyzer.analyze(project)
-        angles = project.creative_angles or self.angle_generator.generate(project, brief)
+        analysis = self._ensure_analysis(project)
+        brief = analysis.product_brief
+        intelligence = analysis.product_intelligence
+        angles = project.creative_angles or self.angle_generator.generate(project, brief, intelligence)
         selected_angles = self._select_angles(angles, request.angle_ids, request.variant_count)
 
         project.product_brief = brief
+        project.product_intelligence = intelligence
         project.creative_angles = angles
-        project.variants = self.script_generator.generate(project, brief, selected_angles)
+        project.variants = self.script_generator.generate(project, brief, selected_angles, intelligence)
         self.storage.save_project(project)
         return project.variants
 
@@ -101,6 +109,15 @@ class ProjectService:
 
     def delete_project(self, project_id: str) -> None:
         self.storage.delete_project(project_id)
+
+    def _ensure_analysis(self, project: Project) -> AnalyzeProjectResponse:
+        if project.product_brief and project.product_intelligence:
+            return AnalyzeProjectResponse(
+                product_intelligence=project.product_intelligence,
+                product_brief=project.product_brief,
+                vision_analysis=self.analyzer.analyze(project).vision_analysis,
+            )
+        return self.analyzer.analyze(project)
 
     def _select_angles(
         self,

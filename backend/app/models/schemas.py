@@ -36,6 +36,49 @@ class UploadedFileInfo(BaseModel):
     url: str
 
 
+class VisionAnalysis(BaseModel):
+    detected_objects: list[str] = Field(default_factory=list)
+    detected_product_type: str = "general"
+    detected_visual_style: str = "natural UGC"
+    detected_brand_colors: list[str] = Field(default_factory=list)
+    detected_ui_elements: list[str] = Field(default_factory=list)
+    detected_text: list[str] = Field(default_factory=list)
+    confidence: float = Field(default=0.5, ge=0, le=1)
+    notes: list[str] = Field(default_factory=list)
+
+
+class Playbook(BaseModel):
+    playbook_id: str
+    name: str
+    best_for: list[str] = Field(default_factory=list)
+    structure: list[str] = Field(default_factory=list)
+    recommended_angles: list[str] = Field(default_factory=list)
+    scene_formula: list[str] = Field(default_factory=list)
+
+
+class ProductIntelligenceBrief(BaseModel):
+    detected_product: str
+    product_category: str
+    product_type: str
+    core_use_case: str
+    target_audience_segments: list[str] = Field(default_factory=list)
+    primary_audience: str
+    pain_points: list[str] = Field(default_factory=list)
+    emotional_triggers: list[str] = Field(default_factory=list)
+    functional_benefits: list[str] = Field(default_factory=list)
+    proof_points: list[str] = Field(default_factory=list)
+    demo_moments: list[str] = Field(default_factory=list)
+    visual_assets_detected: list[str] = Field(default_factory=list)
+    brand_style_notes: str
+    safe_claims: list[str] = Field(default_factory=list)
+    claims_to_avoid: list[str] = Field(default_factory=list)
+    recommended_ad_playbooks: list[Playbook] = Field(default_factory=list)
+    recommended_video_formats: list[str] = Field(default_factory=list)
+    recommended_hooks: list[str] = Field(default_factory=list)
+    recommended_cta: str
+    confidence_score: float = Field(default=0.65, ge=0, le=1)
+
+
 class ProductBrief(BaseModel):
     product_name: str
     category: str
@@ -111,6 +154,8 @@ class Variant(BaseModel):
     title: str
     caption: str
     cover_prompt: str
+    selected_playbook: str | None = None
+    angle_type: str | None = None
     video_status: Literal["draft", "rendering", "ready", "failed"] = "draft"
     mock_video_url: str | None = None
     export_9x16_url: str | None = None
@@ -132,6 +177,7 @@ class Project(BaseModel):
     brand_colors: list[str] = Field(default_factory=list)
     uploaded_files: list[UploadedFileInfo] = Field(default_factory=list)
     product_brief: ProductBrief | None = None
+    product_intelligence: ProductIntelligenceBrief | None = None
     creative_angles: list[CreativeAngle] = Field(default_factory=list)
     variants: list[Variant] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=utc_now)
@@ -151,3 +197,9 @@ class GenerateVariantsRequest(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     service: str
+
+
+class AnalyzeProjectResponse(BaseModel):
+    product_intelligence: ProductIntelligenceBrief
+    product_brief: ProductBrief
+    vision_analysis: VisionAnalysis

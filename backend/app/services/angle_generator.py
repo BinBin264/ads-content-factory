@@ -1,76 +1,88 @@
 from typing import Protocol
 
-from app.models.schemas import CreativeAngle, ProductBrief, Project
+from app.models.schemas import CreativeAngle, ProductBrief, ProductIntelligenceBrief, Project
 
 
 class CreativeAngleGenerator(Protocol):
-    def generate(self, project: Project, brief: ProductBrief) -> list[CreativeAngle]:
+    def generate(
+        self,
+        project: Project,
+        brief: ProductBrief,
+        intelligence: ProductIntelligenceBrief | None = None,
+    ) -> list[CreativeAngle]:
         ...
 
 
 class RuleBasedCreativeAngleGenerator:
-    def generate(self, project: Project, brief: ProductBrief) -> list[CreativeAngle]:
-        if self._is_coin_scanner(project, brief):
-            return self._generate_coin_scanner_angles(project, brief)
-
-        cta = project.cta or self._default_cta(project.goal)
-        audience = self._audience_text(project, brief)
-        product = project.product_name
+    def generate(
+        self,
+        project: Project,
+        brief: ProductBrief,
+        intelligence: ProductIntelligenceBrief | None = None,
+    ) -> list[CreativeAngle]:
+        intelligence = intelligence or self._fallback_intelligence(project, brief)
+        cta = intelligence.recommended_cta or project.cta or self._default_cta(project.goal)
+        audience = intelligence.primary_audience
+        hooks = self._five_hooks(project, intelligence)
+        pain_points = self._pad(intelligence.pain_points, "The audience needs a clearer way to understand the product.")
+        triggers = self._pad(intelligence.emotional_triggers, "curiosity")
+        demo_moments = self._pad(intelligence.demo_moments, "Show the product in use.")
+        benefits = self._pad(intelligence.functional_benefits, intelligence.core_use_case)
 
         templates = [
             {
-                "name": "The moment it finally clicks",
-                "angle_type": "Storytelling / emotional",
-                "pain_point": brief.main_problem,
-                "emotional_trigger": brief.emotional_triggers[0] if brief.emotional_triggers else "relief",
-                "hook": f"I did not realize {product} could make this feel this simple.",
-                "product_role": "The product appears as the turning point in a relatable daily story.",
-                "proof_demo_moment": brief.proof_elements[0] if brief.proof_elements else "hands-on demo",
-                "reason": "A personal story lowers resistance before the product demo appears.",
+                "name": "Emotional discovery",
+                "angle_type": "storytelling",
+                "hook": hooks[0],
+                "pain_point": pain_points[0],
+                "emotional_trigger": triggers[0],
+                "product_role": f"{project.product_name} turns a relatable moment into a useful next step.",
+                "proof_demo_moment": demo_moments[0],
+                "reason": "It starts with a human moment, then earns the demo instead of feeling like a pitch.",
+                "score": 94,
+            },
+            {
+                "name": "Product-led demo",
+                "angle_type": "product_demo",
+                "hook": hooks[1],
+                "pain_point": pain_points[1],
+                "emotional_trigger": triggers[1],
+                "product_role": f"{project.product_name} is shown as the main action from setup to result.",
+                "proof_demo_moment": demo_moments[1],
+                "reason": "A direct demo makes the value easy to understand in a short paid social placement.",
                 "score": 91,
             },
             {
-                "name": "Show me, do not tell me",
-                "angle_type": "Product-led demo",
-                "pain_point": "People need to understand the benefit before they care about the brand.",
-                "emotional_trigger": "clarity",
-                "hook": f"Here is exactly how {product} works in 20 seconds.",
-                "product_role": "The product is the hero from the first visual beat.",
-                "proof_demo_moment": brief.proof_elements[0] if brief.proof_elements else "close-up feature demo",
-                "reason": "A direct demo is easy to reuse across paid social placements.",
+                "name": "Problem-solution",
+                "angle_type": "problem_solution",
+                "hook": hooks[2],
+                "pain_point": pain_points[2],
+                "emotional_trigger": triggers[2],
+                "product_role": f"{project.product_name} removes the specific friction shown in the setup.",
+                "proof_demo_moment": demo_moments[2],
+                "reason": "The viewer sees the problem first, so the product answer feels specific.",
                 "score": 88,
             },
             {
-                "name": "Fix the annoying part",
-                "angle_type": "Problem-solution",
-                "pain_point": brief.main_problem,
-                "emotional_trigger": brief.emotional_triggers[0] if brief.emotional_triggers else "frustration",
-                "hook": f"If this part of your routine feels annoying, try {product}.",
-                "product_role": "The product removes the friction shown in the setup.",
-                "proof_demo_moment": brief.proof_elements[1] if len(brief.proof_elements) > 1 else "before and after moment",
-                "reason": "The audience sees the problem first, so the solution feels earned.",
-                "score": 86,
-            },
-            {
-                "name": "The hidden benefit",
-                "angle_type": "Curiosity / hidden benefit",
-                "pain_point": "The audience may overlook a benefit that is not obvious from the product name.",
+                "name": "Hidden benefit",
+                "angle_type": "curiosity",
+                "hook": hooks[3],
+                "pain_point": pain_points[0],
                 "emotional_trigger": "curiosity",
-                "hook": f"The best part about {product} is not what you expect.",
-                "product_role": "The product reveals an unexpected practical payoff.",
-                "proof_demo_moment": brief.proof_elements[-1] if brief.proof_elements else "surprising use case",
-                "reason": "Curiosity hooks can earn a longer watch time before the CTA.",
-                "score": 84,
+                "product_role": f"{project.product_name} reveals a benefit viewers may not know to look for.",
+                "proof_demo_moment": demo_moments[3],
+                "reason": "The hook creates an open loop that the product demo can close.",
+                "score": 85,
             },
             {
                 "name": "Friend recommendation",
-                "angle_type": "Social proof / recommendation",
-                "pain_point": "Buyers hesitate when they do not know what to trust.",
+                "angle_type": "social_proof",
+                "hook": hooks[4],
+                "pain_point": pain_points[1],
                 "emotional_trigger": "trust",
-                "hook": f"I would recommend {product} to anyone who wants {brief.main_benefit.lower()}",
-                "product_role": "The product is framed as a practical recommendation from a real user.",
-                "proof_demo_moment": "creator testimonial plus product demo",
-                "reason": "Recommendation-style ads feel native to UGC feeds.",
+                "product_role": f"{project.product_name} is framed as the practical first thing a friend would suggest.",
+                "proof_demo_moment": benefits[0],
+                "reason": "Recommendation-style UGC lowers skepticism while staying native to TikTok, Reels, and Shorts.",
                 "score": 82,
             },
         ]
@@ -91,6 +103,48 @@ class RuleBasedCreativeAngleGenerator:
             )
             for item in templates
         ]
+
+    def _five_hooks(self, project: Project, intelligence: ProductIntelligenceBrief) -> list[str]:
+        hooks = list(intelligence.recommended_hooks)
+        while len(hooks) < 5:
+            hooks.append(f"Here's why {project.product_name} is worth checking before you decide.")
+        return hooks[:5]
+
+    def _pad(self, values: list[str], fallback: str) -> list[str]:
+        padded = list(values)
+        while len(padded) < 4:
+            padded.append(fallback)
+        return padded
+
+    def _fallback_intelligence(self, project: Project, brief: ProductBrief) -> ProductIntelligenceBrief:
+        return ProductIntelligenceBrief(
+            detected_product=project.product_name,
+            product_category=brief.category,
+            product_type=brief.product_type,
+            core_use_case=brief.short_description,
+            target_audience_segments=brief.target_audience,
+            primary_audience=", ".join(brief.target_audience) or project.audience or "practical buyers",
+            pain_points=[brief.main_problem],
+            emotional_triggers=brief.emotional_triggers,
+            functional_benefits=brief.functional_benefits,
+            proof_points=brief.proof_elements,
+            demo_moments=brief.proof_elements,
+            visual_assets_detected=[],
+            brand_style_notes=brief.recommended_visual_style,
+            safe_claims=brief.safe_claims,
+            claims_to_avoid=brief.claims_to_avoid,
+            recommended_ad_playbooks=[],
+            recommended_video_formats=brief.recommended_ad_formats,
+            recommended_hooks=[
+                f"I tried {project.product_name} for this exact problem.",
+                f"Here is how {project.product_name} works in 20 seconds.",
+                f"If this feels annoying, {project.product_name} can help.",
+                f"The best part about {project.product_name} is not obvious.",
+                f"I would recommend {project.product_name} if you want a simpler first step.",
+            ],
+            recommended_cta=project.cta or self._default_cta(project.goal),
+            confidence_score=0.5,
+        )
 
     def _default_cta(self, goal: str) -> str:
         if goal == "app_install":
@@ -100,100 +154,3 @@ class RuleBasedCreativeAngleGenerator:
         if goal == "purchase":
             return "Shop now"
         return "Learn more"
-
-    def _is_coin_scanner(self, project: Project, brief: ProductBrief) -> bool:
-        text = " ".join(
-            [
-                project.product_name,
-                project.product_category or "",
-                project.product_description or "",
-                brief.product_type,
-                brief.short_description,
-            ]
-        ).lower()
-        return "coin" in text and any(token in text for token in ["scan", "scanner", "identify", "value", "app"])
-
-    def _generate_coin_scanner_angles(self, project: Project, brief: ProductBrief) -> list[CreativeAngle]:
-        cta = project.cta or "Download now and scan your old coins"
-        audience = self._audience_text(project, brief)
-        templates = [
-            {
-                "name": "Almost spent it",
-                "angle_type": "storytelling",
-                "pain_point": "People treat old coins like loose change because they do not know what they are.",
-                "emotional_trigger": "surprise",
-                "hook": "I almost spent this coin...",
-                "product_role": "The app turns a random coin discovery into a quick scan-and-check moment.",
-                "proof_demo_moment": "scan the coin with the phone camera and show the coin detail result screen",
-                "reason": "The hook creates instant curiosity without promising the coin is valuable.",
-                "score": 94,
-            },
-            {
-                "name": "Five-second coin check",
-                "angle_type": "product_demo",
-                "pain_point": "Users want a fast way to check an old coin before searching random websites.",
-                "emotional_trigger": "curiosity",
-                "hook": "Here's how to check an old coin in 5 seconds.",
-                "product_role": "The app is shown as the simple scan workflow from camera to coin details.",
-                "proof_demo_moment": "open the app, scan the coin, and reveal estimated reference value as a research cue",
-                "reason": "A direct demo makes the app install value obvious in a short ad.",
-                "score": 92,
-            },
-            {
-                "name": "Coin jar mystery",
-                "angle_type": "problem_solution",
-                "pain_point": "A jar of old coins is interesting, but most people do not know where to start.",
-                "emotional_trigger": "discovery",
-                "hook": "That old coin jar might be more interesting than you think.",
-                "product_role": "The app gives users a practical first step: scan, identify, and save the details.",
-                "proof_demo_moment": "pick one coin from a jar and compare the physical coin to the app details",
-                "reason": "It connects a common household object to an easy app demo.",
-                "score": 88,
-            },
-            {
-                "name": "Hidden details",
-                "angle_type": "curiosity",
-                "pain_point": "Users miss dates, mint marks, and details that matter because they do not know what to inspect.",
-                "emotional_trigger": "curiosity",
-                "hook": "The tiny detail on this coin is what I wanted to check.",
-                "product_role": "The app helps surface coin details that are hard for casual users to interpret.",
-                "proof_demo_moment": "macro shot of coin date or mark followed by app detail screen",
-                "reason": "A specific detail keeps the viewer watching for the scan result.",
-                "score": 85,
-            },
-            {
-                "name": "Collector friend recommendation",
-                "angle_type": "social_proof",
-                "pain_point": "Casual users need a low-pressure tool before asking collectors or searching forums.",
-                "emotional_trigger": "confidence",
-                "hook": "If you keep finding old coins, this is the first app I would try.",
-                "product_role": "The app is framed as a friendly first check, not a guaranteed appraisal.",
-                "proof_demo_moment": "creator scans two different coins and shows organized detail screens",
-                "reason": "Recommendation-style UGC feels native while staying safe about value claims.",
-                "score": 82,
-            },
-        ]
-
-        return [
-            CreativeAngle(
-                name=item["name"],
-                angle_type=item["angle_type"],
-                target_audience=audience,
-                pain_point=item["pain_point"],
-                emotional_trigger=item["emotional_trigger"],
-                hook=item["hook"],
-                product_role=item["product_role"],
-                proof_demo_moment=item["proof_demo_moment"],
-                cta=cta,
-                reason_why_it_can_work=item["reason"],
-                score=item["score"],
-            )
-            for item in templates
-        ]
-
-    def _audience_text(self, project: Project, brief: ProductBrief) -> str:
-        if project.audience:
-            return project.audience
-        if brief.target_audience:
-            return ", ".join(brief.target_audience)
-        return "practical buyers comparing simple solutions"

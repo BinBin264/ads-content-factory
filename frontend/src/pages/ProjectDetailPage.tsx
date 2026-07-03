@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import CreativeAngleCard from "../components/CreativeAngleCard";
 import ProductBriefCard from "../components/ProductBriefCard";
+import ProductIntelligenceCard from "../components/ProductIntelligenceCard";
 import ProgressSteps from "../components/ProgressSteps";
 import VariantCard from "../components/VariantCard";
 import {
@@ -196,7 +197,7 @@ export default function ProjectDetailPage() {
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="text-base font-bold text-slate-950">Product Intelligence</h3>
-            <p className="text-sm text-slate-500">Analyze product positioning and proof points.</p>
+            <p className="text-sm text-slate-500">Analyze product type, use case, audiences, proof points, and playbooks.</p>
           </div>
           <button
             className="btn-primary"
@@ -206,6 +207,14 @@ export default function ProjectDetailPage() {
           >
             {loadingAction === "analyze" ? "Analyzing..." : "Analyze Product"}
           </button>
+        </div>
+        <ProductIntelligenceCard intelligence={project?.product_intelligence} />
+      </section>
+
+      <section className="card p-5">
+        <div className="mb-4">
+          <h3 className="text-base font-bold text-slate-950">Legacy Product Brief</h3>
+          <p className="text-sm text-slate-500">Compatibility output used by the existing creative flow.</p>
         </div>
         <ProductBriefCard brief={project?.product_brief} />
       </section>
