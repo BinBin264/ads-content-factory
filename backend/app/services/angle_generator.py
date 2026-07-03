@@ -10,8 +10,11 @@ class CreativeAngleGenerator(Protocol):
 
 class RuleBasedCreativeAngleGenerator:
     def generate(self, project: Project, brief: ProductBrief) -> list[CreativeAngle]:
+        if self._is_coin_scanner(project, brief):
+            return self._generate_coin_scanner_angles(project, brief)
+
         cta = project.cta or self._default_cta(project.goal)
-        audience = project.audience or brief.target_audience
+        audience = self._audience_text(project, brief)
         product = project.product_name
 
         templates = [
@@ -97,3 +100,100 @@ class RuleBasedCreativeAngleGenerator:
         if goal == "purchase":
             return "Shop now"
         return "Learn more"
+
+    def _is_coin_scanner(self, project: Project, brief: ProductBrief) -> bool:
+        text = " ".join(
+            [
+                project.product_name,
+                project.product_category or "",
+                project.product_description or "",
+                brief.product_type,
+                brief.short_description,
+            ]
+        ).lower()
+        return "coin" in text and any(token in text for token in ["scan", "scanner", "identify", "value", "app"])
+
+    def _generate_coin_scanner_angles(self, project: Project, brief: ProductBrief) -> list[CreativeAngle]:
+        cta = project.cta or "Download now and scan your old coins"
+        audience = self._audience_text(project, brief)
+        templates = [
+            {
+                "name": "Almost spent it",
+                "angle_type": "storytelling",
+                "pain_point": "People treat old coins like loose change because they do not know what they are.",
+                "emotional_trigger": "surprise",
+                "hook": "I almost spent this coin...",
+                "product_role": "The app turns a random coin discovery into a quick scan-and-check moment.",
+                "proof_demo_moment": "scan the coin with the phone camera and show the coin detail result screen",
+                "reason": "The hook creates instant curiosity without promising the coin is valuable.",
+                "score": 94,
+            },
+            {
+                "name": "Five-second coin check",
+                "angle_type": "product_demo",
+                "pain_point": "Users want a fast way to check an old coin before searching random websites.",
+                "emotional_trigger": "curiosity",
+                "hook": "Here's how to check an old coin in 5 seconds.",
+                "product_role": "The app is shown as the simple scan workflow from camera to coin details.",
+                "proof_demo_moment": "open the app, scan the coin, and reveal estimated reference value as a research cue",
+                "reason": "A direct demo makes the app install value obvious in a short ad.",
+                "score": 92,
+            },
+            {
+                "name": "Coin jar mystery",
+                "angle_type": "problem_solution",
+                "pain_point": "A jar of old coins is interesting, but most people do not know where to start.",
+                "emotional_trigger": "discovery",
+                "hook": "That old coin jar might be more interesting than you think.",
+                "product_role": "The app gives users a practical first step: scan, identify, and save the details.",
+                "proof_demo_moment": "pick one coin from a jar and compare the physical coin to the app details",
+                "reason": "It connects a common household object to an easy app demo.",
+                "score": 88,
+            },
+            {
+                "name": "Hidden details",
+                "angle_type": "curiosity",
+                "pain_point": "Users miss dates, mint marks, and details that matter because they do not know what to inspect.",
+                "emotional_trigger": "curiosity",
+                "hook": "The tiny detail on this coin is what I wanted to check.",
+                "product_role": "The app helps surface coin details that are hard for casual users to interpret.",
+                "proof_demo_moment": "macro shot of coin date or mark followed by app detail screen",
+                "reason": "A specific detail keeps the viewer watching for the scan result.",
+                "score": 85,
+            },
+            {
+                "name": "Collector friend recommendation",
+                "angle_type": "social_proof",
+                "pain_point": "Casual users need a low-pressure tool before asking collectors or searching forums.",
+                "emotional_trigger": "confidence",
+                "hook": "If you keep finding old coins, this is the first app I would try.",
+                "product_role": "The app is framed as a friendly first check, not a guaranteed appraisal.",
+                "proof_demo_moment": "creator scans two different coins and shows organized detail screens",
+                "reason": "Recommendation-style UGC feels native while staying safe about value claims.",
+                "score": 82,
+            },
+        ]
+
+        return [
+            CreativeAngle(
+                name=item["name"],
+                angle_type=item["angle_type"],
+                target_audience=audience,
+                pain_point=item["pain_point"],
+                emotional_trigger=item["emotional_trigger"],
+                hook=item["hook"],
+                product_role=item["product_role"],
+                proof_demo_moment=item["proof_demo_moment"],
+                cta=cta,
+                reason_why_it_can_work=item["reason"],
+                score=item["score"],
+            )
+            for item in templates
+        ]
+
+    def _audience_text(self, project: Project, brief: ProductBrief) -> str:
+        if project.audience:
+            return project.audience
+        if brief.target_audience:
+            return ", ".join(brief.target_audience)
+        return "practical buyers comparing simple solutions"

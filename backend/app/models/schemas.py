@@ -41,7 +41,7 @@ class ProductBrief(BaseModel):
     category: str
     product_type: str
     short_description: str
-    target_audience: str
+    target_audience: list[str] = Field(default_factory=list)
     main_problem: str
     main_benefit: str
     emotional_triggers: list[str] = Field(default_factory=list)
@@ -51,6 +51,11 @@ class ProductBrief(BaseModel):
     claims_to_avoid: list[str] = Field(default_factory=list)
     recommended_visual_style: str
     recommended_ad_formats: list[str] = Field(default_factory=list)
+
+    @field_validator("target_audience", mode="before")
+    @classmethod
+    def normalize_target_audience(cls, value: Any) -> list[str]:
+        return normalize_string_list(value)
 
 
 class CreativeAngle(BaseModel):
@@ -79,6 +84,16 @@ class StoryboardScene(BaseModel):
     transition: str
     generation_prompt: str
     negative_prompt: str
+
+
+class OptimizedVideoPrompt(BaseModel):
+    video_prompt: str
+    negative_prompt: str
+    camera_instruction: str
+    motion_instruction: str
+    consistency_instruction: str
+    duration_seconds: int
+    aspect_ratio: str = "9:16"
 
 
 class Variant(BaseModel):

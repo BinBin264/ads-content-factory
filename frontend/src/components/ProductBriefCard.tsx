@@ -26,7 +26,7 @@ export default function ProductBriefCard({ brief }: ProductBriefCardProps) {
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <Row label="Category" value={brief.category} />
-      <Row label="Target audience" value={brief.target_audience} />
+      <Row label="Target audience" value={formatList(brief.target_audience)} />
       <Row label="Main problem" value={brief.main_problem} />
       <Row label="Main benefit" value={brief.main_benefit} />
       <Row label="Emotional triggers" value={formatList(brief.emotional_triggers)} />

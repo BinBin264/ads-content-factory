@@ -14,7 +14,7 @@ export interface ProductBrief {
   category: string;
   product_type: string;
   short_description: string;
-  target_audience: string;
+  target_audience: string[];
   main_problem: string;
   main_benefit: string;
   emotional_triggers: string[];

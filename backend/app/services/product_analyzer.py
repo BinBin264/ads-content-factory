@@ -28,13 +28,55 @@ class RuleBasedProductAnalyzer:
         audience = project.audience or self._infer_audience(category_text)
         description = project.product_description or f"{project.product_name} helps {audience} get a better daily outcome."
 
+        if self._is_coin_scanner(category_text):
+            claims_to_avoid = _split_claims(project.claims_to_avoid)
+            if not claims_to_avoid:
+                claims_to_avoid = ["guaranteed value", "100% accurate appraisal", "you will make money"]
+
+            return ProductBrief(
+                product_name=project.product_name,
+                category=category,
+                product_type="Mobile coin identification app",
+                short_description=description,
+                target_audience=[audience],
+                main_problem="People find old coins at home but do not know what they are, whether they are common, or what details to look up.",
+                main_benefit="The app helps users scan a coin, identify key details, and view an estimated reference value for research.",
+                emotional_triggers=["curiosity", "surprise", "nostalgia", "discovery"],
+                functional_benefits=[
+                    "coin scanning flow",
+                    "coin detail lookup",
+                    "estimated reference value",
+                    "quick way to organize coin discoveries",
+                ],
+                proof_elements=[
+                    "phone camera scanning an old coin",
+                    "app result screen with coin details",
+                    "estimated reference value shown as a research reference",
+                ],
+                safe_claims=[
+                    "Helps identify coin details",
+                    "Shows estimated reference value for research",
+                    "Useful for checking coins before spending or storing them",
+                ],
+                claims_to_avoid=claims_to_avoid,
+                recommended_visual_style=(
+                    "Natural UGC at a kitchen table or desk, old coin jar, phone-in-hand scan demo, "
+                    "clean app result overlay, curiosity-driven captions."
+                ),
+                recommended_ad_formats=[
+                    "Found coin curiosity -> app scan demo -> estimated reference result -> CTA",
+                    "Coin jar hook -> quick 5-second scan -> details screen -> download CTA",
+                    "Before spending a coin -> scan it first -> save details -> CTA",
+                ],
+            )
+
         if self._is_app(category_text):
             return ProductBrief(
                 product_name=project.product_name,
                 category=category,
                 product_type="Mobile app / SaaS",
                 short_description=description,
-                target_audience=audience,
+                target_audience=[audience],
                 main_problem="Users want a faster, simpler way to complete the job without switching between messy tools.",
                 main_benefit="A guided app flow that turns the task into a clear next action.",
                 emotional_triggers=["relief", "control", "momentum"],
@@ -52,7 +94,7 @@ class RuleBasedProductAnalyzer:
                 category=category,
                 product_type="Skincare product",
                 short_description=description,
-                target_audience=audience,
+                target_audience=[audience],
                 main_problem="The audience wants a routine that feels easy, trustworthy, and gentle.",
                 main_benefit="A simple product moment that fits into an everyday care routine.",
                 emotional_triggers=["confidence", "self-care", "freshness"],
@@ -70,7 +112,7 @@ class RuleBasedProductAnalyzer:
                 category=category,
                 product_type="Food and beverage",
                 short_description=description,
-                target_audience=audience,
+                target_audience=[audience],
                 main_problem="The audience wants something satisfying now, but needs a strong reason to choose this product.",
                 main_benefit="A craving-led product moment with sensory detail and a clear offer.",
                 emotional_triggers=["craving", "delight", "reward"],
@@ -87,7 +129,7 @@ class RuleBasedProductAnalyzer:
             category=category,
             product_type="Consumer product",
             short_description=description,
-            target_audience=audience,
+            target_audience=[audience],
             main_problem="The audience has a recurring need but may not know which product is worth trying.",
             main_benefit="A clear product demo that makes the value easy to understand in seconds.",
             emotional_triggers=["curiosity", "confidence", "convenience"],
@@ -119,3 +161,6 @@ class RuleBasedProductAnalyzer:
 
     def _is_app(self, text: str) -> bool:
         return any(token in text for token in ["app", "mobile", "screenshot", "saas", "software", "dashboard"])
+
+    def _is_coin_scanner(self, text: str) -> bool:
+        return "coin" in text and any(token in text for token in ["scan", "scanner", "identify", "value", "app"])

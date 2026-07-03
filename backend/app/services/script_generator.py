@@ -17,8 +17,11 @@ class RuleBasedVariantScriptGenerator:
         cta = project.cta or angle.cta
         style = brief.recommended_visual_style
         product = project.product_name
+        audience = ", ".join(brief.target_audience) or "the target audience"
         brand_color_text = ", ".join(project.brand_colors)
         brand_colors = f" Brand colors: {brand_color_text}." if brand_color_text else ""
+        demo_voiceover = self._demo_voiceover(project, brief, product)
+        result_voiceover = self._result_voiceover(project, brief, cta)
 
         scenes = [
             StoryboardScene(
@@ -42,7 +45,7 @@ class RuleBasedVariantScriptGenerator:
                 on_screen_text="This used to slow me down.",
                 voiceover_line=f"The annoying part is simple: {angle.pain_point}",
                 transition="Swipe transition into product demo.",
-                generation_prompt=f"Realistic problem setup for {brief.target_audience}, vertical social ad, authentic environment, no staged studio look.",
+                generation_prompt=f"Realistic problem setup for {audience}, vertical social ad, authentic environment, no staged studio look.",
                 negative_prompt="fearmongering, exaggerated before-after, unsafe usage, offensive content",
             ),
             StoryboardScene(
@@ -52,7 +55,7 @@ class RuleBasedVariantScriptGenerator:
                 visual_description=f"Show {angle.proof_demo_moment}. Keep the product action easy to understand.",
                 camera_angle="Close-up insert shots mixed with screen or product macro.",
                 on_screen_text=brief.main_benefit,
-                voiceover_line=f"Then {product} makes the next step obvious: {brief.main_benefit}",
+                voiceover_line=demo_voiceover,
                 transition="Match cut from demo to result.",
                 generation_prompt=f"Clear product demonstration of {product}, focus on {angle.proof_demo_moment}, crisp lighting, concise captions, {style}",
                 negative_prompt="overpromising results, fake UI, messy background, low resolution",
@@ -64,7 +67,7 @@ class RuleBasedVariantScriptGenerator:
                 visual_description=f"Creator shows the result, smiles naturally, and points to a simple CTA for {product}.",
                 camera_angle="Front-facing close-up with product or screen visible.",
                 on_screen_text=cta,
-                voiceover_line=f"If you want {brief.main_benefit.lower()}, {cta.lower()} today.",
+                voiceover_line=result_voiceover,
                 transition="End card with logo/product and CTA.",
                 generation_prompt=f"UGC end card for {product}, positive realistic reaction, clear CTA text '{cta}', platform {project.platform}.{brand_colors}",
                 negative_prompt="hard-sell spam, fake countdown, misleading discount, unreadable logo",
@@ -98,3 +101,28 @@ class RuleBasedVariantScriptGenerator:
 
     def _slug(self, value: str | None) -> str:
         return (value or "social").lower().replace(" ", "")
+
+    def _demo_voiceover(self, project: Project, brief: ProductBrief, product: str) -> str:
+        if self._is_coin_scanner(project, brief):
+            return (
+                f"{product} scans the coin, shows the coin details, and gives an estimated reference value "
+                "so I know what to research next."
+            )
+        return f"Then {product} makes the next step obvious: {brief.main_benefit}"
+
+    def _result_voiceover(self, project: Project, brief: ProductBrief, cta: str) -> str:
+        if self._is_coin_scanner(project, brief):
+            return f"So before I spend or toss old coins, I scan them first. {cta}."
+        return f"If you want an easier way to get this result, {cta.lower()} today."
+
+    def _is_coin_scanner(self, project: Project, brief: ProductBrief) -> bool:
+        text = " ".join(
+            [
+                project.product_name,
+                project.product_category or "",
+                project.product_description or "",
+                brief.product_type,
+                brief.short_description,
+            ]
+        ).lower()
+        return "coin" in text and any(token in text for token in ["scan", "scanner", "identify", "value", "app"])

@@ -42,6 +42,18 @@ Uploads and outputs are served as static files from:
 
 Shared BE/FE contract: `../API_CONTRACT.md`
 
+## LLM prompt templates
+
+Reusable prompt templates for future real providers live in `app/prompts/`:
+
+- `product_intelligence_agent.md`
+- `creative_angle_agent.md`
+- `script_storyboard_agent.md`
+- `video_prompt_optimizer_agent.md`
+- `demo_coin_scanner.md`
+
+The current MVP still uses rule-based mock services. These files define the future LLM contract without requiring external API calls.
+
 ## Example flow
 
 Create a project:

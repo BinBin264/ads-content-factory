@@ -50,3 +50,5 @@ http://127.0.0.1:5173
 ## API contract
 
 Shared FE/BE contract: `../API_CONTRACT.md`
+
+The Product Brief response uses arrays for `target_audience`, `emotional_triggers`, `functional_benefits`, `proof_elements`, `safe_claims`, `claims_to_avoid`, and `recommended_ad_formats`.

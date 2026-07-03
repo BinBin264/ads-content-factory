@@ -37,3 +37,26 @@ brand_colors=#FFFFFF
 ```
 
 The backend also accepts comma, semicolon, or newline-separated values for compatibility, then stores and returns arrays.
+
+## Product Brief Shape
+
+`POST /api/projects/{project_id}/analyze` returns:
+
+```json
+{
+  "product_name": "Coin Scanner App",
+  "category": "mobile app",
+  "product_type": "Mobile coin identification app",
+  "short_description": "An app that helps users scan old coins, identify coin details, and view estimated reference value.",
+  "target_audience": ["People who find old coins at home, casual collectors, adults with coin jars."],
+  "main_problem": "People find old coins at home but do not know what they are, whether they are common, or what details to look up.",
+  "main_benefit": "The app helps users scan a coin, identify key details, and view an estimated reference value for research.",
+  "emotional_triggers": ["curiosity", "surprise", "nostalgia", "discovery"],
+  "functional_benefits": ["coin scanning flow", "coin detail lookup", "estimated reference value"],
+  "proof_elements": ["phone camera scanning an old coin", "app result screen with coin details"],
+  "safe_claims": ["Helps identify coin details", "Shows estimated reference value for research"],
+  "claims_to_avoid": ["guaranteed value", "100% accurate appraisal"],
+  "recommended_visual_style": "Natural UGC at a kitchen table or desk, old coin jar, phone-in-hand scan demo.",
+  "recommended_ad_formats": ["Found coin curiosity -> app scan demo -> estimated reference result -> CTA"]
+}
+```
