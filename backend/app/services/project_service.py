@@ -116,11 +116,11 @@ class ProjectService:
     def export_production_package(self, project_id: str) -> Project:
         project = self.storage.get_project(project_id)
         if not project.variants:
-            raise ValueError("Generate variants before exporting a production package")
+            raise ValueError("Generate variants before exporting production package.")
 
         for variant in project.variants:
             if not variant.production_package:
-                raise ValueError("Generate variants again to create a production package")
+                raise ValueError("Variant is missing production_package. Generate variants again.")
             variant_dir = OUTPUTS_DIR / project.id / variant.id
             variant_dir.mkdir(parents=True, exist_ok=True)
             self._write_variant_package_files(variant_dir, variant)
@@ -184,7 +184,7 @@ class ProjectService:
     def _write_variant_package_files(self, variant_dir: Path, variant: Variant) -> None:
         package = variant.production_package
         if package is None:
-            raise ValueError("Variant is missing production_package")
+            raise ValueError("Variant is missing production_package. Generate variants again.")
 
         self._write_json(variant_dir / "character_bible.json", package.character_bible.model_dump(mode="json"))
         self._write_text(

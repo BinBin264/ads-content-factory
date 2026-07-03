@@ -1,6 +1,7 @@
 import json
 
 from app.models.schemas import CharacterBible, CharacterPlan, CreativeAngle, ProductIntelligenceBrief, Variant
+from app.services.intelligence_context import compact_intelligence_context
 from app.services.llm_provider import LLMProvider, build_llm_provider
 
 
@@ -77,7 +78,7 @@ class GeminiCharacterPlanner:
             "You are a casting director for AI-generated UGC video ads.\n\n"
             "Your job is to create the most suitable main character for this specific ad script.\n\n"
             "Input:\n"
-            f"Product Intelligence:\n{json.dumps(product_intelligence.model_dump(mode='json'), ensure_ascii=False, indent=2)}\n\n"
+            f"Product Intelligence:\n{json.dumps(compact_intelligence_context(product_intelligence), ensure_ascii=False, indent=2)}\n\n"
             f"Creative Angle:\n{json.dumps(creative_angle.model_dump(mode='json'), ensure_ascii=False, indent=2)}\n\n"
             f"Script:\n{variant.script}\n\n"
             f"Platform:\n{platform}\n\n"

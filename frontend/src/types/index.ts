@@ -269,7 +269,6 @@ export interface CreateProjectValues {
   tone: string;
   cta: string;
   claimsToAvoid: string;
-  brandColors: string;
   files: File[];
 }
 

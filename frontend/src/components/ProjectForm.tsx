@@ -14,7 +14,6 @@ const initialValues: CreateProjectValues = {
   tone: "UGC, natural, realistic",
   cta: "",
   claimsToAvoid: "",
-  brandColors: "",
   files: [],
 };
 
@@ -57,7 +56,6 @@ const sampleInputs: Array<{ label: string; description: string; values: Omit<Cre
       tone: "Natural UGC, relatable, curiosity-driven, realistic, not too polished.",
       cta: "Download now and scan your old coins.",
       claimsToAvoid: "Guaranteed value, 100% accurate appraisal, you will make money, this coin is definitely worth money.",
-      brandColors: "Blue, white, gold",
     },
   },
   {
@@ -74,7 +72,6 @@ const sampleInputs: Array<{ label: string; description: string; values: Omit<Cre
       tone: "Natural skincare routine, clean, realistic, soft lighting.",
       cta: "Shop now.",
       claimsToAvoid: "Cures acne, guaranteed clear skin overnight, medical treatment claims.",
-      brandColors: "White, soft blue, pale green",
     },
   },
   {
@@ -91,7 +88,6 @@ const sampleInputs: Array<{ label: string; description: string; values: Omit<Cre
       tone: "Fun, refreshing, craving-driven, energetic.",
       cta: "Order now.",
       claimsToAvoid: "Health claims.",
-      brandColors: "Cream, sky blue, sunny yellow",
     },
   },
   {
@@ -108,7 +104,6 @@ const sampleInputs: Array<{ label: string; description: string; values: Omit<Cre
       tone: "Helpful, encouraging, student-friendly, realistic.",
       cta: "Start practicing today.",
       claimsToAvoid: "Become fluent instantly, guaranteed exam pass.",
-      brandColors: "Blue, white, lime",
     },
   },
 ];
@@ -122,7 +117,6 @@ const helpText = {
   duration: "Độ dài video mong muốn. Agent dùng để chia thời lượng từng scene trong storyboard.",
   tone: "Phong cách giọng nói và cảm giác video. Ví dụ UGC natural realistic nghĩa là nói tự nhiên như người dùng thật, không quá quảng cáo.",
   cta: "Câu kêu gọi hành động cuối video. Ví dụ Download now, Shop now, Book a demo. Nếu để trống agent sẽ tự gợi ý.",
-  brandColors: "Màu nhận diện thương hiệu, nhập mã màu hoặc tên màu. Agent dùng để gợi ý visual style, overlay, cover prompt và giữ cảm giác đúng brand.",
   claimsToAvoid: "Những câu tuyệt đối không được hứa hoặc nói quá. Agent dùng để tránh claim rủi ro trong script, hook, caption và scene prompt.",
 };
 
@@ -228,10 +222,6 @@ export default function ProjectForm({ loading, onSubmit }: ProjectFormProps) {
         <label className="space-y-1">
           <FieldLabel help={helpText.cta}>CTA</FieldLabel>
           <input className="field-input" value={values.cta} onChange={(event) => update("cta", event.target.value)} />
-        </label>
-        <label className="space-y-1">
-          <FieldLabel help={helpText.brandColors}>Brand colors</FieldLabel>
-          <input className="field-input" placeholder="#111827, #22c55e" value={values.brandColors} onChange={(event) => update("brandColors", event.target.value)} />
         </label>
         <label className="space-y-1 md:col-span-2">
           <FieldLabel help={helpText.claimsToAvoid}>Claims to avoid</FieldLabel>

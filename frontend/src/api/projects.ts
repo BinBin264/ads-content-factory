@@ -28,7 +28,6 @@ export async function createProject(values: CreateProjectValues): Promise<Projec
   appendIfPresent(formData, "tone", values.tone);
   appendIfPresent(formData, "cta", values.cta);
   appendListField(formData, "claims_to_avoid", values.claimsToAvoid);
-  appendListField(formData, "brand_colors", values.brandColors);
 
   values.files.forEach((file) => {
     formData.append("files", file);

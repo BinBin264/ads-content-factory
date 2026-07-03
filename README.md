@@ -85,7 +85,6 @@ Duration: 20s
 Tone: Natural UGC, relatable, curiosity-driven, realistic, not too polished.
 CTA: Download now and scan your old coins.
 Claims to avoid: Guaranteed value, 100% accurate appraisal, you will make money, this coin is definitely worth money.
-Brand colors: Blue, white, gold
 ```
 
 Then run:

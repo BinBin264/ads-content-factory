@@ -3,6 +3,7 @@ from typing import Any
 from typing import Protocol
 
 from app.models.schemas import CreativeAngle, ProductBrief, ProductIntelligenceBrief, Project
+from app.services.intelligence_context import compact_intelligence_context, compact_project_context
 from app.services.llm_provider import LLMProvider, build_llm_provider
 
 
@@ -84,8 +85,8 @@ class GeminiCreativeAngleGenerator:
             "Hooks must be simple spoken language and strong in the first 2 seconds. "
             "Avoid generic hooks like Introducing or This product is amazing. "
             "Make every angle specific to the product intelligence.\n\n"
-            f"Project:\n{json.dumps(project.model_dump(mode='json'), ensure_ascii=False, indent=2)}\n\n"
-            f"Product intelligence:\n{json.dumps(intelligence.model_dump(mode='json'), ensure_ascii=False, indent=2)}"
+            f"Project:\n{json.dumps(compact_project_context(project), ensure_ascii=False, indent=2)}\n\n"
+            f"Product intelligence:\n{json.dumps(compact_intelligence_context(intelligence), ensure_ascii=False, indent=2)}"
         )
         data = self.llm_provider.generate_json(prompt, temperature=0.65, response_schema=self.RESPONSE_SCHEMA)
         raw_angles = data.get("angles")

@@ -91,10 +91,8 @@ class ProductIntelligenceService:
                         "scene_formula": ["string"],
                     }
                 ],
-                "recommended_video_formats": ["string"],
                 "recommended_hooks": ["string"],
                 "recommended_cta": "string",
-                "confidence_score": 0.0,
             },
         }
         return (

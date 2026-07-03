@@ -1,6 +1,8 @@
 import json
+from typing import Any
 
 from app.models.schemas import CharacterBible, CharacterReferencePrompt, CreativeAngle, ProductIntelligenceBrief, Variant
+from app.services.intelligence_context import compact_intelligence_context
 from app.services.llm_provider import LLMProvider, build_llm_provider
 
 
@@ -31,12 +33,32 @@ class GeminiCharacterReferenceGenerator:
         if not isinstance(raw_prompts, list):
             raise ValueError("Gemini character reference response must include character_reference_prompts")
 
-        prompts = [CharacterReferencePrompt.model_validate(item) for item in raw_prompts]
+        prompts = [CharacterReferencePrompt.model_validate(self._coerce_prompt(item, character_bible.base_prompt)) for item in raw_prompts]
         found_ids = {prompt.reference_id for prompt in prompts}
         missing_ids = REQUIRED_REFERENCE_IDS - found_ids
         if missing_ids:
             raise ValueError(f"Gemini character reference prompts missing required ids: {', '.join(sorted(missing_ids))}")
         return prompts
+
+    def _coerce_prompt(self, item: Any, identity_anchor: str) -> dict[str, str]:
+        if not isinstance(item, dict):
+            raise ValueError("Each character reference prompt must be an object")
+
+        prompt = str(item.get("prompt") or "").strip()
+        if identity_anchor and identity_anchor not in prompt:
+            prompt = f"{identity_anchor} {prompt}".strip()
+
+        return {
+            "reference_id": str(item.get("reference_id") or "").strip(),
+            "purpose": str(item.get("purpose") or "Character reference").strip(),
+            "aspect_ratio": str(item.get("aspect_ratio") or "9:16").strip(),
+            "prompt": prompt,
+            "negative_prompt": str(
+                item.get("negative_prompt")
+                or "changed identity, different face, different outfit, distorted hands, extra fingers, blurry, low quality"
+            ).strip(),
+            "notes": str(item.get("notes") or "").strip(),
+        }
 
     def _build_prompt(
         self,
@@ -47,9 +69,10 @@ class GeminiCharacterReferenceGenerator:
     ) -> str:
         return (
             "You are an AI image prompt engineer.\n\n"
-            "Create a character reference pack based on this Character Bible.\n\n"
+            "Create a character reference pack for ONE single UGC actor based on this Character Bible.\n\n"
             f"Character Bible:\n{json.dumps(character_bible.model_dump(mode='json'), ensure_ascii=False, indent=2)}\n\n"
-            f"Product Intelligence:\n{json.dumps(product_intelligence.model_dump(mode='json'), ensure_ascii=False, indent=2)}\n\n"
+            f"Identity anchor that must stay unchanged in every prompt:\n{character_bible.base_prompt}\n\n"
+            f"Product Intelligence:\n{json.dumps(compact_intelligence_context(product_intelligence), ensure_ascii=False, indent=2)}\n\n"
             f"Creative Angle:\n{json.dumps(creative_angle.model_dump(mode='json'), ensure_ascii=False, indent=2)}\n\n"
             f"Script:\n{variant.script}\n\n"
             "Return JSON only:\n"
@@ -63,9 +86,12 @@ class GeminiCharacterReferenceGenerator:
             "  ]\n"
             "}\n\n"
             "Rules:\n"
-            "- Every prompt must describe the same character exactly.\n"
-            "- Repeat face, hair, facial hair, age, outfit, body type, and setting in every prompt.\n"
-            "- Prompts must be realistic UGC style.\n"
+            "- These are NOT different characters. They are multiple reference images of the same actor.\n"
+            "- Start every prompt with the same identity anchor, then add only the reference-specific pose, framing, and prop.\n"
+            "- Repeat face, hair, facial hair, age, skin tone, outfit, body type, and setting in every prompt.\n"
+            "- Keep outfit and setting unchanged unless the Character Bible explicitly says otherwise.\n"
+            "- Change only camera angle, pose, hand position, expression, and whether the actor holds the coin/phone.\n"
+            "- Prompts must be realistic UGC style and should not read like separate story scenes.\n"
             "- Avoid complex text, logos, or UI on screen.\n"
             "- Include natural lighting and simple background.\n"
             "- Negative prompt must prevent changed identity, distorted hands, extra fingers, different clothes, different face.\n"

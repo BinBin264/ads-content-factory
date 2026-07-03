@@ -48,11 +48,7 @@ Return JSON only:
         "negative_prompt": ""
       }
     ],
-    "voiceover": "",
-    "subtitles": [],
-    "title": "",
-    "caption": "",
-    "cover_prompt": ""
+    "voiceover": ""
   }
 }
 ```

@@ -179,7 +179,7 @@ class CharacterReferencePrompt(BaseModel):
     aspect_ratio: str
     prompt: str
     negative_prompt: str
-    notes: str
+    notes: str = ""
 
 
 class UIOverlayItem(BaseModel):

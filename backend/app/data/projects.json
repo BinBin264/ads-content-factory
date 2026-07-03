@@ -317,255 +317,985 @@
     },
     "creative_angles": [
       {
-        "id": "angle_a883c1f50768",
-        "name": "The Grandparent's Secret",
+        "id": "angle_35b479cdcc5e",
+        "name": "The Heirloom Mystery",
         "angle_type": "storytelling",
-        "target_audience": "Adults with coin jars, people who find old coins at home.",
-        "pain_point": "Uncertainty about the history and potential value of old family coins.",
-        "emotional_trigger": "Nostalgia associated with old coins and family heirlooms, excitement of discovery, hope of uncovering a rare find.",
-        "hook": "I found this super old coin in my grandpa's dusty attic box. What even IS this?",
-        "product_role": "The app acts as a personal historian, revealing the hidden story and estimated worth of sentimental items.",
-        "proof_demo_moment": "User holds a tarnished, old coin. Opens the app, taps to scan. The app instantly identifies it as '1909-S VDB Lincoln Cent' and shows details like 'United States' and 'Years of Minting: 1909'. Then highlights an estimated value range like '$100,000 - $500,000' with the disclaimer text visible. User gasps in surprise.",
+        "target_audience": "People who find old coins at home, adults with coin jars.",
+        "pain_point": "Uncertainty about the identity and potential value of old coins found at home.",
+        "emotional_trigger": "Nostalgia associated with old coins and family heirlooms, curiosity about history, hope of uncovering a rare find.",
+        "hook": "My grandpa gave me this old coin, but I have no idea what it is.",
+        "product_role": "The app acts as a personal historian and identifier for cherished old coins.",
+        "proof_demo_moment": "User holds an old, slightly tarnished coin, then scans it with the app. The app instantly displays details like '1909-S VDB Lincoln Cent' and an estimated reference value range, prompting a surprised reaction.",
         "cta": "Download now and scan your old coins.",
-        "reason_why_it_can_work": "Taps into the emotional connection of family heirlooms and the universal dream of finding unexpected treasure, making the app the key to unlocking these stories and potential value.",
-        "score": 95.0
-      },
-      {
-        "id": "angle_a2d57eb0d30f",
-        "name": "Instant Coin ID & Value",
-        "angle_type": "product_demo",
-        "target_audience": "People who find old coins at home, casual coin collectors.",
-        "pain_point": "Lack of quick, easy tools to identify specific coin details and get estimated values.",
-        "emotional_trigger": "Satisfaction from quick, accurate results; efficiency; empowerment.",
-        "hook": "Watch me identify this random coin and its estimated value in under 5 seconds!",
-        "product_role": "The app is a fast, accurate, and comprehensive tool for instant coin identification and information.",
-        "proof_demo_moment": "User picks up a generic old coin from a pile. Opens the Coin Scanner App, taps the central camera icon. Positions the coin under the camera. The app quickly processes, then displays the coin's name, country, and years of minting. User scrolls to the 'Reference Price' tab, showing the estimated value range (e.g., '$100 - $500') and the accompanying disclaimer.",
-        "cta": "Download now and scan your old coins.",
-        "reason_why_it_can_work": "Visually demonstrates the app's core functional benefits (speed, accuracy, detailed info, value estimation) in a direct, compelling way, solving a clear pain point for users seeking efficiency.",
+        "reason_why_it_can_work": "Taps into universal themes of family, legacy, and the excitement of discovering hidden stories. The relatable scenario makes the app's solution feel personal and necessary for unlocking history.",
         "score": 90.0
       },
       {
-        "id": "angle_488d0b86dbde",
-        "name": "Tame Your Coin Jar Chaos",
-        "angle_type": "problem_solution",
-        "target_audience": "Adults with coin jars, people overwhelmed by unorganized, unidentified coins.",
-        "pain_point": "Uncertainty about the identity and potential value of old coins, and the overwhelm of an unorganized collection.",
-        "emotional_trigger": "Hope of uncovering a rare or valuable find, satisfaction from bringing order to chaos.",
-        "hook": "My coin jar was just a mess of unknowns... until this app changed everything.",
-        "product_role": "The app transforms a confusing pile of unidentified coins into an organized, informative digital collection with estimated values.",
-        "proof_demo_moment": "Creator shows a full, disorganized coin jar or a small pile of various old coins, looking slightly frustrated. Pulls out a coin, then uses the app to scan it, revealing its details and estimated value. Shows 'Save to My Coins' and then briefly showcases the 'My Coins' catalog filling up with identified coins, looking satisfied.",
+        "id": "angle_d4e4bef2c9e1",
+        "name": "Instant Coin ID in Action",
+        "angle_type": "product_demo",
+        "target_audience": "Casual coin collectors, people who find old coins at home.",
+        "pain_point": "Lack of knowledge or tools to easily identify specific coin details (country, year, type).",
+        "emotional_trigger": "Satisfaction from identifying and understanding a coin's background.",
+        "hook": "Watch how fast this identifies my old coin!",
+        "product_role": "The app is a quick and precise identification and information tool.",
+        "proof_demo_moment": "A rapid-fire sequence: User picks up a coin, opens the app, taps scan, places coin under camera, app instantly processes and displays detailed info (country, year, type) and estimated value range, highlighting 'Save to My Coins'.",
         "cta": "Download now and scan your old coins.",
-        "reason_why_it_can_work": "Directly addresses a common, relatable problem (the mystery and mess of a coin jar) and presents the app as the simple, effective solution to organize and uncover potential value, leading to a sense of accomplishment.",
+        "reason_why_it_can_work": "Directly shows the core functional benefit and ease of use. The speed and accuracy demonstrated will appeal to those seeking efficiency and quick answers.",
+        "score": 88.0
+      },
+      {
+        "id": "angle_ab8a517f1fab",
+        "name": "The Unidentified Coin Pile Fix",
+        "angle_type": "problem_solution",
+        "target_audience": "Adults with coin jars, casual coin collectors.",
+        "pain_point": "Overwhelm from an unorganized collection of unidentified coins and difficulty in getting an estimated value.",
+        "emotional_trigger": "Relief from confusion, satisfaction from gaining control and understanding.",
+        "hook": "My coin jar is a mystery... until now.",
+        "product_role": "The app transforms chaos into order and provides clarity on coin details and value.",
+        "proof_demo_moment": "User shows a messy pile of old coins, expressing frustration. Then, demonstrates scanning one coin, showing the app's detailed info and estimated value, saving it, and then showing the 'My Coins' catalog starting to fill up, implying organization.",
+        "cta": "Download now and scan your old coins.",
+        "reason_why_it_can_work": "Directly addresses a common, relatable problem of an unorganized collection and offers a simple, effective solution. The before-and-after implication is strong.",
         "score": 92.0
       },
       {
-        "id": "angle_722d355098b1",
-        "name": "The Hidden Value Question",
+        "id": "angle_314420501e30",
+        "name": "What's Hiding in Your Jar?",
         "angle_type": "curiosity",
-        "target_audience": "People who find old coins at home, those with a general interest in discovering potential value.",
-        "pain_point": "Not knowing if an old coin they possess might have significant, unexpected value.",
-        "emotional_trigger": "Excitement of discovery, hope of uncovering a rare or valuable find, intrigue.",
-        "hook": "Is this old coin in my hand worth a fortune or just a few cents? Let's find out!",
-        "product_role": "The app is the ultimate tool that satisfies curiosity and reveals the potential (or lack thereof) of any old coin.",
-        "proof_demo_moment": "User holds up a seemingly ordinary, slightly dirty coin, looking inquisitive. Expresses doubt about its value. Scans it with the app. The app reveals detailed info and then prominently displays a surprising (but plausible) high estimated value range (e.g., '$10,000 - $50,000') with the disclaimer text. User's jaw drops slightly in disbelief/excitement.",
+        "target_audience": "People who find old coins at home, adults with coin jars.",
+        "pain_point": "Uncertainty about the identity and potential value of old coins.",
+        "emotional_trigger": "Excitement of discovery, hope of uncovering a rare or valuable find, curiosity about history.",
+        "hook": "You won't believe what I found in my coin jar!",
+        "product_role": "The app is a tool for discovery and unlocking hidden potential/stories.",
+        "proof_demo_moment": "User pulls a random, unremarkable-looking coin from a jar, expresses skepticism. Scans it with the app. The app reveals surprising details or an unexpectedly high estimated value range (with disclaimer visible). User reacts with genuine surprise.",
         "cta": "Download now and scan your old coins.",
-        "reason_why_it_can_work": "Plays on the universal human desire for unexpected good fortune and the thrill of solving a mystery, positioning the app as the accessible gateway to potentially surprising information.",
-        "score": 94.0
+        "reason_why_it_can_work": "Capitalizes on the innate human desire for discovery and the potential for a 'jackpot' moment, even if it's just knowledge. The hook is very strong for attention.",
+        "score": 95.0
       },
       {
-        "id": "angle_a4d7e9c695aa",
-        "name": "Collector's Must-Have App",
+        "id": "angle_a83f252bd103",
+        "name": "Everyone's Scanning Their Old Coins",
         "angle_type": "social_proof",
-        "target_audience": "Casual coin collectors, people looking for trusted and efficient tools.",
-        "pain_point": "Difficulty in consistently identifying coins and managing a collection without expert help or reliable resources.",
-        "emotional_trigger": "Trust, validation, desire to be informed and efficient like others in the community.",
-        "hook": "My fellow collectors kept telling me about this app, so I finally tried it. Wow.",
-        "product_role": "The app is a trusted, community-approved tool that simplifies coin collecting, identification, and cataloging.",
-        "proof_demo_moment": "User starts by mentioning how other collectors recommended the app. Then, they demonstrate scanning a coin, showing the detailed information and estimated value. They briefly scroll through their 'My Coins' section, showcasing an organized digital collection, implying consistent use and satisfaction, thereby validating the initial recommendation.",
+        "target_audience": "Broader audience, people who find old coins at home.",
+        "pain_point": "Feeling left out or missing out on a trend, uncertainty about a product's legitimacy.",
+        "emotional_trigger": "Fear of missing out (FOMO), desire to be part of something popular, trust in peer recommendations.",
+        "hook": "My friends are all doing this with their old coins!",
+        "product_role": "The app is a popular, trusted tool for exploring coin collections and sharing discoveries.",
+        "proof_demo_moment": "User shows their own 'My Coins' collection in the app, then quickly cuts to text snippets or quick shots implying others are using it (e.g., 'Sarah found this!', 'John's collection is huge now!'). Concludes with a clear scan/identify demo.",
         "cta": "Download now and scan your old coins.",
-        "reason_why_it_can_work": "Leverages the persuasive power of peer recommendation and demonstrates the app's utility through a relatable, positive user experience, fostering trust and encouraging adoption based on shared community value.",
-        "score": 88.0
+        "reason_why_it_can_work": "Leverages the power of peer influence and shows the app as a widely adopted and useful tool, reducing perceived risk and increasing desirability through a sense of community.",
+        "score": 85.0
       }
     ],
     "variants": [
       {
-        "id": "variant_e2a4f6bab745",
-        "angle_id": "angle_a883c1f50768",
-        "name": "Grandpa'sTreasureReveal",
+        "id": "variant_3c0f2a5beea2",
+        "angle_id": "angle_314420501e30",
+        "name": "Coin Scanner App - What's Hiding in Your Jar? (Variant 1)",
         "duration": "20s",
-        "format": "UGC-style short-form video (vertical)",
-        "hook": "Just found this ancient-looking coin in my grandpa's old box. I mean, what even IS this thing?",
-        "script": "Just found this ancient-looking coin in my grandpa's old box. I mean, what even IS this thing? Could it be valuable, or just another old penny? I had no idea how to find out. Then I remembered the Coin Scanner App! Super easy! Just scan, and boom! It instantly identified it as a 1909-S VDB Lincoln Cent, potentially worth thousands! My mind is blown! You gotta check your old coins. Download Coin Scanner App and see what you find!",
+        "format": "UGC short-form video",
+        "hook": "You won't believe what I found in my coin jar!",
+        "script": "You won't believe what I found in my coin jar! It looks old, but I have no idea what it is... or if it's worth anything. Then I remembered the Coin Scanner App. Just scan it... and boom! Instantly tells me everything, even an estimated value! Who knew my old coin jar held so much history? Download now and scan your old coins!",
         "storyboard": [
           {
             "scene_number": 1,
             "duration_seconds": 3,
-            "objective": "Capture attention with the discovery of an old, mysterious coin.",
-            "visual_description": "A hand reaching into a dusty, old wooden box, pulling out a tarnished, ancient-looking coin. Close-up on the coin, showing its age and wear.",
-            "camera_angle": "Close-up, slightly shaky handheld.",
-            "on_screen_text": "Found this in grandpa's box!",
-            "voiceover_line": "Just found this ancient-looking coin in my grandpa's old box.",
+            "objective": "Grab attention with a discovery moment.",
+            "visual_description": "A hand digging into a glass coin jar, pulling out an old, dusty coin. Close-up on the coin, showing its aged details.",
+            "camera_angle": "POV, close-up",
+            "on_screen_text": "You won't believe what I found in my coin jar!",
+            "voiceover_line": "You won't believe what I found in my coin jar!",
             "transition": "Cut",
-            "generation_prompt": "A hand pulling a tarnished, old coin from a dusty wooden box in an attic, close-up on the coin, natural lighting, realistic, UGC style, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text.",
+            "generation_prompt": "POV, hand digging into a glass coin jar, pulling out an old, dusty coin, close up on the coin, natural lighting, realistic, not polished, high detail.",
             "negative_prompt": "different product, wrong brand, unreadable text, distorted hands, extra fingers, deformed face, blurry product, low quality, random logo, fake UI text"
           },
           {
             "scene_number": 2,
             "duration_seconds": 3,
-            "objective": "Express curiosity and the problem of not knowing the coin's identity or value.",
-            "visual_description": "Creator holding the old coin, turning it over in their fingers, looking at it with a curious and slightly puzzled expression. Background is a casual home setting.",
-            "camera_angle": "Medium shot, eye-level.",
-            "on_screen_text": "What is this? Is it worth anything?",
-            "voiceover_line": "I mean, what even IS this thing? Could it be valuable, or just another old penny? I had no idea how to find out.",
+            "objective": "Establish the problem: uncertainty about the coin's identity and value.",
+            "visual_description": "User holding the old coin, looking curious and slightly puzzled, trying to discern faint details on the coin. A question mark might subtly appear as an overlay.",
+            "camera_angle": "Medium shot, slightly low angle",
+            "on_screen_text": "Is this old coin worth anything?",
+            "voiceover_line": "It looks old, but I have no idea what it is... or if it's worth anything.",
             "transition": "Cut",
-            "generation_prompt": "A person holding a tarnished old coin, turning it over, looking at it with a curious and slightly puzzled expression in a casual home setting, natural lighting, realistic, UGC style, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text.",
+            "generation_prompt": "Person holding an old coin, looking curious and slightly puzzled, natural home setting, soft lighting, realistic, not polished, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text.",
             "negative_prompt": "different product, wrong brand, unreadable text, distorted hands, extra fingers, deformed face, blurry product, low quality, random logo, fake UI text"
           },
           {
             "scene_number": 3,
             "duration_seconds": 10,
-            "objective": "Demonstrate the app's core function: scanning and identifying a coin, showing details and estimated value, and user's initial surprise.",
-            "visual_description": "Creator pulls out their smartphone, opens the Coin Scanner App (showing a clean, simple UI). Taps the 'scan' button. Places the old coin on a flat surface. Phone camera hovers over it. The app processes and then displays detailed information: '1909-S VDB Lincoln Cent', 'Country: United States', 'Years of Minting: 1909'. Then highlights the estimated value range (e.g., '$10,000 - $50,000') with a small disclaimer text visible. Creator gasps in surprise.",
-            "camera_angle": "Over-the-shoulder shot transitioning to a close-up of the phone screen, then back to creator's face.",
-            "on_screen_text": "Coin Scanner App; 1909-S VDB Lincoln Cent; Estimated Value: $10,000 - $50,000; Note: Value is an approximate estimate.",
-            "voiceover_line": "Then I remembered the Coin Scanner App! Super easy! Just scan, and boom! It instantly identified it as a 1909-S VDB Lincoln Cent, potentially worth thousands! My mind is blown!",
-            "transition": "Swipe left",
-            "generation_prompt": "A person using a smartphone to scan an old coin with the Coin Scanner App. The phone screen clearly shows the app interface, identifying the coin as '1909-S VDB Lincoln Cent' and displaying an estimated value range (e.g., '$10,000 - $50,000') with a disclaimer. Creator reacts with a gasp. Clean UI, natural lighting, realistic, UGC style, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text.",
+            "objective": "Demonstrate the app's core functionality: scanning and instant identification with estimated value.",
+            "visual_description": "User opens the Coin Scanner App, taps the scan button, places the old coin under the phone's camera. The app quickly processes and displays detailed information about the coin (country, year, type) and an estimated reference value range, with a clear disclaimer. User reacts with genuine surprise and satisfaction.",
+            "camera_angle": "Close-up on phone screen and coin, then user's face",
+            "on_screen_text": "Scan & Identify Instantly!\nEstimated Value: $XXX - $XXX (Reference Only)",
+            "voiceover_line": "Then I remembered the Coin Scanner App. Just scan it... and boom! Instantly tells me everything, even an estimated value!",
+            "transition": "Cut",
+            "generation_prompt": "Close up of a hand holding a smartphone, scanning an old coin with the Coin Scanner App, app interface clearly visible showing coin details like country, year, and an estimated value range with a disclaimer, user's face in background showing surprise, natural lighting, realistic, not polished, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text.",
             "negative_prompt": "different product, wrong brand, unreadable text, distorted hands, extra fingers, deformed face, blurry product, low quality, random logo, fake UI text"
           },
           {
             "scene_number": 4,
             "duration_seconds": 4,
-            "objective": "Show user's continued satisfaction/excitement and a clear call to action.",
-            "visual_description": "Creator looks at the camera with an excited smile, perhaps briefly scrolling through the app details again. Final shot of the phone screen with the app's logo and 'Download Now' button, with the coin visible in the background.",
-            "camera_angle": "Medium close-up on creator's face, then zoom out to show phone and coin.",
-            "on_screen_text": "Check YOUR old coins! Download Coin Scanner App Now!",
-            "voiceover_line": "You gotta check your old coins. Download Coin Scanner App and see what you find!",
+            "objective": "Show the positive result and drive app installs with a clear CTA.",
+            "visual_description": "User smiling and happily scrolling through the Coin Scanner App on their smartphone, perhaps showing the 'My Coins' section with the newly added coin. On-screen text with the app's name and a strong call to action.",
+            "camera_angle": "Medium shot, slightly high angle",
+            "on_screen_text": "Discover Your Coins' Stories!\nCoin Scanner App\nDownload Now!",
+            "voiceover_line": "Who knew my old coin jar held so much history? Download now and scan your old coins!",
             "transition": "Fade to black",
-            "generation_prompt": "A person reacting with excitement and a smile while looking at their phone screen displaying the Coin Scanner App with coin details. Then, a clear shot of the phone screen showing the app's logo and a 'Download Now' button, with an old coin visible in the background, natural lighting, realistic, UGC style, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text.",
+            "generation_prompt": "Person smiling and happily scrolling through the Coin Scanner App on their smartphone, showing the 'My Coins' section with the newly added coin, natural home setting, soft lighting, realistic, not polished, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text.",
             "negative_prompt": "different product, wrong brand, unreadable text, distorted hands, extra fingers, deformed face, blurry product, low quality, random logo, fake UI text"
           }
         ],
         "scene_prompts": [
-          "A hand pulling a tarnished, old coin from a dusty wooden box in an attic, close-up on the coin, natural lighting, realistic, UGC style, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text.",
-          "A person holding a tarnished old coin, turning it over, looking at it with a curious and slightly puzzled expression in a casual home setting, natural lighting, realistic, UGC style, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text.",
-          "A person using a smartphone to scan an old coin with the Coin Scanner App. The phone screen clearly shows the app interface, identifying the coin as '1909-S VDB Lincoln Cent' and displaying an estimated value range (e.g., '$10,000 - $50,000') with a disclaimer. Creator reacts with a gasp. Clean UI, natural lighting, realistic, UGC style, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text.",
-          "A person reacting with excitement and a smile while looking at their phone screen displaying the Coin Scanner App with coin details. Then, a clear shot of the phone screen showing the app's logo and a 'Download Now' button, with an old coin visible in the background, natural lighting, realistic, UGC style, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text."
+          "POV, hand digging into a glass coin jar, pulling out an old, dusty coin, close up on the coin, natural lighting, realistic, not polished, high detail.",
+          "Person holding an old coin, looking curious and slightly puzzled, natural home setting, soft lighting, realistic, not polished, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text.",
+          "Close up of a hand holding a smartphone, scanning an old coin with the Coin Scanner App, app interface clearly visible showing coin details like country, year, and an estimated value range with a disclaimer, user's face in background showing surprise, natural lighting, realistic, not polished, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text.",
+          "Person smiling and happily scrolling through the Coin Scanner App on their smartphone, showing the 'My Coins' section with the newly added coin, natural home setting, soft lighting, realistic, not polished, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text."
         ],
-        "voiceover": "Just found this ancient-looking coin in my grandpa's old box. I mean, what even IS this thing? Could it be valuable, or just another old penny? I had no idea how to find out. Then I remembered the Coin Scanner App! Super easy! Just scan, and boom! It instantly identified it as a 1909-S VDB Lincoln Cent, potentially worth thousands! My mind is blown! You gotta check your old coins. Download Coin Scanner App and see what you find!",
+        "voiceover": "You won't believe what I found in my coin jar! It looks old, but I have no idea what it is... or if it's worth anything. Then I remembered the Coin Scanner App. Just scan it... and boom! Instantly tells me everything, even an estimated value! Who knew my old coin jar held so much history? Download now and scan your old coins!",
         "subtitles": [
-          "Just found this ancient-looking coin in my grandpa's old box.",
-          "I mean, what even IS this thing?",
-          "Could it be valuable, or just another old penny?",
-          "I had no idea how to find out.",
-          "Then I remembered the Coin Scanner App!",
-          "Super easy! Just scan, and boom!",
-          "It instantly identified it as a 1909-S VDB Lincoln Cent,",
-          "potentially worth thousands! My mind is blown!",
-          "You gotta check your old coins.",
-          "Download Coin Scanner App and see what you find!"
+          "You won't believe what I found in my coin jar!",
+          "It looks old, but I have no idea what it is... or if it's worth anything.",
+          "Then I remembered the Coin Scanner App. Just scan it... and boom! Instantly tells me everything, even an estimated value!",
+          "Who knew my old coin jar held so much history? Download now and scan your old coins!"
         ],
-        "title": "Grandpa's Hidden Coin Treasure!",
-        "caption": "You never know what treasures are hiding! 🤫 This app is seriously cool for finding out what your old coins are. #CoinScannerApp #OldCoins #TreasureHunt #FamilyHeirloom #CoinCollecting",
-        "cover_prompt": "A close-up of a hand holding a tarnished old coin, with a smartphone in the background displaying the Coin Scanner App logo, curiosity-driven, natural lighting, UGC style",
-        "selected_playbook": "The Discovery & Reveal",
-        "angle_type": "storytelling",
-        "video_status": "draft",
-        "video_url": null,
-        "export_9x16_url": null,
-        "export_1x1_url": null
-      },
-      {
-        "id": "variant_147864c84b03",
-        "angle_id": "angle_722d355098b1",
-        "name": "HiddenValueQuestion_Variant2",
-        "duration": "20s",
-        "format": "UGC-style short-form video (vertical)",
-        "hook": "Is this old coin in my hand worth a fortune or just a few cents? Let's find out!",
-        "script": "Is this old coin in my hand worth a fortune or just a few cents? Let's find out! I've always wondered about these random coins I find, but never knew how to tell if they were special. This one looks... old. Then I discovered the Coin Scanner App! It's so easy. Just open the app, tap to scan, and point your phone. Wow! It instantly identified it as a 1909-S VDB Lincoln Cent, and look at this estimated value: ten thousand to fifty thousand dollars! My jaw literally dropped. You can uncover the potential worth of YOUR old coins too. Download the Coin Scanner App now!",
-        "storyboard": [
-          {
-            "scene_number": 1,
-            "duration_seconds": 4,
-            "objective": "Introduce the mystery coin and the central question about its value to grab attention.",
-            "visual_description": "A close-up of a hand holding an old, slightly dirty, generic coin. The user's face is partially visible, looking at the coin with curiosity and a hint of wonder. Natural, soft lighting.",
-            "camera_angle": "Close-up shot, slightly Dutch angle for intrigue.",
-            "on_screen_text": "Worth a fortune or a few cents?",
-            "voiceover_line": "Is this old coin in my hand worth a fortune or just a few cents? Let's find out!",
-            "transition": "Cut",
-            "generation_prompt": "A person's hand holding an old, tarnished coin, in a natural home setting. The person's face is partially visible, showing curiosity. Close-up, soft lighting, realistic UGC style, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text.",
-            "negative_prompt": "different product, wrong brand, unreadable text, distorted hands, extra fingers, deformed face, blurry product, low quality, random logo, fake UI text"
+        "title": "Coin Scanner App: What's Hiding in Your Jar?",
+        "caption": "You won't believe what I found in my coin jar! Download now and scan your old coins..",
+        "cover_prompt": "UGC cover frame for Coin Scanner App, creator holding phone and old coin, bold readable hook text.",
+        "character_bible": null,
+        "visual_bible": null,
+        "asset_reference_map": null,
+        "production_package": {
+          "variant_id": "variant_3c0f2a5beea2",
+          "creative_angle_id": "angle_314420501e30",
+          "character_plan": {
+            "recommended_character_type": "Relatable Home Discoverer",
+            "reason": "This character type directly aligns with the primary audience of 'people who find old coins at home' and 'adults with coin jars'. Their relatable, warm, and curious nature perfectly embodies the emotional triggers of discovery, nostalgia, and the hope of finding something valuable, as highlighted in the product intelligence and creative angle. The natural UGC tone requires an authentic, approachable persona who can genuinely convey surprise and enthusiasm.",
+            "gender": "female",
+            "age_range": "35-45",
+            "ethnicity_or_look": "Light-skinned, average build, with an approachable and friendly appearance.",
+            "face_details": "Expressive eyes showing curiosity and genuine surprise, a warm and natural smile.",
+            "hair": "Medium length, natural light brown or blonde hair, styled simply and casually.",
+            "facial_hair": "None",
+            "body_type": "Average, comfortable build.",
+            "outfit": "Neutral beige casual shirt or a simple, comfortable top, reflecting a relaxed home setting.",
+            "setting": "A warm, well-lit kitchen dining table or a cozy living room area, suggesting a home environment where one might sort through old items.",
+            "props": [
+              "An old, slightly tarnished coin (e.g., a penny or nickel) being examined",
+              "A smartphone (held in hand, displaying the Coin Scanner App interface)",
+              "A clear glass coin jar, partially filled with various old coins, from which the discovery coin was pulled"
+            ],
+            "personality": [
+              "Curious",
+              "Initially skeptical",
+              "Genuinely surprised",
+              "Enthusiastic",
+              "Relatable"
+            ],
+            "speaking_style": "Friendly, conversational, enthusiastic, natural, slightly informal, with a tone of genuine discovery and excitement.",
+            "visual_style": "Authentic, well-lit, clean but not sterile. Focus on close-ups of hands, the coin, and the app screen to emphasize the discovery process and app functionality.",
+            "role_in_ad": "The relatable protagonist who discovers the app's utility firsthand, guiding the viewer through her journey from initial curiosity and uncertainty to surprise and satisfaction with the information found.",
+            "consistency_locks": [
+              "Female",
+              "Age 35-45",
+              "Light brown or blonde, medium-length hair",
+              "Neutral beige casual shirt",
+              "Home kitchen/dining table setting"
+            ],
+            "negative_identity_changes": [
+              "No overly glamorous or professional attire",
+              "No overly dramatic or exaggerated reactions",
+              "No highly stylized hair or makeup",
+              "No appearance of being an expert numismatist or professional appraiser"
+            ]
           },
-          {
-            "scene_number": 2,
-            "duration_seconds": 4,
-            "objective": "Emphasize the common problem of not knowing what old coins are or their value.",
-            "visual_description": "The user is sitting at a table, looking intently at the old coin, perhaps trying to read faint markings or comparing it to another common object, looking slightly puzzled or thoughtful. A small pile of other generic old coins might be in the background, out of focus.",
-            "camera_angle": "Medium close-up, eye-level.",
-            "on_screen_text": "What IS this?",
-            "voiceover_line": "I've always wondered about these random coins I find, but never knew how to tell if they were special.",
-            "transition": "Cut",
-            "generation_prompt": "A person sitting at a table, thoughtfully examining an old coin in their hand. Slightly puzzled expression. A few other generic old coins are out of focus in the background. Natural home environment, realistic UGC style, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text.",
-            "negative_prompt": "different product, wrong brand, unreadable text, distorted hands, extra fingers, deformed face, blurry product, low quality, random logo, fake UI text"
+          "character_bible": {
+            "character_id": "character_bb1a234dd16e",
+            "display_name": "Relatable Home Discoverer",
+            "role": "The relatable protagonist who discovers the app's utility firsthand, guiding the viewer through her journey from initial curiosity and uncertainty to surprise and satisfaction with the information found.",
+            "gender": "female",
+            "age_range": "35-45",
+            "ethnicity_or_look": "Light-skinned, average build, with an approachable and friendly appearance.",
+            "face_details": "Expressive eyes showing curiosity and genuine surprise, a warm and natural smile.",
+            "hair": "Medium length, natural light brown or blonde hair, styled simply and casually.",
+            "facial_hair": "None",
+            "body_type": "Average, comfortable build.",
+            "outfit": "Neutral beige casual shirt or a simple, comfortable top, reflecting a relaxed home setting.",
+            "props": [
+              "An old, slightly tarnished coin (e.g., a penny or nickel) being examined",
+              "A smartphone (held in hand, displaying the Coin Scanner App interface)",
+              "A clear glass coin jar, partially filled with various old coins, from which the discovery coin was pulled"
+            ],
+            "setting": "A warm, well-lit kitchen dining table or a cozy living room area, suggesting a home environment where one might sort through old items.",
+            "personality": [
+              "Curious",
+              "Initially skeptical",
+              "Genuinely surprised",
+              "Enthusiastic",
+              "Relatable"
+            ],
+            "speaking_style": "Friendly, conversational, enthusiastic, natural, slightly informal, with a tone of genuine discovery and excitement.",
+            "visual_style": "Authentic, well-lit, clean but not sterile. Focus on close-ups of hands, the coin, and the app screen to emphasize the discovery process and app functionality.",
+            "consistency_locks": [
+              "Female",
+              "Age 35-45",
+              "Light brown or blonde, medium-length hair",
+              "Neutral beige casual shirt",
+              "Home kitchen/dining table setting"
+            ],
+            "negative_identity_changes": [
+              "No overly glamorous or professional attire",
+              "No overly dramatic or exaggerated reactions",
+              "No highly stylized hair or makeup",
+              "No appearance of being an expert numismatist or professional appraiser"
+            ],
+            "base_prompt": "Relatable Home Discoverer. female, 35-45, Light-skinned, average build, with an approachable and friendly appearance.. Face: Expressive eyes showing curiosity and genuine surprise, a warm and natural smile.. Hair: Medium length, natural light brown or blonde hair, styled simply and casually.. Facial hair: None. Body type: Average, comfortable build.. Outfit: Neutral beige casual shirt or a simple, comfortable top, reflecting a relaxed home setting.. Setting: A warm, well-lit kitchen dining table or a cozy living room area, suggesting a home environment where one might sort through old items.. Props: An old, slightly tarnished coin (e.g., a penny or nickel) being examined, A smartphone (held in hand, displaying the Coin Scanner App interface), A clear glass coin jar, partially filled with various old coins, from which the discovery coin was pulled. Personality: Curious, Initially skeptical, Genuinely surprised, Enthusiastic, Relatable. Speaking style: Friendly, conversational, enthusiastic, natural, slightly informal, with a tone of genuine discovery and excitement.. Visual style: Authentic, well-lit, clean but not sterile. Focus on close-ups of hands, the coin, and the app screen to emphasize the discovery process and app functionality..",
+            "identity_lock_prompt": "Use the same character from the generated character reference images. Preserve face, hairstyle, facial hair, age, skin tone, body type, outfit, and setting. Do not change identity across scenes."
           },
-          {
-            "scene_number": 3,
-            "duration_seconds": 7,
-            "objective": "Demonstrate the app's core functionality: scanning and identifying a coin with estimated value.",
-            "visual_description": "The user holds a smartphone with the Coin Scanner App open. They tap the scan button, then carefully place the old coin on a flat surface. The phone camera is positioned over it. The app interface is then shown on the phone screen, instantly displaying the coin's details ('1909-S VDB Lincoln Cent', 'Country: United States') and an estimated value range ('$10,000 - $50,000') with a clear disclaimer at the bottom.",
-            "camera_angle": "Over-the-shoulder shot, focusing on the phone screen and the coin.",
-            "on_screen_text": "Coin Scanner App: Scan & Identify! 1909-S VDB Lincoln Cent. Estimated Value: $10,000 - $50,000. *Value is an estimate.",
-            "voiceover_line": "Then I discovered the Coin Scanner App! It's so easy. Just open the app, tap to scan, and point your phone. Wow! It instantly identified it as a 1909-S VDB Lincoln Cent, and look at this estimated value: ten thousand to fifty thousand dollars!",
-            "transition": "Swipe up",
-            "generation_prompt": "A user's hands holding a smartphone displaying the Coin Scanner App. The user is scanning an old coin on a table. The phone screen should be clean and simple for later UI overlay, do not generate unreadable app text. Focus on the app's interface showing coin details and an estimated value range with a disclaimer. Realistic UGC style.",
-            "negative_prompt": "different product, wrong brand, unreadable text, distorted hands, extra fingers, deformed face, blurry product, low quality, random logo, fake UI text"
+          "character_reference_prompts": [
+            {
+              "reference_id": "front_portrait",
+              "purpose": "Master identity reference",
+              "aspect_ratio": "4:5",
+              "prompt": "A relatable female, 35-45 years old, light-skinned, average build, with an approachable and friendly appearance. She has expressive eyes showing curiosity and a warm, natural smile. Her hair is medium length, natural light brown or blonde, styled simply and casually. She wears a neutral beige casual shirt. The setting is a warm, well-lit kitchen dining table or a cozy living room area, suggesting a home environment. Authentic, natural lighting, clean but not sterile. Front-facing portrait, looking at camera with a curious and friendly expression, simple home background.",
+              "negative_prompt": "ugly, deformed, disfigured, bad anatomy, extra limbs, missing limbs, malformed limbs, extra fingers, missing fingers, fused fingers, too many fingers, too few fingers, mutated hands, distorted hands, different character, different face, different hair, different outfit, different age, different skin tone, different body type, overly glamorous, professional attire, dramatic reactions, exaggerated reactions, stylized hair, heavy makeup, expert numismatist, professional appraiser, sterile environment, dark, poorly lit, text, logo, watermark, UI, app interface, screen content, brand, words, letters, numbers, complex text",
+              "notes": ""
+            },
+            {
+              "reference_id": "three_quarter_portrait",
+              "purpose": "3/4 face reference",
+              "aspect_ratio": "4:5",
+              "prompt": "A relatable female, 35-45 years old, light-skinned, average build, with an approachable and friendly appearance. She has expressive eyes showing curiosity and a warm, natural smile. Her hair is medium length, natural light brown or blonde, styled simply and casually. She wears a neutral beige casual shirt. The setting is a warm, well-lit kitchen dining table or a cozy living room area, suggesting a home environment. Authentic, natural lighting, clean but not sterile. Three-quarter portrait, looking slightly off-camera with a genuinely surprised expression, simple home background.",
+              "negative_prompt": "ugly, deformed, disfigured, bad anatomy, extra limbs, missing limbs, malformed limbs, extra fingers, missing fingers, fused fingers, too many fingers, too few fingers, mutated hands, distorted hands, different character, different face, different hair, different outfit, different age, different skin tone, different body type, overly glamorous, professional attire, dramatic reactions, exaggerated reactions, stylized hair, heavy makeup, expert numismatist, professional appraiser, sterile environment, dark, poorly lit, text, logo, watermark, UI, app interface, screen content, brand, words, letters, numbers, complex text",
+              "notes": ""
+            },
+            {
+              "reference_id": "seated_in_main_setting",
+              "purpose": "Same character in main ad setting",
+              "aspect_ratio": "9:16",
+              "prompt": "A relatable female, 35-45 years old, light-skinned, average build, with an approachable and friendly appearance. She has expressive eyes showing curiosity and a warm, natural smile. Her hair is medium length, natural light brown or blonde, styled simply and casually. She wears a neutral beige casual shirt. Seated at a warm, well-lit kitchen dining table or a cozy living room area, suggesting a home environment. She looks curious and relatable. Authentic, natural lighting, clean but not sterile.",
+              "negative_prompt": "ugly, deformed, disfigured, bad anatomy, extra limbs, missing limbs, malformed limbs, extra fingers, missing fingers, fused fingers, too many fingers, too few fingers, mutated hands, distorted hands, different character, different face, different hair, different outfit, different age, different skin tone, different body type, overly glamorous, professional attire, dramatic reactions, exaggerated reactions, stylized hair, heavy makeup, expert numismatist, professional appraiser, sterile environment, dark, poorly lit, text, logo, watermark, UI, app interface, screen content, brand, words, letters, numbers, complex text",
+              "notes": ""
+            },
+            {
+              "reference_id": "holding_key_object",
+              "purpose": "Same character holding key object or product",
+              "aspect_ratio": "9:16",
+              "prompt": "A relatable female, 35-45 years old, light-skinned, average build, with an approachable and friendly appearance. She has expressive eyes showing curiosity and a warm, natural smile. Her hair is medium length, natural light brown or blonde, styled simply and casually. She wears a neutral beige casual shirt. Seated at a warm, well-lit kitchen dining table or a cozy living room area, suggesting a home environment. She is holding an old, slightly tarnished coin (penny or nickel) between her fingers, examining it closely with a curious expression. Close-up on hands and coin. Authentic, natural lighting, clean but not sterile.",
+              "negative_prompt": "ugly, deformed, disfigured, bad anatomy, extra limbs, missing limbs, malformed limbs, extra fingers, missing fingers, fused fingers, too many fingers, too few fingers, mutated hands, distorted hands, different character, different face, different hair, different outfit, different age, different skin tone, different body type, overly glamorous, professional attire, dramatic reactions, exaggerated reactions, stylized hair, heavy makeup, expert numismatist, professional appraiser, sterile environment, dark, poorly lit, text, logo, watermark, UI, app interface, screen content, brand, words, letters, numbers, complex text",
+              "notes": ""
+            },
+            {
+              "reference_id": "holding_phone_or_cta_pose",
+              "purpose": "Same character holding phone or CTA pose",
+              "aspect_ratio": "9:16",
+              "prompt": "A relatable female, 35-45 years old, light-skinned, average build, with an approachable and friendly appearance. She has expressive eyes showing curiosity and a warm, natural smile. Her hair is medium length, natural light brown or blonde, styled simply and casually. She wears a neutral beige casual shirt. Seated at a warm, well-lit kitchen dining table or a cozy living room area, suggesting a home environment. She is holding a smartphone in her hand, looking at the screen with a surprised and satisfied expression. Close-up on hands and phone. The phone screen is blank and clean. Authentic, natural lighting, clean but not sterile.",
+              "negative_prompt": "ugly, deformed, disfigured, bad anatomy, extra limbs, missing limbs, malformed limbs, extra fingers, missing fingers, fused fingers, too many fingers, too few fingers, mutated hands, distorted hands, different character, different face, different hair, different outfit, different age, different skin tone, different body type, overly glamorous, professional attire, dramatic reactions, exaggerated reactions, stylized hair, heavy makeup, expert numismatist, professional appraiser, sterile environment, dark, poorly lit, text, logo, watermark, UI, app interface, screen content, brand, words, letters, numbers, complex text",
+              "notes": ""
+            }
+          ],
+          "production_scenes": [
+            {
+              "scene_number": 1,
+              "duration_seconds": 4,
+              "creative_objective": "Grab attention with a discovery moment, leveraging curiosity about old finds.",
+              "shot_type": "Close-up",
+              "camera_angle": "POV, close-up",
+              "generation_mode": "image_to_video",
+              "required_reference_assets": [
+                "holding_key_object",
+                "seated_in_main_setting"
+              ],
+              "visual_description": "A relatable hand digging into a clear glass coin jar, pulling out an old, dusty coin. The camera focuses closely on the coin as it's revealed, showing its aged details and potential mystery.",
+              "action_description": "Hand reaches into a coin jar, retrieves a coin, and brings it into close focus.",
+              "keyframe_prompt": "POV, a relatable female hand digging into a clear glass coin jar, pulling out an old, dusty coin. Close-up on the coin, showing its aged details, natural lighting, realistic, not polished, high detail, home setting.",
+              "video_prompt": "POV, a relatable female hand digging into a clear glass coin jar, pulling out an old, dusty coin. Close-up on the coin, showing its aged details, natural lighting, realistic, not polished, high detail, home setting. Use the same character from the generated character reference images. Preserve face, hairstyle, facial hair, age, skin tone, body type, outfit, and setting. Do not change identity across scenes.",
+              "motion_instruction": "Slow, deliberate hand movement revealing the coin, then a slight rotation of the coin to show both sides.",
+              "consistency_instruction": "Ensure the hand matches the character's skin tone and style. The coin jar and coin should maintain consistent appearance.",
+              "negative_prompt": "different person, changed face, different hairstyle, different shirt, older man, younger man, distorted hands, extra fingers, missing fingers, deformed phone, unreadable text, fake UI text, random logo, bad anatomy, blurry face, low quality, identity change, face morphing, plastic skin, cartoon, anime, over-polished commercial look, unrealistic expression",
+              "ui_overlay_plan": [
+                {
+                  "overlay_type": "app_screen",
+                  "text": "You won't believe what I found in my coin jar!",
+                  "start_time": "0:00",
+                  "end_time": "0:03",
+                  "position": "top_center",
+                  "style_notes": "Readable app_screen overlay for scene 1.",
+                  "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                }
+              ],
+              "voiceover_line": "You won't believe what I found in my coin jar!",
+              "on_screen_text": "You won't believe what I found in my coin jar!",
+              "transition": "Cut",
+              "safety_notes": "Ensure the coin is clearly old and potentially interesting, but not overtly valuable to avoid false claims."
+            },
+            {
+              "scene_number": 2,
+              "duration_seconds": 4,
+              "creative_objective": "Establish the problem: uncertainty about the coin's identity and value, building curiosity.",
+              "shot_type": "Medium shot",
+              "camera_angle": "Medium shot, slightly low angle",
+              "generation_mode": "image_to_video",
+              "required_reference_assets": [
+                "holding_key_object",
+                "seated_in_main_setting"
+              ],
+              "visual_description": "The 'Relatable Home Discoverer' character holds the old coin, looking curious and slightly puzzled. She turns the coin over, trying to discern faint details, conveying a sense of 'what is this?'",
+              "action_description": "Character examines the coin closely, turning it in her fingers with a puzzled expression.",
+              "keyframe_prompt": "Relatable Home Discoverer, female, 35-45, light-skinned, average build, wearing a neutral beige casual shirt, seated at a warm, well-lit kitchen dining table. She holds an old, slightly tarnished coin, looking curious and slightly puzzled, trying to discern faint details on the coin. Medium shot, soft lighting, realistic, not polished.",
+              "video_prompt": "Relatable Home Discoverer, female, 35-45, light-skinned, average build, wearing a neutral beige casual shirt, seated at a warm, well-lit kitchen dining table. She holds an old, slightly tarnished coin, looking curious and slightly puzzled, trying to discern faint details on the coin. Medium shot, soft lighting, realistic, not polished. Use the same character from the generated character reference images. Preserve face, hairstyle, facial hair, age, skin tone, body type, outfit, and setting. Do not change identity across scenes.",
+              "motion_instruction": "Subtle head tilt and coin rotation, conveying contemplation and uncertainty.",
+              "consistency_instruction": "Maintain character's puzzled expression and consistent appearance of the coin.",
+              "negative_prompt": "different person, changed face, different hairstyle, different shirt, older man, younger man, distorted hands, extra fingers, missing fingers, deformed phone, unreadable text, fake UI text, random logo, bad anatomy, blurry face, low quality, identity change, face morphing, plastic skin, cartoon, anime, over-polished commercial look, unrealistic expression",
+              "ui_overlay_plan": [
+                {
+                  "overlay_type": "app_screen",
+                  "text": "Is this old coin worth anything?",
+                  "start_time": "0:00",
+                  "end_time": "0:03",
+                  "position": "bottom_center",
+                  "style_notes": "Readable app_screen overlay for scene 2.",
+                  "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                }
+              ],
+              "voiceover_line": "It looks old, but I have no idea what it is... or if it's worth anything.",
+              "on_screen_text": "Is this old coin worth anything?",
+              "transition": "Cut",
+              "safety_notes": "Avoid any text or visual cues that suggest a definitive high value for the coin at this stage."
+            },
+            {
+              "scene_number": 3,
+              "duration_seconds": 10,
+              "creative_objective": "Demonstrate the app's core functionality: scanning, instant identification, and estimated value, providing a clear solution.",
+              "shot_type": "Close-up on phone and coin, then user reaction",
+              "camera_angle": "Over-the-shoulder on phone screen and coin, then user's face",
+              "generation_mode": "image_to_video",
+              "required_reference_assets": [
+                "holding_phone_or_cta_pose",
+                "holding_key_object"
+              ],
+              "visual_description": "The 'Relatable Home Discoverer' opens the Coin Scanner App on her smartphone, taps the central scan button. She carefully places the old coin under the phone's camera. The app quickly processes the image, and the screen instantly displays detailed information about the coin (country, year, type) and an estimated reference value range, with a clear disclaimer visible. The camera then cuts to her face, showing genuine surprise and satisfaction at the information revealed.",
+              "action_description": "Character interacts with the app, scans the coin, and reacts to the displayed results.",
+              "keyframe_prompt": "Close-up, over-the-shoulder shot of a relatable female hand holding a smartphone, scanning an old coin with the Coin Scanner App. The app interface is clearly visible showing coin details like country, year, and an estimated value range with a disclaimer. In the background, the user's face shows genuine surprise. Natural lighting, realistic, not polished. The phone screen should be clean and simple for later UI overlay. Do not generate unreadable app text.",
+              "video_prompt": "Close-up, over-the-shoulder shot of a relatable female hand holding a smartphone, scanning an old coin with the Coin Scanner App. The app interface is clearly visible showing coin details like country, year, and an estimated value range with a disclaimer. In the background, the user's face shows genuine surprise. Natural lighting, realistic, not polished. The phone screen should be clean and simple for later UI overlay. Do not generate unreadable app text. Use the same character from the generated character reference images. Preserve face, hairstyle, facial hair, age, skin tone, body type, outfit, and setting. Do not change identity across scenes.",
+              "motion_instruction": "Smooth transition from tapping the app, positioning the coin, to the app processing animation, followed by a quick pan to the user's surprised face.",
+              "consistency_instruction": "Maintain consistent app interface style (clean, modern). Ensure the coin details and estimated value appear clearly. Character's reaction should be authentic.",
+              "negative_prompt": "different person, changed face, different hairstyle, different shirt, older man, younger man, distorted hands, extra fingers, missing fingers, deformed phone, unreadable text, fake UI text, random logo, bad anatomy, blurry face, low quality, identity change, face morphing, plastic skin, cartoon, anime, over-polished commercial look, unrealistic expression",
+              "ui_overlay_plan": [
+                {
+                  "overlay_type": "app_screen",
+                  "text": "mobile_app.jpg",
+                  "start_time": "0:00",
+                  "end_time": "0:03",
+                  "position": "phone_screen",
+                  "style_notes": "Readable app_screen overlay for scene 3.",
+                  "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                },
+                {
+                  "overlay_type": "app_screen",
+                  "text": "Scan & Identify Instantly!",
+                  "start_time": "0:00",
+                  "end_time": "0:03",
+                  "position": "top_center",
+                  "style_notes": "Readable app_screen overlay for scene 3.",
+                  "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                },
+                {
+                  "overlay_type": "app_screen",
+                  "text": "Estimated Value: $XXX - $XXX (Reference Only)",
+                  "start_time": "0:00",
+                  "end_time": "0:03",
+                  "position": "bottom_center",
+                  "style_notes": "Readable app_screen overlay for scene 3.",
+                  "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                }
+              ],
+              "voiceover_line": "Then I remembered the Coin Scanner App. Just scan it... and boom! Instantly tells me everything, even an estimated value!",
+              "on_screen_text": "Scan & Identify Instantly!\nEstimated Value: $XXX - $XXX (Reference Only)",
+              "transition": "Cut",
+              "safety_notes": "Crucially include the disclaimer 'Reference Only' and 'Actual value may vary' to avoid misleading claims about value. Do not show specific high values without context."
+            },
+            {
+              "scene_number": 4,
+              "duration_seconds": 4,
+              "creative_objective": "Show the positive result and drive app installs with a clear call to action.",
+              "shot_type": "Medium shot",
+              "camera_angle": "Medium shot, slightly high angle",
+              "generation_mode": "image_to_video",
+              "required_reference_assets": [
+                "holding_phone_or_cta_pose"
+              ],
+              "visual_description": "The 'Relatable Home Discoverer' is smiling and happily scrolling through the Coin Scanner App on her smartphone, perhaps showing the 'My Coins' section with the newly added coin. Her expression is one of satisfaction and discovery. On-screen text prominently displays the app's name and a strong call to action.",
+              "action_description": "Character happily scrolls through the app, looking satisfied, then looks up at the camera with a friendly smile.",
+              "keyframe_prompt": "Relatable Home Discoverer, female, 35-45, light-skinned, average build, wearing a neutral beige casual shirt, seated at a warm, well-lit kitchen dining table. She is smiling and happily scrolling through the Coin Scanner App on her smartphone, showing the 'My Coins' section with the newly added coin. Medium shot, soft lighting, realistic, not polished. The phone screen should be clean and simple for later UI overlay. Do not generate unreadable app text.",
+              "video_prompt": "Relatable Home Discoverer, female, 35-45, light-skinned, average build, wearing a neutral beige casual shirt, seated at a warm, well-lit kitchen dining table. She is smiling and happily scrolling through the Coin Scanner App on her smartphone, showing the 'My Coins' section with the newly added coin. Medium shot, soft lighting, realistic, not polished. The phone screen should be clean and simple for later UI overlay. Do not generate unreadable app text. Use the same character from the generated character reference images. Preserve face, hairstyle, facial hair, age, skin tone, body type, outfit, and setting. Do not change identity across scenes.",
+              "motion_instruction": "Gentle scrolling motion on the phone, followed by a satisfied glance at the camera.",
+              "consistency_instruction": "Maintain character's happy and satisfied expression. Ensure the phone and app interface are consistent with previous scenes.",
+              "negative_prompt": "different person, changed face, different hairstyle, different shirt, older man, younger man, distorted hands, extra fingers, missing fingers, deformed phone, unreadable text, fake UI text, random logo, bad anatomy, blurry face, low quality, identity change, face morphing, plastic skin, cartoon, anime, over-polished commercial look, unrealistic expression",
+              "ui_overlay_plan": [
+                {
+                  "overlay_type": "app_screen",
+                  "text": "mobile_app2.jpg",
+                  "start_time": "0:00",
+                  "end_time": "0:03",
+                  "position": "phone_screen",
+                  "style_notes": "Readable app_screen overlay for scene 4.",
+                  "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                },
+                {
+                  "overlay_type": "app_screen",
+                  "text": "Discover Your Coins' Stories!",
+                  "start_time": "0:00",
+                  "end_time": "0:03",
+                  "position": "top_center",
+                  "style_notes": "Readable app_screen overlay for scene 4.",
+                  "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                },
+                {
+                  "overlay_type": "app_screen",
+                  "text": "Coin Scanner App",
+                  "start_time": "0:00",
+                  "end_time": "0:03",
+                  "position": "center",
+                  "style_notes": "Readable app_screen overlay for scene 4.",
+                  "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                },
+                {
+                  "overlay_type": "app_screen",
+                  "text": "Download Now!",
+                  "start_time": "0:00",
+                  "end_time": "0:03",
+                  "position": "bottom_center",
+                  "style_notes": "Readable app_screen overlay for scene 4.",
+                  "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                },
+                {
+                  "overlay_type": "app_screen",
+                  "text": "Estimated reference value only. Actual value may vary.",
+                  "start_time": "0:00",
+                  "end_time": "0:03",
+                  "position": "bottom_left",
+                  "style_notes": "Readable app_screen overlay for scene 4.",
+                  "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                }
+              ],
+              "voiceover_line": "Who knew my old coin jar held so much history? Download now and scan your old coins!",
+              "on_screen_text": "Discover Your Coins' Stories!\nCoin Scanner App\nDownload Now!",
+              "transition": "Fade to black",
+              "safety_notes": "Ensure all value claims are accompanied by a disclaimer. The CTA should be clear and prominent."
+            }
+          ],
+          "edit_plan": {
+            "total_duration": "22s",
+            "pacing_notes": "Start with a quick, intriguing hook (4s), transition to a relatable problem setup (4s), dedicate the longest segment to a clear, engaging app demonstration (10s), and conclude with a concise, impactful result and call to action (4s). Maintain a dynamic pace with quick cuts in the first two scenes, a slightly slower, more detailed pace for the demo, and a strong finish.",
+            "music_direction": "Begin with a light, curious, slightly mysterious track. Transition to an upbeat, positive, and satisfying tune during the app demo and CTA. Music should be royalty-free and suitable for UGC, avoiding overly commercial or generic sounds.",
+            "subtitle_style": "Clean, white sans-serif font with a subtle dark outline or background for readability. Key phrases (e.g., 'Download Now!') can be highlighted in brand gold or blue. Positioned at the bottom third of the screen, avoiding crucial visual elements.",
+            "cut_sequence": [
+              "scene: 1, type: hard_cut",
+              "scene: 2, type: hard_cut",
+              "scene: 3, type: hard_cut",
+              "scene: 4, type: fade_out"
+            ],
+            "export_ratios": [
+              "9:16",
+              "1:1"
+            ],
+            "required_post_production_steps": [
+              "Overlay app UI elements and screenshots onto blank phone screens in scenes 3 and 4, ensuring brand consistency (blue, white, gold).",
+              "Add dynamic on-screen text overlays for hooks, questions, and CTAs, matching brand colors.",
+              "Integrate voiceover track, ensuring synchronization with visuals and on-screen text.",
+              "Add background music and subtle sound effects (e.g., coin clink, app notification sound) to enhance engagement.",
+              "Apply color grading to ensure a natural, warm, and consistent look across all scenes.",
+              "Add legal disclaimers for estimated values, ensuring they are clearly visible and legible."
+            ],
+            "platform_notes": "Optimize for TikTok's vertical format (9:16). Utilize trending sounds or a custom sound that aligns with the 'discovery' theme. Keep captions concise and engaging. Encourage user interaction in the comments by asking 'What's the oldest coin you've found?'"
           },
-          {
-            "scene_number": 4,
-            "duration_seconds": 5,
-            "objective": "Show the user's positive reaction to the discovery and present a clear call to action.",
-            "visual_description": "The user looks up from the phone with a surprised, excited, or satisfied expression, jaw slightly dropped. They might briefly scroll through the app's details on the screen, then look directly at the camera with a smile. The final shot transitions to a clear call to action screen with the app logo.",
-            "camera_angle": "Medium shot, then close-up on phone screen, then back to user.",
-            "on_screen_text": "Your old coins could be worth more! Download Coin Scanner App NOW!",
-            "voiceover_line": "My jaw literally dropped. You can uncover the potential worth of YOUR old coins too. Download the Coin Scanner App now!",
-            "transition": "Fade to black with CTA",
-            "generation_prompt": "A person reacting with surprise and excitement, jaw slightly dropped, looking at their phone screen displaying the Coin Scanner App with coin details. Then, a clear call to action screen with the Coin Scanner App logo and 'Download Now' button, with an old coin visible in the background. Realistic UGC style, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text.",
-            "negative_prompt": "different product, wrong brand, unreadable text, distorted hands, extra fingers, deformed face, blurry product, low quality, random logo, fake UI text"
-          }
-        ],
-        "scene_prompts": [
-          "A person's hand holding an old, tarnished coin, in a natural home setting. The person's face is partially visible, showing curiosity. Close-up, soft lighting, realistic UGC style, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text.",
-          "A person sitting at a table, thoughtfully examining an old coin in their hand. Slightly puzzled expression. A few other generic old coins are out of focus in the background. Natural home environment, realistic UGC style, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text.",
-          "A user's hands holding a smartphone displaying the Coin Scanner App. The user is scanning an old coin on a table. The phone screen should be clean and simple for later UI overlay, do not generate unreadable app text. Focus on the app's interface showing coin details and an estimated value range with a disclaimer. Realistic UGC style.",
-          "A person reacting with surprise and excitement, jaw slightly dropped, looking at their phone screen displaying the Coin Scanner App with coin details. Then, a clear call to action screen with the Coin Scanner App logo and 'Download Now' button, with an old coin visible in the background. Realistic UGC style, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text."
-        ],
-        "voiceover": "Is this old coin in my hand worth a fortune or just a few cents? Let's find out! I've always wondered about these random coins I find, but never knew how to tell if they were special. This one looks... old. Then I discovered the Coin Scanner App! It's so easy. Just open the app, tap to scan, and point your phone. Wow! It instantly identified it as a 1909-S VDB Lincoln Cent, and look at this estimated value: ten thousand to fifty thousand dollars! My jaw literally dropped. You can uncover the potential worth of YOUR old coins too. Download the Coin Scanner App now!",
-        "subtitles": [
-          "Is this old coin in my hand worth a fortune or just a few cents?",
-          "Let's find out!",
-          "I've always wondered about these random coins I find,",
-          "but never knew how to tell if they were special.",
-          "This one looks... old.",
-          "Then I discovered the Coin Scanner App!",
-          "It's so easy. Just open the app, tap to scan, and point your phone.",
-          "Wow! It instantly identified it as a 1909-S VDB Lincoln Cent,",
-          "and look at this estimated value: $10,000 - $50,000!",
-          "My jaw literally dropped.",
-          "You can uncover the potential worth of YOUR old coins too.",
-          "Download the Coin Scanner App now!"
-        ],
-        "title": "Is YOUR Old Coin a Hidden Fortune?",
-        "caption": "Found an old coin? You might be sitting on a treasure! 💰 The Coin Scanner App reveals its secrets. #CoinScannerApp #CoinCollecting #HiddenTreasure #OldCoins #AppFinds",
-        "cover_prompt": "A close-up of a hand holding an old, slightly dirty coin, with a smartphone in the background showing the Coin Scanner App logo, a question mark hovering over the coin, and a curious expression on the user's face (partially visible). Natural lighting, UGC style.",
+          "app_ui_overlay_notes": "All UI overlays should use the Coin Scanner App's brand colors (blue, white, gold) and maintain a clean, modern aesthetic. Text should be legible and strategically placed to not obscure key visual information. Ensure all value claims are accompanied by a clear disclaimer, such as 'Estimated Reference Value Only. Actual value may vary.' or 'Reference Price'.",
+          "asset_checklist": [
+            "Character reference images (front_portrait, three_quarter_portrait, seated_in_main_setting, holding_key_object, holding_phone_or_cta_pose)",
+            "Coin Scanner App UI screenshots for identification results (mobile_app.jpg)",
+            "Coin Scanner App UI screenshots for 'My Coins' section (mobile_app2.jpg)",
+            "Royalty-free background music (curious/upbeat)",
+            "Sound effects (coin handling, app notification)",
+            "On-screen text graphic assets (for hooks, questions, CTAs, disclaimers)"
+          ],
+          "compliance_notes": [
+            "Strictly avoid claims of 'estimated reference value', 'reference-only appraisal', 'you will learn more about the coin', or 'this coin is may have a reference value of money'.",
+            "All estimated values must be clearly labeled as 'estimated reference value', 'reference price', or similar, with a visible disclaimer stating 'Actual value may vary' or 'Reference Only'.",
+            "Ensure no imagery or text suggests reference estimate services are being offered.",
+            "All disclaimers must be legible and present for the duration of any value claim.",
+            "Coin value language sanitized to estimated reference value only. Actual value may vary by condition, rarity, and market demand."
+          ],
+          "render_sequence": [
+            "Scene 1: Video generation based on keyframe_prompt and video_prompt.",
+            "Scene 2: Video generation based on keyframe_prompt and video_prompt.",
+            "Scene 3: Video generation based on keyframe_prompt and video_prompt, with blank phone screen.",
+            "Scene 4: Video generation based on keyframe_prompt and video_prompt, with blank phone screen.",
+            "Post-production: Overlay UI elements, text, voiceover, music, and sound effects according to the edit plan and UI overlay plan. Apply color grading and final export."
+          ]
+        },
         "selected_playbook": "The Discovery & Reveal",
         "angle_type": "curiosity",
         "video_status": "draft",
         "video_url": null,
         "export_9x16_url": null,
-        "export_1x1_url": null
+        "export_1x1_url": null,
+        "export_package_url": null
+      },
+      {
+        "id": "variant_1e0eca31630b",
+        "angle_id": "angle_ab8a517f1fab",
+        "name": "The Unidentified Coin Pile Fix - Discovery & Reveal Variant 2",
+        "duration": "20s",
+        "format": "UGC",
+        "hook": "My coin jar is a mystery... until now.",
+        "script": "VO: My coin jar is a mystery... until now. I always wondered what these old coins were, and if they were worth anything. That's why I tried the Coin Scanner App. Just scan it, and boom! Instant details and an estimated value. It's so cool to finally know the history of these coins! Download Coin Scanner and discover what's in your jar.",
+        "storyboard": [
+          {
+            "scene_number": 1,
+            "duration_seconds": 3,
+            "objective": "Hook the viewer by showing the relatable act of finding an old coin.",
+            "visual_description": "A hand sifts through a dusty coin jar, picking out an old, tarnished coin. Close-up on the coin, showing its age and some indistinct features.",
+            "camera_angle": "Close-up, top-down view of the coin jar, then a focus on the selected coin.",
+            "on_screen_text": "My coin jar is a mystery... until now.",
+            "voiceover_line": "My coin jar is a mystery... until now.",
+            "transition": "Cut",
+            "generation_prompt": "UGC style, close-up of a hand sifting through a glass coin jar filled with old, tarnished coins, picking out one specific old coin. The coin is clearly old and worn. Realistic lighting, natural setting.",
+            "negative_prompt": "different product, wrong brand, unreadable text, distorted hands, extra fingers, deformed face, blurry product, low quality, random logo, fake UI text"
+          },
+          {
+            "scene_number": 2,
+            "duration_seconds": 3,
+            "objective": "Establish the problem: uncertainty and curiosity about old coins.",
+            "visual_description": "The user holds the old coin, turning it over in their fingers, looking at it with a curious but slightly confused expression. A small pile of other similar old coins is visible in the background on a table.",
+            "camera_angle": "Medium shot, eye-level with the user's hands and face.",
+            "on_screen_text": "What is this?",
+            "voiceover_line": "I always wondered what these old coins were, and if they were worth anything.",
+            "transition": "Cut",
+            "generation_prompt": "UGC style, a person holding an old, tarnished coin, looking at it curiously with a slightly confused expression. A small pile of similar old coins in the background on a wooden table. Natural lighting.",
+            "negative_prompt": "different product, wrong brand, unreadable text, distorted hands, extra fingers, deformed face, blurry product, low quality, random logo, fake UI text"
+          },
+          {
+            "scene_number": 3,
+            "duration_seconds": 6,
+            "objective": "Demonstrate the app's core functionality: scanning and identification.",
+            "visual_description": "User opens the Coin Scanner App on their phone. They tap the 'scan' button. The user places the old coin under the phone's camera. The app quickly processes and displays detailed information about the coin (e.g., '1909-S VDB Lincoln Cent', Country, Years of Minting) and an estimated reference value range on the screen.",
+            "camera_angle": "Over-the-shoulder shot, focusing on the phone screen and the coin.",
+            "on_screen_text": "Coin Scanner App\nInstant Identification & Value",
+            "voiceover_line": "That's why I tried the Coin Scanner App. Just scan it, and boom! Instant details and an estimated value.",
+            "transition": "Cut",
+            "generation_prompt": "UGC style, close-up of a person's hands holding a smartphone, displaying the Coin Scanner App. The phone screen should be clean and simple for later UI overlay, do not generate unreadable app text. The app shows a 'scan' button. A physical old coin is placed beneath the phone's camera. The app then displays detailed information about the coin and an estimated value range. Clean, modern app UI, natural lighting.",
+            "negative_prompt": "different product, wrong brand, unreadable text, distorted hands, extra fingers, deformed face, blurry product, low quality, random logo, fake UI text"
+          },
+          {
+            "scene_number": 4,
+            "duration_seconds": 8,
+            "objective": "Show the benefit of discovery and end with a clear call to action.",
+            "visual_description": "The user scrolls through the app's detailed information, showing a positive reaction (e.g., a smile, nod). They tap 'Save to My Coins'. The screen briefly shows the coin added to a digital collection. On-screen text with the app's name and CTA.",
+            "camera_angle": "Close-up on the phone screen, then a wider shot including the user's satisfied face.",
+            "on_screen_text": "Coin Scanner App\nDiscover Your Coins' History!\nDownload Now!",
+            "voiceover_line": "It's so cool to finally know the history of these coins! Download Coin Scanner and discover what's in your jar.",
+            "transition": "Fade to black",
+            "generation_prompt": "UGC style, close-up on a smartphone screen showing the Coin Scanner App. The phone screen should be clean and simple for later UI overlay, do not generate unreadable app text. The app displays detailed coin information, and the user scrolls through it, then taps 'Save to My Coins'. A satisfied user's face is visible in the background. Final shot includes the app's branding and a clear call to action. Clean, modern app UI, natural lighting.",
+            "negative_prompt": "different product, wrong brand, unreadable text, distorted hands, extra fingers, deformed face, blurry product, low quality, random logo, fake UI text"
+          }
+        ],
+        "scene_prompts": [
+          "UGC style, close-up of a hand sifting through a glass coin jar filled with old, tarnished coins, picking out one specific old coin. The coin is clearly old and worn. Realistic lighting, natural setting.",
+          "UGC style, a person holding an old, tarnished coin, looking at it curiously with a slightly confused expression. A small pile of similar old coins in the background on a wooden table. Natural lighting.",
+          "UGC style, close-up of a person's hands holding a smartphone, displaying the Coin Scanner App. The phone screen should be clean and simple for later UI overlay, do not generate unreadable app text. The app shows a 'scan' button. A physical old coin is placed beneath the phone's camera. The app then displays detailed information about the coin and an estimated value range. Clean, modern app UI, natural lighting.",
+          "UGC style, close-up on a smartphone screen showing the Coin Scanner App. The phone screen should be clean and simple for later UI overlay, do not generate unreadable app text. The app displays detailed coin information, and the user scrolls through it, then taps 'Save to My Coins'. A satisfied user's face is visible in the background. Final shot includes the app's branding and a clear call to action. Clean, modern app UI, natural lighting."
+        ],
+        "voiceover": "My coin jar is a mystery... until now. I always wondered what these old coins were, and if they were worth anything. That's why I tried the Coin Scanner App. Just scan it, and boom! Instant details and an estimated value. It's so cool to finally know the history of these coins! Download Coin Scanner and discover what's in your jar.",
+        "subtitles": [
+          "My coin jar is a mystery... until now.",
+          "I always wondered what these old coins were, and if they were worth anything.",
+          "That's why I tried the Coin Scanner App. Just scan it, and boom! Instant details and an estimated value.",
+          "It's so cool to finally know the history of these coins! Download Coin Scanner and discover what's in your jar."
+        ],
+        "title": "Coin Scanner App: The Unidentified Coin Pile Fix",
+        "caption": "My coin jar is a mystery... until now. Download now and scan your old coins..",
+        "cover_prompt": "UGC cover frame for Coin Scanner App, creator holding phone and old coin, bold readable hook text.",
+        "character_bible": null,
+        "visual_bible": null,
+        "asset_reference_map": null,
+        "production_package": {
+          "variant_id": "variant_1e0eca31630b",
+          "creative_angle_id": "angle_ab8a517f1fab",
+          "character_plan": {
+            "recommended_character_type": "Relatable Everyday Adult",
+            "reason": "The product targets adults with coin jars and casual collectors, driven by curiosity and nostalgia. A relatable, warm, and trustworthy character enhances the UGC feel and makes the discovery process authentic and appealing, aligning with the script's personal discovery journey.",
+            "gender": "Female",
+            "age_range": "35-45",
+            "ethnicity_or_look": "Natural, approachable, friendly appearance, no specific ethnicity.",
+            "face_details": "Friendly smile, expressive eyes conveying curiosity and satisfaction.",
+            "hair": "Medium-length, natural brown hair, simply styled.",
+            "facial_hair": "None",
+            "body_type": "Average, healthy, relatable build.",
+            "outfit": "Neutral beige casual shirt or a simple, comfortable top.",
+            "setting": "Warm kitchen dining table or a cozy home study area.",
+            "props": [
+              "An old coin (e.g., a tarnished penny or silver coin)",
+              "A smartphone displaying the Coin Scanner App",
+              "A clear glass coin jar, partially filled with various old coins",
+              "A small wooden coin box or tray"
+            ],
+            "personality": [
+              "Curious",
+              "Relatable",
+              "Enthusiastic",
+              "Satisfied",
+              "Authentic"
+            ],
+            "speaking_style": "Natural, conversational, slightly enthusiastic, genuine, with a tone of pleasant discovery.",
+            "visual_style": "Natural lighting, warm tones, slightly informal framing, consistent with user-generated content.",
+            "role_in_ad": "The everyday user discovering the value and history of her old coins with the app, demonstrating ease of use and the joy of discovery.",
+            "consistency_locks": [
+              "Character's hair and facial features",
+              "The specific coin jar and wooden coin box used",
+              "The smartphone model used for scanning",
+              "The casual, neutral-toned outfit"
+            ],
+            "negative_identity_changes": [
+              "Avoid overly dramatic or exaggerated expressions",
+              "Avoid overly formal or professional attire",
+              "Avoid a 'professional collector' or 'expert' look",
+              "Avoid overly polished or studio-like lighting"
+            ]
+          },
+          "character_bible": {
+            "character_id": "character_c15ef42ec812",
+            "display_name": "Relatable Everyday Adult",
+            "role": "The everyday user discovering the value and history of her old coins with the app, demonstrating ease of use and the joy of discovery.",
+            "gender": "Female",
+            "age_range": "35-45",
+            "ethnicity_or_look": "Natural, approachable, friendly appearance, no specific ethnicity.",
+            "face_details": "Friendly smile, expressive eyes conveying curiosity and satisfaction.",
+            "hair": "Medium-length, natural brown hair, simply styled.",
+            "facial_hair": "None",
+            "body_type": "Average, healthy, relatable build.",
+            "outfit": "Neutral beige casual shirt or a simple, comfortable top.",
+            "props": [
+              "An old coin (e.g., a tarnished penny or silver coin)",
+              "A smartphone displaying the Coin Scanner App",
+              "A clear glass coin jar, partially filled with various old coins",
+              "A small wooden coin box or tray"
+            ],
+            "setting": "Warm kitchen dining table or a cozy home study area.",
+            "personality": [
+              "Curious",
+              "Relatable",
+              "Enthusiastic",
+              "Satisfied",
+              "Authentic"
+            ],
+            "speaking_style": "Natural, conversational, slightly enthusiastic, genuine, with a tone of pleasant discovery.",
+            "visual_style": "Natural lighting, warm tones, slightly informal framing, consistent with user-generated content.",
+            "consistency_locks": [
+              "Character's hair and facial features",
+              "The specific coin jar and wooden coin box used",
+              "The smartphone model used for scanning",
+              "The casual, neutral-toned outfit"
+            ],
+            "negative_identity_changes": [
+              "Avoid overly dramatic or exaggerated expressions",
+              "Avoid overly formal or professional attire",
+              "Avoid a 'professional collector' or 'expert' look",
+              "Avoid overly polished or studio-like lighting"
+            ],
+            "base_prompt": "Relatable Everyday Adult. Female, 35-45, Natural, approachable, friendly appearance, no specific ethnicity.. Face: Friendly smile, expressive eyes conveying curiosity and satisfaction.. Hair: Medium-length, natural brown hair, simply styled.. Facial hair: None. Body type: Average, healthy, relatable build.. Outfit: Neutral beige casual shirt or a simple, comfortable top.. Setting: Warm kitchen dining table or a cozy home study area.. Props: An old coin (e.g., a tarnished penny or silver coin), A smartphone displaying the Coin Scanner App, A clear glass coin jar, partially filled with various old coins, A small wooden coin box or tray. Personality: Curious, Relatable, Enthusiastic, Satisfied, Authentic. Speaking style: Natural, conversational, slightly enthusiastic, genuine, with a tone of pleasant discovery.. Visual style: Natural lighting, warm tones, slightly informal framing, consistent with user-generated content..",
+            "identity_lock_prompt": "Use the same character from the generated character reference images. Preserve face, hairstyle, facial hair, age, skin tone, body type, outfit, and setting. Do not change identity across scenes."
+          },
+          "character_reference_prompts": [
+            {
+              "reference_id": "front_portrait",
+              "purpose": "Master identity reference",
+              "aspect_ratio": "4:5",
+              "prompt": "A front portrait of a relatable everyday adult, female, 35-45, natural, approachable, friendly appearance, no specific ethnicity. She has a friendly smile and expressive eyes conveying curiosity and satisfaction. Her medium-length, natural brown hair is simply styled. She wears a neutral beige casual shirt. Natural lighting, warm tones, simple background, slightly informal framing, consistent with user-generated content.",
+              "negative_prompt": "distorted hands, extra fingers, mutated hands, bad anatomy, bad proportions, ugly, disfigured, deformed, different clothes, different face, different hair, different age, studio lighting, professional photography, overly polished, dramatic expression, exaggerated expression, formal attire, professional collector, expert look, text, logo, watermark, UI, app interface, blurry, low quality, out of focus.",
+              "notes": "Focus on the character's face and upper body for clear identity reference."
+            },
+            {
+              "reference_id": "three_quarter_portrait",
+              "purpose": "3/4 face reference",
+              "aspect_ratio": "4:5",
+              "prompt": "A three-quarter portrait of a relatable everyday adult, female, 35-45, natural, approachable, friendly appearance, no specific ethnicity. She has a friendly smile and expressive eyes conveying curiosity and satisfaction. Her medium-length, natural brown hair is simply styled. She wears a neutral beige casual shirt. Natural lighting, warm tones, simple background, slightly informal framing, consistent with user-generated content.",
+              "negative_prompt": "distorted hands, extra fingers, mutated hands, bad anatomy, bad proportions, ugly, disfigured, deformed, different clothes, different face, different hair, different age, studio lighting, professional photography, overly polished, dramatic expression, exaggerated expression, formal attire, professional collector, expert look, text, logo, watermark, UI, app interface, blurry, low quality, out of focus.",
+              "notes": "Show the character's face with a slight turn to capture more dimension."
+            },
+            {
+              "reference_id": "seated_in_main_setting",
+              "purpose": "Same character in main ad setting",
+              "aspect_ratio": "9:16",
+              "prompt": "A relatable everyday adult, female, 35-45, natural, approachable, friendly appearance, no specific ethnicity, seated at a warm kitchen dining table or a cozy home study area. She has a friendly smile and expressive eyes conveying curiosity and satisfaction. Her medium-length, natural brown hair is simply styled. She wears a neutral beige casual shirt. On the table are a clear glass coin jar partially filled with various old coins and a small wooden coin box. Natural lighting, warm tones, slightly informal framing, consistent with user-generated content.",
+              "negative_prompt": "distorted hands, extra fingers, mutated hands, bad anatomy, bad proportions, ugly, disfigured, deformed, different clothes, different face, different hair, different age, studio lighting, professional photography, overly polished, dramatic expression, exaggerated expression, formal attire, professional collector, expert look, text, logo, watermark, UI, app interface, blurry, low quality, out of focus.",
+              "notes": "Character in the primary setting with key background props, embodying curiosity and satisfaction."
+            },
+            {
+              "reference_id": "holding_key_object",
+              "purpose": "Same character holding key object or product",
+              "aspect_ratio": "9:16",
+              "prompt": "A relatable everyday adult, female, 35-45, natural, approachable, friendly appearance, no specific ethnicity, holding an old, tarnished penny or silver coin in her hand, examining it with curiosity. Her expressive eyes convey curiosity. Her medium-length, natural brown hair is simply styled. She wears a neutral beige casual shirt. In the background, a warm kitchen dining table or a cozy home study area. Natural lighting, warm tones, slightly informal framing, consistent with user-generated content.",
+              "negative_prompt": "distorted hands, extra fingers, mutated hands, bad anatomy, bad proportions, ugly, disfigured, deformed, different clothes, different face, different hair, different age, studio lighting, professional photography, overly polished, dramatic expression, exaggerated expression, formal attire, professional collector, expert look, text, logo, watermark, UI, app interface, blurry, low quality, out of focus.",
+              "notes": "Character holding an old coin, showing curiosity and discovery."
+            },
+            {
+              "reference_id": "holding_phone_or_cta_pose",
+              "purpose": "Same character holding phone or CTA pose",
+              "aspect_ratio": "9:16",
+              "prompt": "A relatable everyday adult, female, 35-45, natural, approachable, friendly appearance, no specific ethnicity, holding a smartphone in her hand, looking at the screen with a friendly smile and expressive eyes conveying satisfaction. Her medium-length, natural brown hair is simply styled. She wears a neutral beige casual shirt. In the background, a warm kitchen dining table or a cozy home study area. The smartphone screen is blank and clean. Natural lighting, warm tones, slightly informal framing, consistent with user-generated content.",
+              "negative_prompt": "distorted hands, extra fingers, mutated hands, bad anatomy, bad proportions, ugly, disfigured, deformed, different clothes, different face, different hair, different age, studio lighting, professional photography, overly polished, dramatic expression, exaggerated expression, formal attire, professional collector, expert look, text, logo, watermark, UI, app interface, blurry, low quality, out of focus, text on screen, logo on screen, UI elements on screen.",
+              "notes": "Character holding a smartphone with a blank screen, ready for app overlay, expressing satisfaction or enthusiasm."
+            }
+          ],
+          "production_scenes": [
+            {
+              "scene_number": 1,
+              "duration_seconds": 4,
+              "creative_objective": "Hook the viewer by showing the relatable act of finding an old coin, establishing curiosity.",
+              "shot_type": "Close-up",
+              "camera_angle": "Top-down view of the coin jar, then a focus on the selected coin.",
+              "generation_mode": "image_to_video",
+              "required_reference_assets": [
+                "seated_in_main_setting",
+                "holding_key_object"
+              ],
+              "visual_description": "A hand sifts through a dusty clear glass coin jar, picking out an old, tarnished coin. The coin is clearly old and worn, with indistinct features. The setting is a warm kitchen dining table or cozy home study.",
+              "action_description": "A hand sifts through coins in a glass jar, selects one specific old coin, and lifts it slightly for a closer look.",
+              "keyframe_prompt": "UGC style, close-up of a hand sifting through a clear glass coin jar filled with various old, tarnished coins. The hand is picking out one specific old coin. The coin is clearly old and worn. Natural lighting, warm tones, on a warm kitchen dining table or cozy home study area. Informal framing.",
+              "video_prompt": "UGC style, close-up video of a hand sifting through a clear glass coin jar filled with various old, tarnished coins. The hand picks out one specific old coin and lifts it slightly. The coin is clearly old and worn. Natural lighting, warm tones, on a warm kitchen dining table or cozy home study area. Informal framing. Use the same character from the generated character reference images. Preserve face, hairstyle, facial hair, age, skin tone, body type, outfit, and setting. Do not change identity across scenes.",
+              "motion_instruction": "Slow, deliberate sifting motion, then a gentle lift of the selected coin.",
+              "consistency_instruction": "Maintain consistent appearance of the coin jar, coins, and hand.",
+              "negative_prompt": "different person, changed face, different hairstyle, different shirt, older man, younger man, distorted hands, extra fingers, missing fingers, deformed phone, unreadable text, fake UI text, random logo, bad anatomy, blurry face, low quality, identity change, face morphing, plastic skin, cartoon, anime, over-polished commercial look, unrealistic expression",
+              "ui_overlay_plan": [],
+              "voiceover_line": "My coin jar is a mystery... until now.",
+              "on_screen_text": "My coin jar is a mystery... until now.",
+              "transition": "Cut",
+              "safety_notes": "Ensure the coin is clearly old and not a modern currency that could be misinterpreted."
+            },
+            {
+              "scene_number": 2,
+              "duration_seconds": 4,
+              "creative_objective": "Establish the problem: the user's uncertainty and curiosity about the identity and potential value of old coins.",
+              "shot_type": "Medium shot",
+              "camera_angle": "Eye-level with the user's hands and face, slightly over the shoulder.",
+              "generation_mode": "image_to_video",
+              "required_reference_assets": [
+                "seated_in_main_setting",
+                "holding_key_object"
+              ],
+              "visual_description": "The 'Relatable Everyday Adult' holds the old coin from Scene 1, turning it over in her fingers, looking at it with a curious but slightly confused expression. A small pile of other similar old coins is visible in the background on a warm kitchen dining table or cozy home study area.",
+              "action_description": "The character holds and examines the coin, turning it slowly, conveying curiosity and mild confusion.",
+              "keyframe_prompt": "UGC style, a relatable everyday adult, female, 35-45, holding an old, tarnished coin, looking at it curiously with a slightly confused expression. A small pile of similar old coins is visible in the background on a warm kitchen dining table or cozy home study area. Natural lighting, warm tones, informal framing.",
+              "video_prompt": "UGC style, a relatable everyday adult, female, 35-45, holding an old, tarnished coin, turning it over slowly in her fingers, looking at it curiously with a slightly confused expression. A small pile of similar old coins is visible in the background on a warm kitchen dining table or cozy home study area. Natural lighting, warm tones, informal framing. Use the same character from the generated character reference images. Preserve face, hairstyle, facial hair, age, skin tone, body type, outfit, and setting. Do not change identity across scenes.",
+              "motion_instruction": "Gentle turning of the coin, subtle facial expression changes from curiosity to slight confusion.",
+              "consistency_instruction": "Maintain consistent character appearance, coin, and background setting.",
+              "negative_prompt": "different person, changed face, different hairstyle, different shirt, older man, younger man, distorted hands, extra fingers, missing fingers, deformed phone, unreadable text, fake UI text, random logo, bad anatomy, blurry face, low quality, identity change, face morphing, plastic skin, cartoon, anime, over-polished commercial look, unrealistic expression",
+              "ui_overlay_plan": [],
+              "voiceover_line": "I always wondered what these old coins were, and if they were worth anything.",
+              "on_screen_text": "What is this?",
+              "transition": "Cut",
+              "safety_notes": "Ensure the character's expression is relatable curiosity, not frustration or despair."
+            },
+            {
+              "scene_number": 3,
+              "duration_seconds": 7,
+              "creative_objective": "Demonstrate the app's core functionality: quick and easy scanning to identify coins and reveal estimated values.",
+              "shot_type": "Close-up / Over-the-shoulder",
+              "camera_angle": "Over-the-shoulder shot, focusing on the phone screen and the coin, then a close-up on the app interface.",
+              "generation_mode": "image_to_video",
+              "required_reference_assets": [
+                "holding_phone_or_cta_pose",
+                "holding_key_object"
+              ],
+              "visual_description": "The 'Relatable Everyday Adult' opens the Coin Scanner App on her smartphone. Her hand taps the central 'scan' button. She then places the old coin under the phone's camera. The app quickly processes the image and instantly displays detailed information about the coin (e.g., '1909-S VDB Lincoln Cent', Country, Years of Minting, Coin Type) and an estimated reference value range on the screen. The phone screen should be clean and simple for later UI overlay.",
+              "action_description": "Character interacts with the app, tapping the scan button, positioning the coin, and observing the app's instant identification results.",
+              "keyframe_prompt": "UGC style, close-up of a relatable everyday adult's hands holding a smartphone, displaying the Coin Scanner App. The phone screen should be clean and simple for later UI overlay. Do not generate unreadable app text. The app shows a prominent 'scan' button. A physical old, tarnished coin is placed beneath the phone's camera. Natural lighting, warm tones, on a warm kitchen dining table or cozy home study area. Informal framing. The app then displays detailed information about the coin and an estimated value range.",
+              "video_prompt": "UGC style, close-up video of a relatable everyday adult's hands holding a smartphone, displaying the Coin Scanner App. The phone screen should be clean and simple for later UI overlay. Do not generate unreadable app text. The character taps the central 'scan' button. She then places a physical old, tarnished coin under the phone's camera. The app quickly processes and instantly displays detailed information about the coin (e.g., '1909-S VDB Lincoln Cent', Country, Years of Minting, Coin Type) and an estimated reference value range on the screen. Natural lighting, warm tones, on a warm kitchen dining table or cozy home study area. Informal framing. Use the same character from the generated character reference images. Preserve face, hairstyle, facial hair, age, skin tone, body type, outfit, and setting. Do not change identity across scenes.",
+              "motion_instruction": "Smooth hand movements opening the app, tapping, positioning the coin, and a quick, clear transition on the phone screen to display results.",
+              "consistency_instruction": "Maintain consistent character, phone, and app UI consistent with brand style (clean, modern).",
+              "negative_prompt": "different person, changed face, different hairstyle, different shirt, older man, younger man, distorted hands, extra fingers, missing fingers, deformed phone, unreadable text, fake UI text, random logo, bad anatomy, blurry face, low quality, identity change, face morphing, plastic skin, cartoon, anime, over-polished commercial look, unrealistic expression, estimated reference value, reference-only appraisal, you will learn more about the coin, this coin is may have a reference value of money.",
+              "ui_overlay_plan": [
+                {
+                  "overlay_type": "subtitle",
+                  "text": "subtitle",
+                  "start_time": "0:00",
+                  "end_time": "0:03",
+                  "position": "center",
+                  "style_notes": "Readable subtitle overlay for scene 3.",
+                  "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                },
+                {
+                  "overlay_type": "subtitle",
+                  "text": "subtitle",
+                  "start_time": "0:00",
+                  "end_time": "0:03",
+                  "position": "center",
+                  "style_notes": "Readable subtitle overlay for scene 3.",
+                  "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                },
+                {
+                  "overlay_type": "subtitle",
+                  "text": "subtitle",
+                  "start_time": "0:00",
+                  "end_time": "0:03",
+                  "position": "center",
+                  "style_notes": "Readable subtitle overlay for scene 3.",
+                  "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                },
+                {
+                  "overlay_type": "subtitle",
+                  "text": "subtitle",
+                  "start_time": "0:00",
+                  "end_time": "0:03",
+                  "position": "center",
+                  "style_notes": "Readable subtitle overlay for scene 3.",
+                  "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                }
+              ],
+              "voiceover_line": "That's why I tried the Coin Scanner App. Just scan it, and boom! Instant details and an estimated value.",
+              "on_screen_text": "Coin Scanner App\nInstant Identification & Value",
+              "transition": "Cut",
+              "safety_notes": "Ensure the estimated value displayed is not excessively high or misleading, and the disclaimer is visible. Avoid any claims of 'guaranteed' or 'reference-only' value."
+            },
+            {
+              "scene_number": 4,
+              "duration_seconds": 5,
+              "creative_objective": "Show the satisfaction of discovery and organization, ending with a clear call to action.",
+              "shot_type": "Close-up on phone, then wider shot including user's face.",
+              "camera_angle": "Close-up on the phone screen, then a wider shot including the user's satisfied face.",
+              "generation_mode": "image_to_video",
+              "required_reference_assets": [
+                "holding_phone_or_cta_pose",
+                "seated_in_main_setting"
+              ],
+              "visual_description": "The 'Relatable Everyday Adult' scrolls through the app's detailed information on her smartphone, showing a positive reaction (e.g., a smile, nod of satisfaction). She taps the 'Save to My Coins' button. The screen briefly shows the coin successfully added to a digital collection within the app. Her satisfied face is visible in the background. The phone screen should be clean and simple for later UI overlay.",
+              "action_description": "Character scrolls through app details, smiles, taps 'Save to My Coins', and looks up with satisfaction.",
+              "keyframe_prompt": "UGC style, close-up on a relatable everyday adult's smartphone screen showing the Coin Scanner App. The phone screen should be clean and simple for later UI overlay. Do not generate unreadable app text. The app displays detailed coin information. The user's hand taps 'Save to My Coins'. A satisfied user's face is visible in the background, smiling. Natural lighting, warm tones, on a warm kitchen dining table or cozy home study area. Informal framing. The final shot includes the app's branding and a clear call to action.",
+              "video_prompt": "UGC style, close-up video on a relatable everyday adult's smartphone screen showing the Coin Scanner App. The phone screen should be clean and simple for later UI overlay. Do not generate unreadable app text. The app displays detailed coin information, and the user scrolls through it with her finger, showing a positive reaction (e.g., a smile, nod of satisfaction). She then taps 'Save to My Coins'. The screen briefly shows the coin added to a digital collection within the app. A satisfied user's face is visible in the background. Natural lighting, warm tones, on a warm kitchen dining table or cozy home study area. Informal framing. Use the same character from the generated character reference images. Preserve face, hairstyle, facial hair, age, skin tone, body type, outfit, and setting. Do not change identity across scenes.",
+              "motion_instruction": "Smooth scrolling motion, clear tap action, subtle positive facial expression.",
+              "consistency_instruction": "Maintain consistent character, phone, and app UI.",
+              "negative_prompt": "different person, changed face, different hairstyle, different shirt, older man, younger man, distorted hands, extra fingers, missing fingers, deformed phone, unreadable text, fake UI text, random logo, bad anatomy, blurry face, low quality, identity change, face morphing, plastic skin, cartoon, anime, over-polished commercial look, unrealistic expression, estimated reference value, reference-only appraisal, you will learn more about the coin, this coin is may have a reference value of money.",
+              "ui_overlay_plan": [
+                {
+                  "overlay_type": "subtitle",
+                  "text": "subtitle",
+                  "start_time": "0:00",
+                  "end_time": "0:03",
+                  "position": "center",
+                  "style_notes": "Readable subtitle overlay for scene 4.",
+                  "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                },
+                {
+                  "overlay_type": "subtitle",
+                  "text": "subtitle",
+                  "start_time": "0:00",
+                  "end_time": "0:03",
+                  "position": "center",
+                  "style_notes": "Readable subtitle overlay for scene 4.",
+                  "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                },
+                {
+                  "overlay_type": "subtitle",
+                  "text": "subtitle",
+                  "start_time": "0:00",
+                  "end_time": "0:03",
+                  "position": "center",
+                  "style_notes": "Readable subtitle overlay for scene 4.",
+                  "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                },
+                {
+                  "overlay_type": "subtitle",
+                  "text": "subtitle",
+                  "start_time": "0:00",
+                  "end_time": "0:03",
+                  "position": "center",
+                  "style_notes": "Readable subtitle overlay for scene 4.",
+                  "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                },
+                {
+                  "overlay_type": "disclaimer",
+                  "text": "Estimated reference value only. Actual value may vary.",
+                  "start_time": "0:03",
+                  "end_time": "0:05",
+                  "position": "bottom",
+                  "style_notes": "Small readable caption, high contrast, not distracting from CTA.",
+                  "safety_notes": "Required value disclaimer for coin reference estimates."
+                }
+              ],
+              "voiceover_line": "It's so cool to finally know the history of these coins! Download Coin Scanner and discover what's in your jar.",
+              "on_screen_text": "Coin Scanner App\nDiscover Your Coins' History!\nDownload Now!",
+              "transition": "Fade to black",
+              "safety_notes": "Ensure the CTA is clear and prominent. Avoid any misleading claims about financial gain."
+            }
+          ],
+          "edit_plan": {
+            "total_duration": "20 seconds",
+            "pacing_notes": "Start with a curious, slightly slow pace to build intrigue, quicken during the app demo for impact, then a satisfying, clear pace for the result and CTA.",
+            "music_direction": "Upbeat, curious, and slightly mysterious background music that transitions to a more positive, satisfying, and inspiring tone during the app demo and CTA. Royalty-free, non-distracting.",
+            "subtitle_style": "Clean, white sans-serif font with a subtle dark outline for readability, positioned centrally or bottom-third.",
+            "cut_sequence": [
+              "Hard cut between Scene 1 and Scene 2.",
+              "Hard cut between Scene 2 and Scene 3.",
+              "Hard cut between Scene 3 and Scene 4.",
+              "Scene 4 begins with a close-up cut, then a slight zoom out or cut to a wider shot including the user's face.",
+              "Fade to black at the very end of Scene 4."
+            ],
+            "export_ratios": [
+              "9:16",
+              "1:1"
+            ],
+            "required_post_production_steps": [
+              "UI overlay for Coin Scanner App screens (Scene 3 & 4).",
+              "On-screen text implementation (Scene 1, 2, 3, 4).",
+              "Voiceover synchronization.",
+              "Background music integration and audio mixing.",
+              "Color grading to enhance warm, natural UGC aesthetic.",
+              "Final CTA graphic overlay."
+            ],
+            "platform_notes": "Optimized for TikTok's vertical format. Keep pacing engaging for short attention spans. Use trending sounds if applicable, but prioritize clear voiceover and music."
+          },
+          "app_ui_overlay_notes": "UI should be clean, modern, and consistent with the brand style (white, gold/yellow, dark green, grey). For scanning, show a clear camera view with a processing animation. For results, display clear fields: 'Country', 'Years of Minting', 'Period', 'Coin Type', 'Estimated Reference Value'. The estimated value should always be a range (e.g., '$XXX - $YYY') and accompanied by a small, legible disclaimer: 'Estimated reference value only. Actual value may vary.'. 'Save to My Coins' button should be prominent. Final CTA screen should feature the app logo, 'Download Now!', and app store icons.",
+          "asset_checklist": [
+            "Character reference images (front, 3/4, seated, holding coin, holding phone).",
+            "Stock footage/images of old, tarnished coins (various types).",
+            "Stock footage/images of a clear glass coin jar.",
+            "Stock footage/images of a warm kitchen dining table or cozy home study area.",
+            "Coin Scanner App UI assets (home screen, scan button, scanning animation, coin detail screen, estimated value screen, 'My Coins' screen, 'Save' button, final CTA graphic).",
+            "Background music track.",
+            "Voiceover audio file."
+          ],
+          "compliance_notes": [
+            "Claims: Strictly adhere to 'safe_claims' and avoid 'claims_to_avoid'. Emphasize 'estimated reference value' and 'potential approximate worth' rather than definitive or estimated reference values.",
+            "Disclaimers: Ensure the disclaimer 'Estimated reference value only. Actual value may vary.' is clearly visible when estimated values are shown.",
+            "Product Misrepresentation: Ensure the app's functionality is accurately represented (identification, estimated value, organization) without overstating capabilities (e.g., not an official appraisal).",
+            "Age Appropriateness: Content is suitable for a general audience.",
+            "Intellectual Property: All visual and audio assets must be licensed or original.",
+            "Coin value language sanitized to estimated reference value only. Actual value may vary by condition, rarity, and market demand."
+          ],
+          "render_sequence": [
+            "1. Generate character reference images based on 'Character Reference Prompts'.",
+            "2. Generate keyframes for each scene using 'keyframe_prompt' and character reference images.",
+            "3. Generate video clips for each scene using 'video_prompt', keyframes, and character identity lock.",
+            "4. Edit video clips together according to 'cut_sequence' and 'pacing_notes'.",
+            "5. Add voiceover and synchronize with visuals.",
+            "6. Integrate background music.",
+            "7. Overlay app UI elements as per 'ui_overlay_plan' and 'app_ui_overlay_notes'.",
+            "8. Add on-screen text and subtitles.",
+            "9. Apply color grading and final visual adjustments.",
+            "10. Export in '9:16' and '1:1' aspect ratios."
+          ]
+        },
+        "selected_playbook": "The Discovery & Reveal",
+        "angle_type": "problem_solution",
+        "video_status": "draft",
+        "video_url": null,
+        "export_9x16_url": null,
+        "export_1x1_url": null,
+        "export_package_url": null
       }
     ],
     "created_at": "2026-07-03T07:00:16.836323Z",
-    "updated_at": "2026-07-03T08:16:35.939917Z"
+    "updated_at": "2026-07-03T15:01:39.503087Z"
   }
 ]

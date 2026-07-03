@@ -11,6 +11,7 @@ from app.models.schemas import (
 )
 from app.services.character_planner import GeminiCharacterPlanner
 from app.services.character_reference_generator import GeminiCharacterReferenceGenerator
+from app.services.intelligence_context import compact_intelligence_context, compact_project_context
 from app.services.llm_provider import LLMProvider, build_llm_provider
 from app.services.production_prompt_generator import GeminiProductionPromptGenerator
 
@@ -77,10 +78,6 @@ class GeminiVariantScriptGenerator:
                         },
                     },
                     "voiceover": {"type": "string"},
-                    "subtitles": {"type": "array", "items": {"type": "string"}},
-                    "title": {"type": "string"},
-                    "caption": {"type": "string"},
-                    "cover_prompt": {"type": "string"},
                 },
                 "required": [
                     "name",
@@ -90,10 +87,6 @@ class GeminiVariantScriptGenerator:
                     "script",
                     "storyboard",
                     "voiceover",
-                    "subtitles",
-                    "title",
-                    "caption",
-                    "cover_prompt",
                 ],
             }
         },
@@ -132,7 +125,7 @@ class GeminiVariantScriptGenerator:
             "Create one publish-ready UGC video ad variant from the selected creative angle. "
             "Return JSON only in this exact shape: {\"variant\": {...}}. "
             "The variant object must include these exact keys: name, duration, format, hook, script, "
-            "storyboard, voiceover, subtitles, title, caption, cover_prompt. "
+            "storyboard, voiceover. "
             "Create exactly 4 storyboard scenes. "
             "Scene 1: hook. Scene 2: problem/setup. Scene 3: product demo/proof. Scene 4: result + CTA. "
             "Every scene must include scene_number, duration_seconds, objective, visual_description, camera_angle, "
@@ -141,8 +134,8 @@ class GeminiVariantScriptGenerator:
             "extra fingers, deformed face, blurry product, low quality, random logo, fake UI text. "
             "For app products, generation_prompt must say: phone screen should be clean and simple for later UI overlay, "
             "do not generate unreadable app text. Avoid unsafe or exaggerated claims.\n\n"
-            f"Project:\n{json.dumps(project.model_dump(mode='json'), ensure_ascii=False, indent=2)}\n\n"
-            f"Product intelligence:\n{json.dumps(intelligence.model_dump(mode='json'), ensure_ascii=False, indent=2)}\n\n"
+            f"Project:\n{json.dumps(compact_project_context(project), ensure_ascii=False, indent=2)}\n\n"
+            f"Product intelligence:\n{json.dumps(compact_intelligence_context(intelligence), ensure_ascii=False, indent=2)}\n\n"
             f"Selected creative angle:\n{json.dumps(angle.model_dump(mode='json'), ensure_ascii=False, indent=2)}\n\n"
             f"Selected playbook:\n{json.dumps(playbook, ensure_ascii=False, indent=2)}\n\n"
             f"Variant index: {index}"
