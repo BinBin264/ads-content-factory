@@ -1,0 +1,27 @@
+from fastapi import APIRouter
+
+from app.models.schemas import CreativeAngle, GenerateVariantsRequest, ProductBrief, Project, Variant
+from app.routes.projects import project_service
+
+
+router = APIRouter(prefix="/api/projects", tags=["generation"])
+
+
+@router.post("/{project_id}/analyze", response_model=ProductBrief)
+def analyze_project(project_id: str) -> ProductBrief:
+    return project_service.analyze_project(project_id)
+
+
+@router.post("/{project_id}/angles", response_model=list[CreativeAngle])
+def generate_angles(project_id: str) -> list[CreativeAngle]:
+    return project_service.generate_angles(project_id)
+
+
+@router.post("/{project_id}/generate-variants", response_model=list[Variant])
+def generate_variants(project_id: str, request: GenerateVariantsRequest) -> list[Variant]:
+    return project_service.generate_variants(project_id, request)
+
+
+@router.post("/{project_id}/mock-render", response_model=Project)
+def mock_render(project_id: str) -> Project:
+    return project_service.render_mock_videos(project_id)
