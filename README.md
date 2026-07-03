@@ -5,20 +5,20 @@ AI Ads Content Factory is a full-stack MVP for turning minimal product input, br
 The current flow is:
 
 1. Create project with product details and uploads.
-2. Analyze product through a mock Product Intelligence Layer.
+2. Analyze product through Gemini Vision and Product Intelligence.
 3. Generate five creative angles.
 4. Generate two video ad variants with script, storyboard, scene prompts, title, caption, and cover prompt.
-5. Mock render placeholder output files for 9:16 and 1:1 exports.
+5. Render video through a configured video provider.
 
-No real AI API is required for this version. The backend uses mock providers and rule-based playbooks, but the architecture is ready to swap in real LLM, Vision, image, and video providers later.
+Gemini is required for text and vision intelligence. Video rendering requires a configured production video provider.
 
-If `GEMINI_API_KEY` is configured, the backend uses Gemini for:
+If `GEMINI_API_KEYS` or legacy `GEMINI_API_KEY` is configured, the backend uses Gemini for:
 
 - Product Intelligence
 - Creative Angles
 - Script + Storyboard
 
-If the key is missing or Gemini returns invalid JSON, the backend returns an API error so the user knows Gemini is not configured correctly.
+If all keys are missing or Gemini returns invalid JSON, the backend returns an API error so the user knows Gemini is not configured correctly.
 
 ## Product Intelligence Layer
 
@@ -63,9 +63,11 @@ notepad .env
 Set:
 
 ```text
-GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_API_KEYS=your_first_gemini_api_key,your_second_gemini_api_key
 GEMINI_MODEL=gemini-2.5-flash
 ```
+
+The backend rotates configured Gemini keys per request and retries the next key when Gemini returns quota, rate-limit, auth, or provider errors.
 
 Backend docs:
 
@@ -87,16 +89,15 @@ Frontend:
 http://127.0.0.1:5173
 ```
 
-## Demo Sample Inputs
+## Demo Input
 
-Use the frontend "Try Sample Inputs" panel or enter:
+Enter:
 
 ```text
 Product name: Coin Scanner App
 Category: Mobile app
 Description: An app that helps users scan old coins, identify coin details, and view estimated reference value.
-Audience: People who find old coins at home, casual collectors.
-Goal: app_install
+Campaign objective: Get app installs
 CTA: Download now and scan your old coins.
 Claims to avoid: Guaranteed value, 100% accurate appraisal, you will make money.
 ```
@@ -106,17 +107,11 @@ Then run:
 1. Analyze Product
 2. Generate Angles
 3. Generate 2 Variants
-4. Mock Render
+4. Render Video
 
 Expected first two hooks:
 
 - `I almost spent this old coin...`
 - `Here's how to check an old coin in 5 seconds.`
 
-Mock render creates output files under:
-
-```text
-backend/app/outputs/{project_id}/{variant_id}/
-```
-
-Files include `storyboard.json`, `script.txt`, `prompts.txt`, `caption.txt`, `mock_video_9x16.txt`, and `mock_video_1x1.txt`.
+Video render requires `VIDEO_PROVIDER_NAME` and `VIDEO_PROVIDER_API_KEY`. No local video output is generated without a provider.

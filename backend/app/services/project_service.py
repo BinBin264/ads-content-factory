@@ -1,11 +1,11 @@
 from fastapi import UploadFile
 
 from app.models.schemas import AnalyzeProjectResponse, CreativeAngle, GenerateVariantsRequest, ProductBrief, Project, Variant, VisionAnalysis
-from app.services.angle_generator import CreativeAngleGenerator, RuleBasedCreativeAngleGenerator
-from app.services.product_analyzer import ProductAnalyzer, RuleBasedProductAnalyzer
-from app.services.script_generator import RuleBasedVariantScriptGenerator, VariantScriptGenerator
+from app.services.angle_generator import CreativeAngleGenerator, GeminiCreativeAngleGenerator
+from app.services.product_analyzer import ProductAnalyzer, ProductIntelligenceAnalyzer
+from app.services.script_generator import GeminiVariantScriptGenerator, VariantScriptGenerator
 from app.services.storage_service import JsonProjectStorage, LocalFileStorage
-from app.services.video_provider import MockVideoProvider, VideoProvider
+from app.services.video_provider import ExternalVideoProvider, VideoProvider
 
 
 class ProjectService:
@@ -20,10 +20,10 @@ class ProjectService:
     ) -> None:
         self.storage = storage or JsonProjectStorage()
         self.file_storage = file_storage or LocalFileStorage()
-        self.analyzer = analyzer or RuleBasedProductAnalyzer()
-        self.angle_generator = angle_generator or RuleBasedCreativeAngleGenerator()
-        self.script_generator = script_generator or RuleBasedVariantScriptGenerator()
-        self.video_provider = video_provider or MockVideoProvider()
+        self.analyzer = analyzer or ProductIntelligenceAnalyzer()
+        self.angle_generator = angle_generator or GeminiCreativeAngleGenerator()
+        self.script_generator = script_generator or GeminiVariantScriptGenerator()
+        self.video_provider = video_provider or ExternalVideoProvider()
 
     async def create_project(
         self,
@@ -100,14 +100,14 @@ class ProjectService:
         self.storage.save_project(project)
         return project.variants
 
-    def render_mock_videos(self, project_id: str) -> Project:
+    def render_videos(self, project_id: str) -> Project:
         project = self.storage.get_project(project_id)
         if not project.variants:
             request = GenerateVariantsRequest(variant_count=2)
             self.generate_variants(project_id, request)
             project = self.storage.get_project(project_id)
 
-        project.variants = self.video_provider.render_mock(project, project.variants)
+        project.variants = self.video_provider.render(project, project.variants)
         return self.storage.save_project(project)
 
     def delete_project(self, project_id: str) -> None:
@@ -134,7 +134,13 @@ class ProjectService:
             selected = [by_id[angle_id] for angle_id in angle_ids if angle_id in by_id]
             if not selected:
                 raise ValueError("None of the requested angle_ids exist on this project")
-            return selected[:variant_count]
+            selected_ids = {angle.id for angle in selected}
+            remaining = [
+                angle
+                for angle in sorted(angles, key=lambda angle: angle.score, reverse=True)
+                if angle.id not in selected_ids
+            ]
+            return (selected + remaining)[:variant_count]
 
         return sorted(angles, key=lambda angle: angle.score, reverse=True)[:variant_count]
 

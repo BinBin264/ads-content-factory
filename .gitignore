@@ -25,6 +25,7 @@ frontend/dist/
 .env
 .env.*
 !.env.example
+**/.codex-*.log
 
 # OS / editor
 .DS_Store

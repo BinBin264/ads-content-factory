@@ -44,7 +44,7 @@ http://127.0.0.1:5173
 3. Generate Angles to create five creative angle cards.
 4. Select two angles or leave selection incomplete so the backend auto-selects.
 5. Generate 2 Variants to create scripts, storyboards, prompts, captions, and cover prompts.
-6. Mock Render to create placeholder export URLs for 9:16 and 1:1 outputs.
+6. Render Video through the configured backend video provider.
 7. Use Project JSON Debug to inspect the raw backend response.
 
 ## API contract

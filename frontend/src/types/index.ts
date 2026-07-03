@@ -115,7 +115,7 @@ export interface Variant {
   selected_playbook?: string | null;
   angle_type?: string | null;
   video_status: VideoStatus;
-  mock_video_url?: string | null;
+  video_url?: string | null;
   export_9x16_url?: string | null;
   export_1x1_url?: string | null;
 }

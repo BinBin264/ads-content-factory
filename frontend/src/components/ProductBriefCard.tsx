@@ -7,7 +7,7 @@ interface ProductBriefCardProps {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div>
+    <div className="rounded-lg border border-slate-200 bg-white p-3">
       <dt className="field-label">{label}</dt>
       <dd className="mt-1 text-sm text-slate-800">{value}</dd>
     </div>
@@ -17,7 +17,7 @@ function Row({ label, value }: { label: string; value: string }) {
 export default function ProductBriefCard({ brief }: ProductBriefCardProps) {
   if (!brief) {
     return (
-      <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-500">
+      <div className="empty-state">
         Product Intelligence Brief will appear here after analysis.
       </div>
     );

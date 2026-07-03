@@ -4,7 +4,7 @@
 
 :root {
   color: #172033;
-  background: #f6f7fb;
+  background: #eef3f8;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -25,15 +25,45 @@ textarea {
 
 @layer components {
   .card {
-    @apply rounded-lg border border-slate-200 bg-white shadow-soft;
+    @apply rounded-lg border border-slate-200/80 bg-white shadow-soft;
+  }
+
+  .card-accent {
+    @apply rounded-lg border border-slate-200/80 bg-white shadow-soft;
+  }
+
+  .card-accent::before {
+    content: "";
+    @apply block h-1 rounded-t-lg;
+    background: linear-gradient(90deg, #14b8a6, #f59e0b, #ef4444);
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300;
+    @apply inline-flex items-center justify-center rounded-md bg-teal-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-slate-300;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300;
+    @apply inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-teal-300 hover:bg-teal-50 disabled:cursor-not-allowed disabled:text-slate-300;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center rounded-md border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 shadow-sm transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:text-rose-300;
+  }
+
+  .section-heading {
+    @apply text-base font-bold text-slate-950;
+  }
+
+  .section-subtitle {
+    @apply text-sm text-slate-500;
+  }
+
+  .metric-tile {
+    @apply rounded-lg border border-slate-200 bg-slate-50/80 p-4;
+  }
+
+  .empty-state {
+    @apply rounded-lg border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-500;
   }
 
   .field-label {
@@ -41,6 +71,6 @@ textarea {
   }
 
   .field-input {
-    @apply w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10;
+    @apply w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15;
   }
 }

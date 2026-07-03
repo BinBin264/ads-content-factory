@@ -1,5 +1,5 @@
 import json
-from typing import Protocol
+from typing import Any, Protocol
 
 from app.models.schemas import CreativeAngle, ProductBrief, ProductIntelligenceBrief, Project, StoryboardScene, Variant
 from app.services.llm_provider import LLMProvider, build_llm_provider
@@ -22,7 +22,74 @@ class VariantScriptGenerator(Protocol):
         ...
 
 
-class RuleBasedVariantScriptGenerator:
+class GeminiVariantScriptGenerator:
+    RESPONSE_SCHEMA = {
+        "type": "object",
+        "properties": {
+            "variant": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "duration": {"type": "string"},
+                    "format": {"type": "string"},
+                    "hook": {"type": "string"},
+                    "script": {"type": "string"},
+                    "storyboard": {
+                        "type": "array",
+                        "minItems": 4,
+                        "maxItems": 4,
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "scene_number": {"type": "integer"},
+                                "duration_seconds": {"type": "integer"},
+                                "objective": {"type": "string"},
+                                "visual_description": {"type": "string"},
+                                "camera_angle": {"type": "string"},
+                                "on_screen_text": {"type": "string"},
+                                "voiceover_line": {"type": "string"},
+                                "transition": {"type": "string"},
+                                "generation_prompt": {"type": "string"},
+                                "negative_prompt": {"type": "string"},
+                            },
+                            "required": [
+                                "scene_number",
+                                "duration_seconds",
+                                "objective",
+                                "visual_description",
+                                "camera_angle",
+                                "on_screen_text",
+                                "voiceover_line",
+                                "transition",
+                                "generation_prompt",
+                                "negative_prompt",
+                            ],
+                        },
+                    },
+                    "voiceover": {"type": "string"},
+                    "subtitles": {"type": "array", "items": {"type": "string"}},
+                    "title": {"type": "string"},
+                    "caption": {"type": "string"},
+                    "cover_prompt": {"type": "string"},
+                },
+                "required": [
+                    "name",
+                    "duration",
+                    "format",
+                    "hook",
+                    "script",
+                    "storyboard",
+                    "voiceover",
+                    "subtitles",
+                    "title",
+                    "caption",
+                    "cover_prompt",
+                ],
+            }
+        },
+        "required": ["variant"],
+    }
+
     def __init__(self, llm_provider: LLMProvider | None = None) -> None:
         self.llm_provider = llm_provider or build_llm_provider()
 
@@ -50,7 +117,9 @@ class RuleBasedVariantScriptGenerator:
         prompt = (
             "You are the Script + Storyboard Agent for a short-form video ad factory. "
             "Create one publish-ready UGC video ad variant from the selected creative angle. "
-            "Return JSON only in this shape: {\"variant\": {...}}. "
+            "Return JSON only in this exact shape: {\"variant\": {...}}. "
+            "The variant object must include these exact keys: name, duration, format, hook, script, "
+            "storyboard, voiceover, subtitles, title, caption, cover_prompt. "
             "Create exactly 4 storyboard scenes. "
             "Scene 1: hook. Scene 2: problem/setup. Scene 3: product demo/proof. Scene 4: result + CTA. "
             "Every scene must include scene_number, duration_seconds, objective, visual_description, camera_angle, "
@@ -65,16 +134,11 @@ class RuleBasedVariantScriptGenerator:
             f"Selected playbook:\n{json.dumps(playbook, ensure_ascii=False, indent=2)}\n\n"
             f"Variant index: {index}"
         )
-        data = self.llm_provider.generate_json(prompt, temperature=0.55)
+        data = self.llm_provider.generate_json(prompt, temperature=0.55, response_schema=self.RESPONSE_SCHEMA)
         raw_variant = data.get("variant")
         if not isinstance(raw_variant, dict):
             raise ValueError("Gemini script response must include a variant object")
-        raw_variant.setdefault("angle_id", angle.id)
-        raw_variant.setdefault("hook", angle.hook)
-        raw_variant.setdefault("duration", project.duration)
-        raw_variant.setdefault("format", "9:16")
-        raw_variant.setdefault("selected_playbook", playbook["name"] if playbook else None)
-        raw_variant.setdefault("angle_type", angle.angle_type)
+        raw_variant = self._coerce_variant(raw_variant, project, intelligence, angle, index, playbook)
         variant = Variant.model_validate(raw_variant)
         if len(variant.storyboard) != 4:
             raise ValueError("Gemini variant must include exactly 4 storyboard scenes")
@@ -85,6 +149,126 @@ class RuleBasedVariantScriptGenerator:
         if not variant.voiceover:
             variant.voiceover = " ".join(variant.subtitles)
         return variant
+
+    def _coerce_variant(
+        self,
+        raw_variant: dict[str, Any],
+        project: Project,
+        intelligence: ProductIntelligenceBrief,
+        angle: CreativeAngle,
+        index: int,
+        playbook: dict[str, Any] | None,
+    ) -> dict[str, Any]:
+        storyboard = raw_variant.get("storyboard") or raw_variant.get("scenes") or raw_variant.get("storyboard_scenes")
+        if not isinstance(storyboard, list):
+            storyboard = []
+        scenes = [
+            self._coerce_scene(scene, scene_index, project, intelligence, angle)
+            for scene_index, scene in enumerate(storyboard[:4], start=1)
+        ]
+        if len(scenes) != 4:
+            raise ValueError("Gemini variant must include exactly 4 storyboard scenes")
+
+        subtitles = raw_variant.get("subtitles")
+        if not isinstance(subtitles, list) or not subtitles:
+            subtitles = [scene["voiceover_line"] for scene in scenes]
+
+        voiceover = self._string_from(raw_variant, "voiceover", "voice_over", "vo")
+        if not voiceover:
+            voiceover = " ".join(subtitles)
+
+        script = self._string_from(raw_variant, "script", "full_script", "video_script")
+        if not script:
+            script = "\n".join(
+                f"Scene {scene['scene_number']} ({scene['duration_seconds']}s): {scene['voiceover_line']}"
+                for scene in scenes
+            )
+
+        return {
+            "angle_id": angle.id,
+            "name": self._string_from(raw_variant, "name", "variant_name", "title") or f"Variant {index}: {angle.name}",
+            "duration": self._string_from(raw_variant, "duration") or project.duration,
+            "format": self._string_from(raw_variant, "format", "aspect_ratio") or "9:16",
+            "hook": self._string_from(raw_variant, "hook", "opening_hook") or angle.hook,
+            "script": script,
+            "storyboard": scenes,
+            "scene_prompts": [scene["generation_prompt"] for scene in scenes],
+            "voiceover": voiceover,
+            "subtitles": [str(item).strip() for item in subtitles if str(item).strip()],
+            "title": self._string_from(raw_variant, "title", "ad_title") or f"{project.product_name}: {angle.name}",
+            "caption": self._string_from(raw_variant, "caption", "social_caption", "post_caption")
+            or f"{angle.hook} {angle.cta}.",
+            "cover_prompt": self._string_from(raw_variant, "cover_prompt", "thumbnail_prompt", "cover_image_prompt")
+            or f"UGC cover frame for {project.product_name}, creator holding phone and old coin, bold readable hook text.",
+            "selected_playbook": playbook["name"] if playbook else None,
+            "angle_type": angle.angle_type,
+        }
+
+    def _coerce_scene(
+        self,
+        raw_scene: Any,
+        index: int,
+        project: Project,
+        intelligence: ProductIntelligenceBrief,
+        angle: CreativeAngle,
+    ) -> dict[str, Any]:
+        if not isinstance(raw_scene, dict):
+            raise ValueError(f"Gemini storyboard scene {index} must be an object")
+
+        objective = self._string_from(raw_scene, "objective", "goal", "scene_objective") or self._default_scene_objective(index)
+        visual = self._string_from(raw_scene, "visual_description", "visual", "shot_description") or angle.proof_demo_moment
+        camera = self._string_from(raw_scene, "camera_angle", "camera", "shot") or "Handheld UGC vertical shot."
+        on_screen_text = self._string_from(raw_scene, "on_screen_text", "text_overlay", "overlay_text") or (
+            angle.hook if index == 1 else angle.cta if index == 4 else objective
+        )
+        voiceover_line = self._string_from(raw_scene, "voiceover_line", "voiceover", "vo_line") or on_screen_text
+        generation_prompt = self._string_from(raw_scene, "generation_prompt", "prompt", "video_prompt")
+        if not generation_prompt:
+            generation_prompt = (
+                f"Vertical UGC ad scene for {project.product_name}. {visual} Camera: {camera}. "
+                f"Style: {intelligence.brand_style_notes}"
+            )
+
+        return {
+            "scene_number": self._int_from(raw_scene.get("scene_number") or raw_scene.get("scene"), index),
+            "duration_seconds": self._int_from(raw_scene.get("duration_seconds") or raw_scene.get("duration"), 5),
+            "objective": objective,
+            "visual_description": visual,
+            "camera_angle": camera,
+            "on_screen_text": on_screen_text,
+            "voiceover_line": voiceover_line,
+            "transition": self._string_from(raw_scene, "transition") or "Cut.",
+            "generation_prompt": generation_prompt,
+            "negative_prompt": self._string_from(raw_scene, "negative_prompt") or BASE_NEGATIVE_PROMPT,
+        }
+
+    def _string_from(self, item: dict[str, Any], *keys: str) -> str:
+        for key in keys:
+            value = item.get(key)
+            if value is None:
+                continue
+            if isinstance(value, list):
+                value = " ".join(str(part).strip() for part in value if str(part).strip())
+            value = str(value).strip()
+            if value:
+                return value
+        return ""
+
+    def _int_from(self, value: Any, default_value: int) -> int:
+        try:
+            parsed = int(float(str(value).replace("s", "").strip()))
+        except (TypeError, ValueError):
+            parsed = default_value
+        return max(1, parsed)
+
+    def _default_scene_objective(self, index: int) -> str:
+        objectives = {
+            1: "Hook the viewer.",
+            2: "Set up the problem.",
+            3: "Show the product demo.",
+            4: "Show result and CTA.",
+        }
+        return objectives.get(index, "Move the story forward.")
 
     def _build_variant(
         self,

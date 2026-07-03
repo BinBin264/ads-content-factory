@@ -1,4 +1,5 @@
 import json
+from typing import Any
 from typing import Protocol
 
 from app.models.schemas import CreativeAngle, ProductBrief, ProductIntelligenceBrief, Project
@@ -15,7 +16,50 @@ class CreativeAngleGenerator(Protocol):
         ...
 
 
-class RuleBasedCreativeAngleGenerator:
+class GeminiCreativeAngleGenerator:
+    ANGLE_TYPES = ["storytelling", "product_demo", "problem_solution", "curiosity", "social_proof"]
+
+    RESPONSE_SCHEMA = {
+        "type": "object",
+        "properties": {
+            "angles": {
+                "type": "array",
+                "minItems": 5,
+                "maxItems": 5,
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "name": {"type": "string"},
+                        "angle_type": {"type": "string"},
+                        "target_audience": {"type": "string"},
+                        "pain_point": {"type": "string"},
+                        "emotional_trigger": {"type": "string"},
+                        "hook": {"type": "string"},
+                        "product_role": {"type": "string"},
+                        "proof_demo_moment": {"type": "string"},
+                        "cta": {"type": "string"},
+                        "reason_why_it_can_work": {"type": "string"},
+                        "score": {"type": "number"},
+                    },
+                    "required": [
+                        "name",
+                        "angle_type",
+                        "target_audience",
+                        "pain_point",
+                        "emotional_trigger",
+                        "hook",
+                        "product_role",
+                        "proof_demo_moment",
+                        "cta",
+                        "reason_why_it_can_work",
+                        "score",
+                    ],
+                },
+            }
+        },
+        "required": ["angles"],
+    }
+
     def __init__(self, llm_provider: LLMProvider | None = None) -> None:
         self.llm_provider = llm_provider or build_llm_provider()
 
@@ -32,7 +76,10 @@ class RuleBasedCreativeAngleGenerator:
         prompt = (
             "You are the Creative Angle Agent for TikTok, Reels, and Shorts. "
             "Generate exactly 5 meaningfully different short-form ad angles. "
-            "Return JSON only in this shape: {\"angles\": [CreativeAngle...]}. "
+            "Return JSON only in this exact shape: {\"angles\": [CreativeAngle...]}. "
+            "Every CreativeAngle object must include these exact keys: "
+            "name, angle_type, target_audience, pain_point, emotional_trigger, hook, "
+            "product_role, proof_demo_moment, cta, reason_why_it_can_work, score. "
             "Required angle types in order: storytelling, product_demo, problem_solution, curiosity, social_proof. "
             "Hooks must be simple spoken language and strong in the first 2 seconds. "
             "Avoid generic hooks like Introducing or This product is amazing. "
@@ -40,95 +87,66 @@ class RuleBasedCreativeAngleGenerator:
             f"Project:\n{json.dumps(project.model_dump(mode='json'), ensure_ascii=False, indent=2)}\n\n"
             f"Product intelligence:\n{json.dumps(intelligence.model_dump(mode='json'), ensure_ascii=False, indent=2)}"
         )
-        data = self.llm_provider.generate_json(prompt, temperature=0.65)
+        data = self.llm_provider.generate_json(prompt, temperature=0.65, response_schema=self.RESPONSE_SCHEMA)
         raw_angles = data.get("angles")
         if not isinstance(raw_angles, list) or len(raw_angles) < 5:
             raise ValueError("Gemini angle response must include at least 5 angles")
-        return [CreativeAngle.model_validate(item) for item in raw_angles[:5]]
-
-    def _generate_rule_based(self, project: Project, intelligence: ProductIntelligenceBrief) -> list[CreativeAngle]:
-        cta = intelligence.recommended_cta or project.cta or self._default_cta(project.goal)
-        audience = intelligence.primary_audience
-        hooks = self._five_hooks(project, intelligence)
-        pain_points = self._pad(intelligence.pain_points, "The audience needs a clearer way to understand the product.")
-        triggers = self._pad(intelligence.emotional_triggers, "curiosity")
-        demo_moments = self._pad(intelligence.demo_moments, "Show the product in use.")
-        benefits = self._pad(intelligence.functional_benefits, intelligence.core_use_case)
-
-        templates = [
-            {
-                "name": "Emotional discovery",
-                "angle_type": "storytelling",
-                "hook": hooks[0],
-                "pain_point": pain_points[0],
-                "emotional_trigger": triggers[0],
-                "product_role": f"{project.product_name} turns a relatable moment into a useful next step.",
-                "proof_demo_moment": demo_moments[0],
-                "reason": "It starts with a human moment, then earns the demo instead of feeling like a pitch.",
-                "score": 94,
-            },
-            {
-                "name": "Product-led demo",
-                "angle_type": "product_demo",
-                "hook": hooks[1],
-                "pain_point": pain_points[1],
-                "emotional_trigger": triggers[1],
-                "product_role": f"{project.product_name} is shown as the main action from setup to result.",
-                "proof_demo_moment": demo_moments[1],
-                "reason": "A direct demo makes the value easy to understand in a short paid social placement.",
-                "score": 91,
-            },
-            {
-                "name": "Problem-solution",
-                "angle_type": "problem_solution",
-                "hook": hooks[2],
-                "pain_point": pain_points[2],
-                "emotional_trigger": triggers[2],
-                "product_role": f"{project.product_name} removes the specific friction shown in the setup.",
-                "proof_demo_moment": demo_moments[2],
-                "reason": "The viewer sees the problem first, so the product answer feels specific.",
-                "score": 88,
-            },
-            {
-                "name": "Hidden benefit",
-                "angle_type": "curiosity",
-                "hook": hooks[3],
-                "pain_point": pain_points[0],
-                "emotional_trigger": "curiosity",
-                "product_role": f"{project.product_name} reveals a benefit viewers may not know to look for.",
-                "proof_demo_moment": demo_moments[3],
-                "reason": "The hook creates an open loop that the product demo can close.",
-                "score": 85,
-            },
-            {
-                "name": "Friend recommendation",
-                "angle_type": "social_proof",
-                "hook": hooks[4],
-                "pain_point": pain_points[1],
-                "emotional_trigger": "trust",
-                "product_role": f"{project.product_name} is framed as the practical first thing a friend would suggest.",
-                "proof_demo_moment": benefits[0],
-                "reason": "Recommendation-style UGC lowers skepticism while staying native to TikTok, Reels, and Shorts.",
-                "score": 82,
-            },
-        ]
-
         return [
-            CreativeAngle(
-                name=item["name"],
-                angle_type=item["angle_type"],
-                target_audience=audience,
-                pain_point=item["pain_point"],
-                emotional_trigger=item["emotional_trigger"],
-                hook=item["hook"],
-                product_role=item["product_role"],
-                proof_demo_moment=item["proof_demo_moment"],
-                cta=cta,
-                reason_why_it_can_work=item["reason"],
-                score=item["score"],
-            )
-            for item in templates
+            CreativeAngle.model_validate(self._coerce_angle(item, index, project, intelligence))
+            for index, item in enumerate(raw_angles[:5])
         ]
+
+    def _coerce_angle(
+        self,
+        item: Any,
+        index: int,
+        project: Project,
+        intelligence: ProductIntelligenceBrief,
+    ) -> dict[str, Any]:
+        if not isinstance(item, dict):
+            raise ValueError(f"Gemini angle at index {index} must be an object")
+
+        angle_type = self._string_from(item, "angle_type", "type", "category") or self.ANGLE_TYPES[index]
+        angle_type = angle_type.lower().replace("-", "_").replace(" ", "_")
+        if angle_type not in self.ANGLE_TYPES:
+            angle_type = self.ANGLE_TYPES[index]
+
+        hook = self._string_from(item, "hook", "opening_hook", "headline") or self._pick(
+            intelligence.recommended_hooks,
+            index,
+            f"Here's what {project.product_name} can show you in seconds.",
+        )
+        pain_point = self._string_from(item, "pain_point", "problem", "pain", "viewer_problem") or self._pick(
+            intelligence.pain_points,
+            index,
+            "The audience is unsure what to do next.",
+        )
+        emotional_trigger = self._string_from(item, "emotional_trigger", "emotion", "trigger") or self._pick(
+            intelligence.emotional_triggers,
+            index,
+            "curiosity",
+        )
+        proof_demo_moment = self._string_from(item, "proof_demo_moment", "demo_moment", "proof", "demo") or self._pick(
+            intelligence.demo_moments,
+            index,
+            self._pick(intelligence.proof_points, index, "Show the product working on screen."),
+        )
+
+        return {
+            "name": self._string_from(item, "name", "title", "angle_name") or self._title_from_type(angle_type),
+            "angle_type": angle_type,
+            "target_audience": self._string_from(item, "target_audience", "audience", "target") or intelligence.primary_audience,
+            "pain_point": pain_point,
+            "emotional_trigger": emotional_trigger,
+            "hook": hook,
+            "product_role": self._string_from(item, "product_role", "role", "solution_role")
+            or f"{project.product_name} is the tool that turns the hook into a concrete next step.",
+            "proof_demo_moment": proof_demo_moment,
+            "cta": self._string_from(item, "cta", "call_to_action") or intelligence.recommended_cta or project.cta or self._default_cta(project.goal),
+            "reason_why_it_can_work": self._string_from(item, "reason_why_it_can_work", "reason", "why_it_works")
+            or "It connects a specific viewer problem to a clear product demo and CTA.",
+            "score": self._score_from(item.get("score"), index),
+        }
 
     def _five_hooks(self, project: Project, intelligence: ProductIntelligenceBrief) -> list[str]:
         hooks = list(intelligence.recommended_hooks)
@@ -141,6 +159,35 @@ class RuleBasedCreativeAngleGenerator:
         while len(padded) < 4:
             padded.append(default_value)
         return padded
+
+    def _string_from(self, item: dict[str, Any], *keys: str) -> str:
+        for key in keys:
+            value = item.get(key)
+            if value is None:
+                continue
+            if isinstance(value, list):
+                value = ", ".join(str(part).strip() for part in value if str(part).strip())
+            value = str(value).strip()
+            if value:
+                return value
+        return ""
+
+    def _pick(self, values: list[str], index: int, default_value: str) -> str:
+        return values[index % len(values)] if values else default_value
+
+    def _title_from_type(self, angle_type: str) -> str:
+        return angle_type.replace("_", " ").title()
+
+    def _score_from(self, value: Any, index: int) -> float:
+        try:
+            score = float(value)
+        except (TypeError, ValueError):
+            score = 88 - index * 3
+        if 0 < score <= 1:
+            score *= 100
+        elif 1 < score <= 10:
+            score *= 10
+        return max(0, min(100, score))
 
     def _compat_intelligence(self, project: Project, brief: ProductBrief) -> ProductIntelligenceBrief:
         return ProductIntelligenceBrief(

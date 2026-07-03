@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import ProjectForm from "../components/ProjectForm";
-import SampleInputsPanel from "../components/SampleInputsPanel";
 import { createProject, listProjects } from "../api/projects";
 import { getApiErrorMessage } from "../api/client";
 import type { CreateProjectValues, Project } from "../types";
@@ -12,7 +11,6 @@ export default function HomePage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sampleValues, setSampleValues] = useState<CreateProjectValues | null>(null);
 
   const loadProjects = async () => {
     try {
@@ -31,7 +29,7 @@ export default function HomePage() {
     setError(null);
     try {
       const project = await createProject(values);
-      navigate(`/projects/${project.id}`);
+      navigate(`/projects/${project.id}/assets`);
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
@@ -40,17 +38,16 @@ export default function HomePage() {
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
-      <ProjectForm loading={loading} sampleValues={sampleValues} onSubmit={handleCreateProject} />
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
+      <ProjectForm loading={loading} onSubmit={handleCreateProject} />
 
       <aside className="space-y-4">
         {error ? <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">{error}</div> : null}
-        <SampleInputsPanel onSelect={setSampleValues} />
-        <section className="card p-5">
+        <section className="card-accent p-5">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h2 className="text-base font-bold text-slate-950">Projects</h2>
-              <p className="text-sm text-slate-500">Recent local MVP projects.</p>
+              <h2 className="section-heading">Projects</h2>
+              <p className="section-subtitle">Recent local MVP projects.</p>
             </div>
             <button className="btn-secondary px-3 py-1 text-xs" type="button" onClick={() => void loadProjects()}>
               Refresh
@@ -58,14 +55,14 @@ export default function HomePage() {
           </div>
 
           {projects.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500">No projects yet.</p>
+            <p className="empty-state">No projects yet.</p>
           ) : (
             <div className="space-y-3">
               {projects.map((project) => (
                 <Link
                   key={project.id}
-                  className="block rounded-lg border border-slate-200 bg-white p-4 transition hover:border-slate-400"
-                  to={`/projects/${project.id}`}
+                  className="block rounded-lg border border-slate-200 bg-white p-4 transition hover:-translate-y-0.5 hover:border-teal-300 hover:shadow-soft"
+                  to={`/projects/${project.id}/assets`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">

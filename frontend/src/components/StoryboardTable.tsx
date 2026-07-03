@@ -6,9 +6,9 @@ interface StoryboardTableProps {
 
 export default function StoryboardTable({ scenes }: StoryboardTableProps) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-slate-200">
+    <div className="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
       <table className="min-w-[980px] divide-y divide-slate-200 text-left text-sm">
-        <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+        <thead className="bg-slate-950 text-xs uppercase tracking-wide text-slate-200">
           <tr>
             <th className="px-3 py-3">Scene</th>
             <th className="px-3 py-3">Duration</th>

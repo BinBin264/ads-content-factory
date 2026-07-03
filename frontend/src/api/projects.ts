@@ -61,13 +61,13 @@ export async function generateAngles(id: string): Promise<CreativeAngle[]> {
 }
 
 export async function generateVariants(id: string, angleIds?: string[]): Promise<Variant[]> {
-  const body = angleIds && angleIds.length >= 2 ? { angle_ids: angleIds, variant_count: 2 } : { variant_count: 2 };
+  const body = angleIds && angleIds.length > 0 ? { angle_ids: angleIds, variant_count: 2 } : { variant_count: 2 };
   const response = await apiClient.post<Variant[]>(`/api/projects/${id}/generate-variants`, body);
   return response.data;
 }
 
-export async function mockRender(id: string): Promise<Project> {
-  const response = await apiClient.post<Project>(`/api/projects/${id}/mock-render`);
+export async function renderProject(id: string): Promise<Project> {
+  const response = await apiClient.post<Project>(`/api/projects/${id}/render`);
   return response.data;
 }
 

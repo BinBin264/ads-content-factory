@@ -1,11 +1,12 @@
 import json
 import re
+import threading
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import Any, Protocol
+from typing import Any, Protocol, Sequence
 
-from app.config import GEMINI_API_BASE_URL, GEMINI_API_KEY, GEMINI_MODEL
+from app.config import GEMINI_API_BASE_URL, GEMINI_API_KEYS, GEMINI_MODEL
 
 
 class LLMProviderError(Exception):
@@ -26,23 +27,34 @@ class LLMProvider(Protocol):
     ) -> dict[str, Any]:
         ...
 
+    def generate_json_parts(
+        self,
+        parts: list[dict[str, Any]],
+        *,
+        temperature: float = 0.3,
+        response_schema: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        ...
+
 
 class GeminiLLMProvider:
     def __init__(
         self,
-        api_key: str = GEMINI_API_KEY,
+        api_keys: Sequence[str] | None = None,
         model: str = GEMINI_MODEL,
         base_url: str = GEMINI_API_BASE_URL,
         timeout_seconds: int = 45,
     ) -> None:
-        self.api_key = api_key
+        self.api_keys = [key.strip() for key in (api_keys if api_keys is not None else GEMINI_API_KEYS) if key.strip()]
         self.model = model
         self.base_url = base_url.rstrip("/")
         self.timeout_seconds = timeout_seconds
+        self._next_key_index = 0
+        self._lock = threading.Lock()
 
     @property
     def is_configured(self) -> bool:
-        return bool(self.api_key)
+        return bool(self.api_keys)
 
     def generate_json(
         self,
@@ -52,11 +64,61 @@ class GeminiLLMProvider:
         response_schema: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         if not self.is_configured:
-            raise LLMProviderError("GEMINI_API_KEY is not configured")
+            raise LLMProviderError("GEMINI_API_KEYS or GEMINI_API_KEY is not configured")
+
+        return self.generate_json_parts(
+            [{"text": prompt}],
+            temperature=temperature,
+            response_schema=response_schema,
+        )
+
+    def generate_json_parts(
+        self,
+        parts: list[dict[str, Any]],
+        *,
+        temperature: float = 0.3,
+        response_schema: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        if not self.is_configured:
+            raise LLMProviderError("GEMINI_API_KEYS or GEMINI_API_KEY is not configured")
+
+        last_error: LLMProviderError | None = None
+        for _ in range(len(self.api_keys)):
+            api_key = self._take_next_api_key()
+            try:
+                return self._generate_json_parts_with_key(
+                    api_key,
+                    parts,
+                    temperature=temperature,
+                    response_schema=response_schema,
+                )
+            except LLMProviderError as exc:
+                last_error = exc
+                if not self._should_try_next_key(exc):
+                    raise
+
+        if last_error:
+            raise LLMProviderError(f"All configured Gemini API keys failed: {last_error}") from last_error
+        raise LLMProviderError("Gemini request failed before an API key was selected")
+
+    def _take_next_api_key(self) -> str:
+        with self._lock:
+            key = self.api_keys[self._next_key_index % len(self.api_keys)]
+            self._next_key_index = (self._next_key_index + 1) % len(self.api_keys)
+            return key
+
+    def _generate_json_parts_with_key(
+        self,
+        api_key: str,
+        parts: list[dict[str, Any]],
+        *,
+        temperature: float,
+        response_schema: dict[str, Any] | None,
+    ) -> dict[str, Any]:
 
         url = (
             f"{self.base_url}/models/{urllib.parse.quote(self.model, safe='')}:generateContent"
-            f"?key={urllib.parse.quote(self.api_key)}"
+            f"?key={urllib.parse.quote(api_key)}"
         )
         generation_config: dict[str, Any] = {
             "temperature": temperature,
@@ -69,7 +131,7 @@ class GeminiLLMProvider:
             "contents": [
                 {
                     "role": "user",
-                    "parts": [{"text": prompt}],
+                    "parts": parts,
                 }
             ],
             "generationConfig": generation_config,
@@ -86,11 +148,35 @@ class GeminiLLMProvider:
                 response_body = response.read().decode("utf-8")
         except urllib.error.HTTPError as exc:
             error_body = exc.read().decode("utf-8", errors="replace")
-            raise LLMProviderError(f"Gemini API HTTP {exc.code}: {error_body}") from exc
+            raise LLMProviderError(f"Gemini API HTTP {exc.code}: {self._sanitize_error_body(error_body)}") from exc
         except urllib.error.URLError as exc:
             raise LLMProviderError(f"Gemini API request failed: {exc.reason}") from exc
 
         return self._extract_json(response_body)
+
+    def _should_try_next_key(self, exc: LLMProviderError) -> bool:
+        message = str(exc)
+        if len(self.api_keys) <= 1:
+            return False
+        return any(
+            marker in message
+            for marker in (
+                "Gemini API HTTP 400",
+                "Gemini API HTTP 401",
+                "Gemini API HTTP 403",
+                "Gemini API HTTP 429",
+                "Gemini API HTTP 500",
+                "Gemini API HTTP 502",
+                "Gemini API HTTP 503",
+                "Gemini API HTTP 504",
+            )
+        )
+
+    def _sanitize_error_body(self, error_body: str) -> str:
+        sanitized = error_body
+        for api_key in self.api_keys:
+            sanitized = sanitized.replace(api_key, "[redacted]")
+        return sanitized
 
     def _extract_json(self, response_body: str) -> dict[str, Any]:
         try:

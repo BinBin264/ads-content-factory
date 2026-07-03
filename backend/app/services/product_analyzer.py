@@ -2,7 +2,7 @@ from typing import Protocol
 
 from app.models.schemas import AnalyzeProjectResponse, Project
 from app.services.product_intelligence import ProductIntelligenceService
-from app.services.vision_provider import MockVisionProvider, VisionProvider
+from app.services.vision_provider import GeminiVisionProvider, VisionProvider
 
 
 class ProductAnalyzer(Protocol):
@@ -10,13 +10,13 @@ class ProductAnalyzer(Protocol):
         ...
 
 
-class RuleBasedProductAnalyzer:
+class ProductIntelligenceAnalyzer:
     def __init__(
         self,
         vision_provider: VisionProvider | None = None,
         intelligence_service: ProductIntelligenceService | None = None,
     ) -> None:
-        self.vision_provider = vision_provider or MockVisionProvider()
+        self.vision_provider = vision_provider or GeminiVisionProvider()
         self.intelligence_service = intelligence_service or ProductIntelligenceService()
 
     def analyze(self, project: Project) -> AnalyzeProjectResponse:

@@ -22,6 +22,6 @@ def generate_variants(project_id: str, request: GenerateVariantsRequest) -> list
     return project_service.generate_variants(project_id, request)
 
 
-@router.post("/{project_id}/mock-render", response_model=Project)
-def mock_render(project_id: str) -> Project:
-    return project_service.render_mock_videos(project_id)
+@router.post("/{project_id}/render", response_model=Project)
+def render(project_id: str) -> Project:
+    return project_service.render_videos(project_id)

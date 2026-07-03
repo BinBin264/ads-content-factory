@@ -1,1 +1,571 @@
-[]
+[
+  {
+    "id": "project_bc92697eb7bc",
+    "product_name": "Coin Scanner App",
+    "product_category": "Mobile app",
+    "product_description": "Product description:\r\nAn app that helps users scan old coins, identify coin details, and view estimated reference value.\r\nAudience:\r\nPeople who find old coins at home, casual coin collectors, adults with coin jars.",
+    "audience": null,
+    "goal": "app_install",
+    "platform": "tiktok",
+    "duration": "20s",
+    "tone": "Natural UGC, relatable, curiosity-driven, realistic, not too polished.",
+    "cta": "Download now and scan your old coins.",
+    "claims_to_avoid": [
+      "Guaranteed value",
+      "100% accurate appraisal",
+      "you will make money",
+      "this coin is definitely worth money."
+    ],
+    "brand_colors": [
+      "Brand colors: Blue",
+      "white",
+      "gold"
+    ],
+    "uploaded_files": [
+      {
+        "id": "file_47dd089276bf",
+        "file_name": "mobile_app.jpg",
+        "content_type": "image/jpeg",
+        "size_bytes": 78226,
+        "path": "D:\\DTP_COMPANY\\ads-content-factory\\backend\\app\\uploads\\project_bc92697eb7bc\\01_mobile_app.jpg",
+        "url": "/uploads/project_bc92697eb7bc/01_mobile_app.jpg"
+      },
+      {
+        "id": "file_065a9d5c2181",
+        "file_name": "mobile_app2.jpg",
+        "content_type": "image/jpeg",
+        "size_bytes": 48415,
+        "path": "D:\\DTP_COMPANY\\ads-content-factory\\backend\\app\\uploads\\project_bc92697eb7bc\\02_mobile_app2.jpg",
+        "url": "/uploads/project_bc92697eb7bc/02_mobile_app2.jpg"
+      }
+    ],
+    "vision_analysis": {
+      "detected_objects": [
+        "mobile phone screen",
+        "coin (Lincoln Cent)",
+        "app interface elements",
+        "search bar",
+        "buttons",
+        "navigation tabs",
+        "icons"
+      ],
+      "detected_product_type": "mobile_app",
+      "detected_visual_style": "Clean, modern, functional, informative, app-like, clear hierarchy with distinct sections for scanning, information display, and navigation.",
+      "detected_brand_colors": [
+        "white",
+        "gold",
+        "yellow",
+        "dark green",
+        "grey"
+      ],
+      "detected_ui_elements": [
+        "search bar",
+        "prominent 'Coin Identify' button",
+        "statistical displays (coin count, total value, countries)",
+        "banner for 'Free Premium Available'",
+        "section for 'Top 10 popular coins'",
+        "bottom navigation bar with 'Home', 'Catalog', 'Explore', 'My Coins' icons and a central camera/scan button",
+        "back arrow",
+        "tabbed navigation for coin details ('Overview', 'Reference Price', 'Rarity', 'Value History')",
+        "detailed information fields (Country, Years of Minting, Period, Coin Type)",
+        "price range display",
+        "disclaimer text",
+        "'Save to My Coins' button"
+      ],
+      "detected_text": [
+        "9:41",
+        "Search for coins",
+        "Coin Identify",
+        "Tap here to recognize a coins",
+        "4 coin",
+        "4 total value",
+        "4 countries",
+        "Free Premium Available",
+        "Tap to Claim",
+        "Top 10 popular coins",
+        "-$0.25",
+        "Home",
+        "Catalog",
+        "Explore",
+        "My Coins",
+        "1909-S VDB Lincoln Cent",
+        "Commemorative Coins, Precious Coins, Dollar Coins, Modern Coins",
+        "Overview",
+        "Reference Price",
+        "Rarity",
+        "Value History",
+        "Country:",
+        "United States",
+        "Years of Minting:",
+        "1999",
+        "Period:",
+        "States Quarters Program (1999-2008)",
+        "Coin Type:",
+        "Circulation Coins",
+        "$100,000 - $500,000",
+        "Note: The coin's actual value can vary based on its condition, shine, rarity, and other factors. This is only an approximate estimate.",
+        "Save to My Coins"
+      ],
+      "confidence": 0.95,
+      "notes": [
+        "The app's primary function is to scan and identify coins, providing detailed information and estimated values.",
+        "The user interface is intuitive, featuring clear calls to action and organized data presentation.",
+        "The visual style is consistent with modern mobile applications, utilizing a clean layout and a combination of white, gold/yellow, and dark green for branding and highlights.",
+        "The app includes a disclaimer regarding coin value estimates, aligning with the project's 'claims to avoid'."
+      ]
+    },
+    "product_brief": {
+      "product_name": "Coin Scanner App",
+      "category": "Mobile app",
+      "product_type": "mobile_app",
+      "short_description": "Scanning old coins to identify their details and view estimated reference values.",
+      "target_audience": [
+        "People who find old coins at home",
+        "Casual coin collectors",
+        "Adults with coin jars"
+      ],
+      "main_problem": "Uncertainty about the identity and potential value of old coins found at home.",
+      "main_benefit": "Quick and easy coin identification through scanning.",
+      "emotional_triggers": [
+        "Curiosity about the history and origin of old coins.",
+        "Excitement of discovery when finding a potentially interesting or valuable coin.",
+        "Nostalgia associated with old coins and family heirlooms.",
+        "Satisfaction from identifying and understanding a coin's background.",
+        "Hope of uncovering a rare or valuable find."
+      ],
+      "functional_benefits": [
+        "Quick and easy coin identification through scanning.",
+        "Access to detailed coin information (country, years of minting, period, coin type).",
+        "Display of estimated reference value ranges for identified coins.",
+        "Ability to save identified coins to a personal digital collection ('My Coins').",
+        "User-friendly interface for seamless coin exploration and cataloging."
+      ],
+      "proof_elements": [
+        "Visual demonstration of scanning a physical coin and instantly displaying its details.",
+        "Clear presentation of detailed information fields like 'Country', 'Years of Minting', 'Coin Type'.",
+        "Showing the estimated price range (e.g., '$100,000 - $500,000') with the accompanying disclaimer.",
+        "The 'Save to My Coins' feature for building a digital collection.",
+        "The app's clean UI and organized data presentation."
+      ],
+      "safe_claims": [
+        "Scan old coins to instantly identify their details.",
+        "Get an estimated reference value for your coins.",
+        "Discover historical information about your coins.",
+        "Easily organize and catalog your coin collection.",
+        "Turn your coin jar finds into fascinating discoveries.",
+        "Uncover the potential approximate worth of your old coins."
+      ],
+      "claims_to_avoid": [
+        "Guaranteed value",
+        "100% accurate appraisal",
+        "you will make money",
+        "this coin is definitely worth money."
+      ],
+      "recommended_visual_style": "Clean, modern, functional, and informative app interface with a clear hierarchy. Visuals are consistent with modern mobile applications, utilizing a clean layout with white, gold/yellow, dark green, and grey for branding and highlights. The overall tone should be Natural UGC, relatable, curiosity-driven, realistic, and not overly polished.",
+      "recommended_ad_formats": [
+        "The Discovery & Reveal",
+        "The Collector's Companion"
+      ]
+    },
+    "product_intelligence": {
+      "detected_product": "Coin Scanner App",
+      "product_category": "Mobile app",
+      "product_type": "mobile_app",
+      "core_use_case": "Scanning old coins to identify their details and view estimated reference values.",
+      "target_audience_segments": [
+        "People who find old coins at home",
+        "Casual coin collectors",
+        "Adults with coin jars"
+      ],
+      "primary_audience": "People who find old coins at home",
+      "pain_points": [
+        "Uncertainty about the identity and potential value of old coins found at home.",
+        "Lack of knowledge or tools to easily identify specific coin details (country, year, type).",
+        "Difficulty in getting an estimated value for coins without expert appraisal.",
+        "Overwhelm from an unorganized collection of unidentified coins."
+      ],
+      "emotional_triggers": [
+        "Curiosity about the history and origin of old coins.",
+        "Excitement of discovery when finding a potentially interesting or valuable coin.",
+        "Nostalgia associated with old coins and family heirlooms.",
+        "Satisfaction from identifying and understanding a coin's background.",
+        "Hope of uncovering a rare or valuable find."
+      ],
+      "functional_benefits": [
+        "Quick and easy coin identification through scanning.",
+        "Access to detailed coin information (country, years of minting, period, coin type).",
+        "Display of estimated reference value ranges for identified coins.",
+        "Ability to save identified coins to a personal digital collection ('My Coins').",
+        "User-friendly interface for seamless coin exploration and cataloging."
+      ],
+      "proof_points": [
+        "Visual demonstration of scanning a physical coin and instantly displaying its details.",
+        "Clear presentation of detailed information fields like 'Country', 'Years of Minting', 'Coin Type'.",
+        "Showing the estimated price range (e.g., '$100,000 - $500,000') with the accompanying disclaimer.",
+        "The 'Save to My Coins' feature for building a digital collection.",
+        "The app's clean UI and organized data presentation."
+      ],
+      "demo_moments": [
+        "User picking up an old, dusty coin from a jar or drawer.",
+        "Opening the Coin Scanner App and tapping the central scan/camera button.",
+        "Positioning the coin under the phone's camera for scanning.",
+        "App processing and instantly displaying the coin's name (e.g., '1909-S VDB Lincoln Cent').",
+        "Scrolling through the coin's detailed information tabs ('Overview', 'Reference Price', 'Rarity').",
+        "Highlighting the estimated value range and the accompanying disclaimer.",
+        "Tapping 'Save to My Coins' and showing the coin added to a digital catalog."
+      ],
+      "visual_assets_detected": [
+        "Mobile phone screen displaying the app interface",
+        "Close-up of a coin (e.g., Lincoln Cent) being scanned",
+        "App interface elements: search bar, 'Coin Identify' button, navigation tabs ('Overview', 'Reference Price', 'Rarity', 'Value History')",
+        "Statistical displays (coin count, total value, countries)",
+        "Banner for 'Free Premium Available'",
+        "Section for 'Top 10 popular coins'",
+        "Bottom navigation bar with 'Home', 'Catalog', 'Explore', 'My Coins' icons and a central camera/scan button",
+        "Detailed information fields (Country, Years of Minting, Period, Coin Type)",
+        "Price range display (e.g., '$100,000 - $500,000')",
+        "Disclaimer text regarding coin value estimates",
+        "'Save to My Coins' button"
+      ],
+      "brand_style_notes": "Clean, modern, functional, and informative app interface with a clear hierarchy. Visuals are consistent with modern mobile applications, utilizing a clean layout with white, gold/yellow, dark green, and grey for branding and highlights. The overall tone should be Natural UGC, relatable, curiosity-driven, realistic, and not overly polished.",
+      "safe_claims": [
+        "Scan old coins to instantly identify their details.",
+        "Get an estimated reference value for your coins.",
+        "Discover historical information about your coins.",
+        "Easily organize and catalog your coin collection.",
+        "Turn your coin jar finds into fascinating discoveries.",
+        "Uncover the potential approximate worth of your old coins."
+      ],
+      "claims_to_avoid": [
+        "Guaranteed value",
+        "100% accurate appraisal",
+        "you will make money",
+        "this coin is definitely worth money."
+      ],
+      "recommended_ad_playbooks": [
+        {
+          "playbook_id": "app_discovery_reveal",
+          "name": "The Discovery & Reveal",
+          "best_for": [
+            "Curiosity-driven users",
+            "Problem-solution narrative",
+            "First-time app users"
+          ],
+          "structure": [
+            "Hook: User finds an old, unidentified coin.",
+            "Problem: Expresses confusion or curiosity about the coin's identity/value.",
+            "Solution: Introduces the Coin Scanner App and its scanning feature.",
+            "App Demo: Shows the app in action, scanning the coin and revealing details/estimated value.",
+            "Result: User expresses surprise/satisfaction at the information found.",
+            "CTA: Direct call to download and try the app."
+          ],
+          "recommended_angles": [
+            "What's hiding in your coin jar?",
+            "Unlock the secrets of your old coins.",
+            "Is this old coin worth anything?"
+          ],
+          "scene_formula": [
+            "0-3s: Hand finding an old coin, close-up on coin.",
+            "3-6s: User looking confused/curious, voiceover asking 'What is this?'",
+            "6-12s: User opens app, taps scan, places coin, app identifies and shows details/value.",
+            "12-16s: User reacts with 'wow' or 'cool', scrolls through details, saves to 'My Coins'.",
+            "16-20s: On-screen text with key benefit and CTA, voiceover for CTA."
+          ]
+        },
+        {
+          "playbook_id": "app_collector_companion",
+          "name": "The Collector's Companion",
+          "best_for": [
+            "Casual coin collectors",
+            "Users seeking organization and detailed information",
+            "Highlighting app features beyond basic scanning"
+          ],
+          "structure": [
+            "Hook: User shows a small collection of unorganized or unidentified coins.",
+            "Problem: Expresses frustration with not knowing details or keeping track.",
+            "Solution: Introduces the app as a tool for identification and organization.",
+            "App Demo: Shows scanning multiple coins, saving to 'My Coins', browsing the catalog.",
+            "Result: User demonstrates an organized, informed collection within the app.",
+            "CTA: Encourages download for better collecting experience."
+          ],
+          "recommended_angles": [
+            "Level up your coin collecting game.",
+            "Your digital expert for every coin.",
+            "Finally, an easy way to manage your coin collection."
+          ],
+          "scene_formula": [
+            "0-3s: Panning shot over a small pile of various old coins.",
+            "3-6s: User expresses difficulty identifying or organizing them.",
+            "6-12s: User demonstrates scanning a coin, saving it, then browsing the 'My Coins' catalog.",
+            "12-16s: Highlights features like detailed info, estimated value, and collection overview.",
+            "16-20s: On-screen text with benefit (e.g., 'Organize & Discover'), CTA."
+          ]
+        }
+      ],
+      "recommended_video_formats": [
+        "UGC-style short-form video (vertical)",
+        "App demo walkthrough"
+      ],
+      "recommended_hooks": [
+        "Found this old coin, what is it?",
+        "You won't believe what I found in my coin jar!",
+        "Is this coin worth anything?",
+        "My grandma gave me this, but I have no idea what it is."
+      ],
+      "recommended_cta": "Download now and scan your old coins.",
+      "confidence_score": 0.98
+    },
+    "creative_angles": [
+      {
+        "id": "angle_a883c1f50768",
+        "name": "The Grandparent's Secret",
+        "angle_type": "storytelling",
+        "target_audience": "Adults with coin jars, people who find old coins at home.",
+        "pain_point": "Uncertainty about the history and potential value of old family coins.",
+        "emotional_trigger": "Nostalgia associated with old coins and family heirlooms, excitement of discovery, hope of uncovering a rare find.",
+        "hook": "I found this super old coin in my grandpa's dusty attic box. What even IS this?",
+        "product_role": "The app acts as a personal historian, revealing the hidden story and estimated worth of sentimental items.",
+        "proof_demo_moment": "User holds a tarnished, old coin. Opens the app, taps to scan. The app instantly identifies it as '1909-S VDB Lincoln Cent' and shows details like 'United States' and 'Years of Minting: 1909'. Then highlights an estimated value range like '$100,000 - $500,000' with the disclaimer text visible. User gasps in surprise.",
+        "cta": "Download now and scan your old coins.",
+        "reason_why_it_can_work": "Taps into the emotional connection of family heirlooms and the universal dream of finding unexpected treasure, making the app the key to unlocking these stories and potential value.",
+        "score": 95.0
+      },
+      {
+        "id": "angle_a2d57eb0d30f",
+        "name": "Instant Coin ID & Value",
+        "angle_type": "product_demo",
+        "target_audience": "People who find old coins at home, casual coin collectors.",
+        "pain_point": "Lack of quick, easy tools to identify specific coin details and get estimated values.",
+        "emotional_trigger": "Satisfaction from quick, accurate results; efficiency; empowerment.",
+        "hook": "Watch me identify this random coin and its estimated value in under 5 seconds!",
+        "product_role": "The app is a fast, accurate, and comprehensive tool for instant coin identification and information.",
+        "proof_demo_moment": "User picks up a generic old coin from a pile. Opens the Coin Scanner App, taps the central camera icon. Positions the coin under the camera. The app quickly processes, then displays the coin's name, country, and years of minting. User scrolls to the 'Reference Price' tab, showing the estimated value range (e.g., '$100 - $500') and the accompanying disclaimer.",
+        "cta": "Download now and scan your old coins.",
+        "reason_why_it_can_work": "Visually demonstrates the app's core functional benefits (speed, accuracy, detailed info, value estimation) in a direct, compelling way, solving a clear pain point for users seeking efficiency.",
+        "score": 90.0
+      },
+      {
+        "id": "angle_488d0b86dbde",
+        "name": "Tame Your Coin Jar Chaos",
+        "angle_type": "problem_solution",
+        "target_audience": "Adults with coin jars, people overwhelmed by unorganized, unidentified coins.",
+        "pain_point": "Uncertainty about the identity and potential value of old coins, and the overwhelm of an unorganized collection.",
+        "emotional_trigger": "Hope of uncovering a rare or valuable find, satisfaction from bringing order to chaos.",
+        "hook": "My coin jar was just a mess of unknowns... until this app changed everything.",
+        "product_role": "The app transforms a confusing pile of unidentified coins into an organized, informative digital collection with estimated values.",
+        "proof_demo_moment": "Creator shows a full, disorganized coin jar or a small pile of various old coins, looking slightly frustrated. Pulls out a coin, then uses the app to scan it, revealing its details and estimated value. Shows 'Save to My Coins' and then briefly showcases the 'My Coins' catalog filling up with identified coins, looking satisfied.",
+        "cta": "Download now and scan your old coins.",
+        "reason_why_it_can_work": "Directly addresses a common, relatable problem (the mystery and mess of a coin jar) and presents the app as the simple, effective solution to organize and uncover potential value, leading to a sense of accomplishment.",
+        "score": 92.0
+      },
+      {
+        "id": "angle_722d355098b1",
+        "name": "The Hidden Value Question",
+        "angle_type": "curiosity",
+        "target_audience": "People who find old coins at home, those with a general interest in discovering potential value.",
+        "pain_point": "Not knowing if an old coin they possess might have significant, unexpected value.",
+        "emotional_trigger": "Excitement of discovery, hope of uncovering a rare or valuable find, intrigue.",
+        "hook": "Is this old coin in my hand worth a fortune or just a few cents? Let's find out!",
+        "product_role": "The app is the ultimate tool that satisfies curiosity and reveals the potential (or lack thereof) of any old coin.",
+        "proof_demo_moment": "User holds up a seemingly ordinary, slightly dirty coin, looking inquisitive. Expresses doubt about its value. Scans it with the app. The app reveals detailed info and then prominently displays a surprising (but plausible) high estimated value range (e.g., '$10,000 - $50,000') with the disclaimer text. User's jaw drops slightly in disbelief/excitement.",
+        "cta": "Download now and scan your old coins.",
+        "reason_why_it_can_work": "Plays on the universal human desire for unexpected good fortune and the thrill of solving a mystery, positioning the app as the accessible gateway to potentially surprising information.",
+        "score": 94.0
+      },
+      {
+        "id": "angle_a4d7e9c695aa",
+        "name": "Collector's Must-Have App",
+        "angle_type": "social_proof",
+        "target_audience": "Casual coin collectors, people looking for trusted and efficient tools.",
+        "pain_point": "Difficulty in consistently identifying coins and managing a collection without expert help or reliable resources.",
+        "emotional_trigger": "Trust, validation, desire to be informed and efficient like others in the community.",
+        "hook": "My fellow collectors kept telling me about this app, so I finally tried it. Wow.",
+        "product_role": "The app is a trusted, community-approved tool that simplifies coin collecting, identification, and cataloging.",
+        "proof_demo_moment": "User starts by mentioning how other collectors recommended the app. Then, they demonstrate scanning a coin, showing the detailed information and estimated value. They briefly scroll through their 'My Coins' section, showcasing an organized digital collection, implying consistent use and satisfaction, thereby validating the initial recommendation.",
+        "cta": "Download now and scan your old coins.",
+        "reason_why_it_can_work": "Leverages the persuasive power of peer recommendation and demonstrates the app's utility through a relatable, positive user experience, fostering trust and encouraging adoption based on shared community value.",
+        "score": 88.0
+      }
+    ],
+    "variants": [
+      {
+        "id": "variant_e2a4f6bab745",
+        "angle_id": "angle_a883c1f50768",
+        "name": "Grandpa'sTreasureReveal",
+        "duration": "20s",
+        "format": "UGC-style short-form video (vertical)",
+        "hook": "Just found this ancient-looking coin in my grandpa's old box. I mean, what even IS this thing?",
+        "script": "Just found this ancient-looking coin in my grandpa's old box. I mean, what even IS this thing? Could it be valuable, or just another old penny? I had no idea how to find out. Then I remembered the Coin Scanner App! Super easy! Just scan, and boom! It instantly identified it as a 1909-S VDB Lincoln Cent, potentially worth thousands! My mind is blown! You gotta check your old coins. Download Coin Scanner App and see what you find!",
+        "storyboard": [
+          {
+            "scene_number": 1,
+            "duration_seconds": 3,
+            "objective": "Capture attention with the discovery of an old, mysterious coin.",
+            "visual_description": "A hand reaching into a dusty, old wooden box, pulling out a tarnished, ancient-looking coin. Close-up on the coin, showing its age and wear.",
+            "camera_angle": "Close-up, slightly shaky handheld.",
+            "on_screen_text": "Found this in grandpa's box!",
+            "voiceover_line": "Just found this ancient-looking coin in my grandpa's old box.",
+            "transition": "Cut",
+            "generation_prompt": "A hand pulling a tarnished, old coin from a dusty wooden box in an attic, close-up on the coin, natural lighting, realistic, UGC style, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text.",
+            "negative_prompt": "different product, wrong brand, unreadable text, distorted hands, extra fingers, deformed face, blurry product, low quality, random logo, fake UI text"
+          },
+          {
+            "scene_number": 2,
+            "duration_seconds": 3,
+            "objective": "Express curiosity and the problem of not knowing the coin's identity or value.",
+            "visual_description": "Creator holding the old coin, turning it over in their fingers, looking at it with a curious and slightly puzzled expression. Background is a casual home setting.",
+            "camera_angle": "Medium shot, eye-level.",
+            "on_screen_text": "What is this? Is it worth anything?",
+            "voiceover_line": "I mean, what even IS this thing? Could it be valuable, or just another old penny? I had no idea how to find out.",
+            "transition": "Cut",
+            "generation_prompt": "A person holding a tarnished old coin, turning it over, looking at it with a curious and slightly puzzled expression in a casual home setting, natural lighting, realistic, UGC style, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text.",
+            "negative_prompt": "different product, wrong brand, unreadable text, distorted hands, extra fingers, deformed face, blurry product, low quality, random logo, fake UI text"
+          },
+          {
+            "scene_number": 3,
+            "duration_seconds": 10,
+            "objective": "Demonstrate the app's core function: scanning and identifying a coin, showing details and estimated value, and user's initial surprise.",
+            "visual_description": "Creator pulls out their smartphone, opens the Coin Scanner App (showing a clean, simple UI). Taps the 'scan' button. Places the old coin on a flat surface. Phone camera hovers over it. The app processes and then displays detailed information: '1909-S VDB Lincoln Cent', 'Country: United States', 'Years of Minting: 1909'. Then highlights the estimated value range (e.g., '$10,000 - $50,000') with a small disclaimer text visible. Creator gasps in surprise.",
+            "camera_angle": "Over-the-shoulder shot transitioning to a close-up of the phone screen, then back to creator's face.",
+            "on_screen_text": "Coin Scanner App; 1909-S VDB Lincoln Cent; Estimated Value: $10,000 - $50,000; Note: Value is an approximate estimate.",
+            "voiceover_line": "Then I remembered the Coin Scanner App! Super easy! Just scan, and boom! It instantly identified it as a 1909-S VDB Lincoln Cent, potentially worth thousands! My mind is blown!",
+            "transition": "Swipe left",
+            "generation_prompt": "A person using a smartphone to scan an old coin with the Coin Scanner App. The phone screen clearly shows the app interface, identifying the coin as '1909-S VDB Lincoln Cent' and displaying an estimated value range (e.g., '$10,000 - $50,000') with a disclaimer. Creator reacts with a gasp. Clean UI, natural lighting, realistic, UGC style, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text.",
+            "negative_prompt": "different product, wrong brand, unreadable text, distorted hands, extra fingers, deformed face, blurry product, low quality, random logo, fake UI text"
+          },
+          {
+            "scene_number": 4,
+            "duration_seconds": 4,
+            "objective": "Show user's continued satisfaction/excitement and a clear call to action.",
+            "visual_description": "Creator looks at the camera with an excited smile, perhaps briefly scrolling through the app details again. Final shot of the phone screen with the app's logo and 'Download Now' button, with the coin visible in the background.",
+            "camera_angle": "Medium close-up on creator's face, then zoom out to show phone and coin.",
+            "on_screen_text": "Check YOUR old coins! Download Coin Scanner App Now!",
+            "voiceover_line": "You gotta check your old coins. Download Coin Scanner App and see what you find!",
+            "transition": "Fade to black",
+            "generation_prompt": "A person reacting with excitement and a smile while looking at their phone screen displaying the Coin Scanner App with coin details. Then, a clear shot of the phone screen showing the app's logo and a 'Download Now' button, with an old coin visible in the background, natural lighting, realistic, UGC style, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text.",
+            "negative_prompt": "different product, wrong brand, unreadable text, distorted hands, extra fingers, deformed face, blurry product, low quality, random logo, fake UI text"
+          }
+        ],
+        "scene_prompts": [
+          "A hand pulling a tarnished, old coin from a dusty wooden box in an attic, close-up on the coin, natural lighting, realistic, UGC style, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text.",
+          "A person holding a tarnished old coin, turning it over, looking at it with a curious and slightly puzzled expression in a casual home setting, natural lighting, realistic, UGC style, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text.",
+          "A person using a smartphone to scan an old coin with the Coin Scanner App. The phone screen clearly shows the app interface, identifying the coin as '1909-S VDB Lincoln Cent' and displaying an estimated value range (e.g., '$10,000 - $50,000') with a disclaimer. Creator reacts with a gasp. Clean UI, natural lighting, realistic, UGC style, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text.",
+          "A person reacting with excitement and a smile while looking at their phone screen displaying the Coin Scanner App with coin details. Then, a clear shot of the phone screen showing the app's logo and a 'Download Now' button, with an old coin visible in the background, natural lighting, realistic, UGC style, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text."
+        ],
+        "voiceover": "Just found this ancient-looking coin in my grandpa's old box. I mean, what even IS this thing? Could it be valuable, or just another old penny? I had no idea how to find out. Then I remembered the Coin Scanner App! Super easy! Just scan, and boom! It instantly identified it as a 1909-S VDB Lincoln Cent, potentially worth thousands! My mind is blown! You gotta check your old coins. Download Coin Scanner App and see what you find!",
+        "subtitles": [
+          "Just found this ancient-looking coin in my grandpa's old box.",
+          "I mean, what even IS this thing?",
+          "Could it be valuable, or just another old penny?",
+          "I had no idea how to find out.",
+          "Then I remembered the Coin Scanner App!",
+          "Super easy! Just scan, and boom!",
+          "It instantly identified it as a 1909-S VDB Lincoln Cent,",
+          "potentially worth thousands! My mind is blown!",
+          "You gotta check your old coins.",
+          "Download Coin Scanner App and see what you find!"
+        ],
+        "title": "Grandpa's Hidden Coin Treasure!",
+        "caption": "You never know what treasures are hiding! 🤫 This app is seriously cool for finding out what your old coins are. #CoinScannerApp #OldCoins #TreasureHunt #FamilyHeirloom #CoinCollecting",
+        "cover_prompt": "A close-up of a hand holding a tarnished old coin, with a smartphone in the background displaying the Coin Scanner App logo, curiosity-driven, natural lighting, UGC style",
+        "selected_playbook": "The Discovery & Reveal",
+        "angle_type": "storytelling",
+        "video_status": "draft",
+        "video_url": null,
+        "export_9x16_url": null,
+        "export_1x1_url": null
+      },
+      {
+        "id": "variant_147864c84b03",
+        "angle_id": "angle_722d355098b1",
+        "name": "HiddenValueQuestion_Variant2",
+        "duration": "20s",
+        "format": "UGC-style short-form video (vertical)",
+        "hook": "Is this old coin in my hand worth a fortune or just a few cents? Let's find out!",
+        "script": "Is this old coin in my hand worth a fortune or just a few cents? Let's find out! I've always wondered about these random coins I find, but never knew how to tell if they were special. This one looks... old. Then I discovered the Coin Scanner App! It's so easy. Just open the app, tap to scan, and point your phone. Wow! It instantly identified it as a 1909-S VDB Lincoln Cent, and look at this estimated value: ten thousand to fifty thousand dollars! My jaw literally dropped. You can uncover the potential worth of YOUR old coins too. Download the Coin Scanner App now!",
+        "storyboard": [
+          {
+            "scene_number": 1,
+            "duration_seconds": 4,
+            "objective": "Introduce the mystery coin and the central question about its value to grab attention.",
+            "visual_description": "A close-up of a hand holding an old, slightly dirty, generic coin. The user's face is partially visible, looking at the coin with curiosity and a hint of wonder. Natural, soft lighting.",
+            "camera_angle": "Close-up shot, slightly Dutch angle for intrigue.",
+            "on_screen_text": "Worth a fortune or a few cents?",
+            "voiceover_line": "Is this old coin in my hand worth a fortune or just a few cents? Let's find out!",
+            "transition": "Cut",
+            "generation_prompt": "A person's hand holding an old, tarnished coin, in a natural home setting. The person's face is partially visible, showing curiosity. Close-up, soft lighting, realistic UGC style, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text.",
+            "negative_prompt": "different product, wrong brand, unreadable text, distorted hands, extra fingers, deformed face, blurry product, low quality, random logo, fake UI text"
+          },
+          {
+            "scene_number": 2,
+            "duration_seconds": 4,
+            "objective": "Emphasize the common problem of not knowing what old coins are or their value.",
+            "visual_description": "The user is sitting at a table, looking intently at the old coin, perhaps trying to read faint markings or comparing it to another common object, looking slightly puzzled or thoughtful. A small pile of other generic old coins might be in the background, out of focus.",
+            "camera_angle": "Medium close-up, eye-level.",
+            "on_screen_text": "What IS this?",
+            "voiceover_line": "I've always wondered about these random coins I find, but never knew how to tell if they were special.",
+            "transition": "Cut",
+            "generation_prompt": "A person sitting at a table, thoughtfully examining an old coin in their hand. Slightly puzzled expression. A few other generic old coins are out of focus in the background. Natural home environment, realistic UGC style, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text.",
+            "negative_prompt": "different product, wrong brand, unreadable text, distorted hands, extra fingers, deformed face, blurry product, low quality, random logo, fake UI text"
+          },
+          {
+            "scene_number": 3,
+            "duration_seconds": 7,
+            "objective": "Demonstrate the app's core functionality: scanning and identifying a coin with estimated value.",
+            "visual_description": "The user holds a smartphone with the Coin Scanner App open. They tap the scan button, then carefully place the old coin on a flat surface. The phone camera is positioned over it. The app interface is then shown on the phone screen, instantly displaying the coin's details ('1909-S VDB Lincoln Cent', 'Country: United States') and an estimated value range ('$10,000 - $50,000') with a clear disclaimer at the bottom.",
+            "camera_angle": "Over-the-shoulder shot, focusing on the phone screen and the coin.",
+            "on_screen_text": "Coin Scanner App: Scan & Identify! 1909-S VDB Lincoln Cent. Estimated Value: $10,000 - $50,000. *Value is an estimate.",
+            "voiceover_line": "Then I discovered the Coin Scanner App! It's so easy. Just open the app, tap to scan, and point your phone. Wow! It instantly identified it as a 1909-S VDB Lincoln Cent, and look at this estimated value: ten thousand to fifty thousand dollars!",
+            "transition": "Swipe up",
+            "generation_prompt": "A user's hands holding a smartphone displaying the Coin Scanner App. The user is scanning an old coin on a table. The phone screen should be clean and simple for later UI overlay, do not generate unreadable app text. Focus on the app's interface showing coin details and an estimated value range with a disclaimer. Realistic UGC style.",
+            "negative_prompt": "different product, wrong brand, unreadable text, distorted hands, extra fingers, deformed face, blurry product, low quality, random logo, fake UI text"
+          },
+          {
+            "scene_number": 4,
+            "duration_seconds": 5,
+            "objective": "Show the user's positive reaction to the discovery and present a clear call to action.",
+            "visual_description": "The user looks up from the phone with a surprised, excited, or satisfied expression, jaw slightly dropped. They might briefly scroll through the app's details on the screen, then look directly at the camera with a smile. The final shot transitions to a clear call to action screen with the app logo.",
+            "camera_angle": "Medium shot, then close-up on phone screen, then back to user.",
+            "on_screen_text": "Your old coins could be worth more! Download Coin Scanner App NOW!",
+            "voiceover_line": "My jaw literally dropped. You can uncover the potential worth of YOUR old coins too. Download the Coin Scanner App now!",
+            "transition": "Fade to black with CTA",
+            "generation_prompt": "A person reacting with surprise and excitement, jaw slightly dropped, looking at their phone screen displaying the Coin Scanner App with coin details. Then, a clear call to action screen with the Coin Scanner App logo and 'Download Now' button, with an old coin visible in the background. Realistic UGC style, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text.",
+            "negative_prompt": "different product, wrong brand, unreadable text, distorted hands, extra fingers, deformed face, blurry product, low quality, random logo, fake UI text"
+          }
+        ],
+        "scene_prompts": [
+          "A person's hand holding an old, tarnished coin, in a natural home setting. The person's face is partially visible, showing curiosity. Close-up, soft lighting, realistic UGC style, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text.",
+          "A person sitting at a table, thoughtfully examining an old coin in their hand. Slightly puzzled expression. A few other generic old coins are out of focus in the background. Natural home environment, realistic UGC style, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text.",
+          "A user's hands holding a smartphone displaying the Coin Scanner App. The user is scanning an old coin on a table. The phone screen should be clean and simple for later UI overlay, do not generate unreadable app text. Focus on the app's interface showing coin details and an estimated value range with a disclaimer. Realistic UGC style.",
+          "A person reacting with surprise and excitement, jaw slightly dropped, looking at their phone screen displaying the Coin Scanner App with coin details. Then, a clear call to action screen with the Coin Scanner App logo and 'Download Now' button, with an old coin visible in the background. Realistic UGC style, phone screen should be clean and simple for later UI overlay, do not generate unreadable app text."
+        ],
+        "voiceover": "Is this old coin in my hand worth a fortune or just a few cents? Let's find out! I've always wondered about these random coins I find, but never knew how to tell if they were special. This one looks... old. Then I discovered the Coin Scanner App! It's so easy. Just open the app, tap to scan, and point your phone. Wow! It instantly identified it as a 1909-S VDB Lincoln Cent, and look at this estimated value: ten thousand to fifty thousand dollars! My jaw literally dropped. You can uncover the potential worth of YOUR old coins too. Download the Coin Scanner App now!",
+        "subtitles": [
+          "Is this old coin in my hand worth a fortune or just a few cents?",
+          "Let's find out!",
+          "I've always wondered about these random coins I find,",
+          "but never knew how to tell if they were special.",
+          "This one looks... old.",
+          "Then I discovered the Coin Scanner App!",
+          "It's so easy. Just open the app, tap to scan, and point your phone.",
+          "Wow! It instantly identified it as a 1909-S VDB Lincoln Cent,",
+          "and look at this estimated value: $10,000 - $50,000!",
+          "My jaw literally dropped.",
+          "You can uncover the potential worth of YOUR old coins too.",
+          "Download the Coin Scanner App now!"
+        ],
+        "title": "Is YOUR Old Coin a Hidden Fortune?",
+        "caption": "Found an old coin? You might be sitting on a treasure! 💰 The Coin Scanner App reveals its secrets. #CoinScannerApp #CoinCollecting #HiddenTreasure #OldCoins #AppFinds",
+        "cover_prompt": "A close-up of a hand holding an old, slightly dirty coin, with a smartphone in the background showing the Coin Scanner App logo, a question mark hovering over the coin, and a curious expression on the user's face (partially visible). Natural lighting, UGC style.",
+        "selected_playbook": "The Discovery & Reveal",
+        "angle_type": "curiosity",
+        "video_status": "draft",
+        "video_url": null,
+        "export_9x16_url": null,
+        "export_1x1_url": null
+      }
+    ],
+    "created_at": "2026-07-03T07:00:16.836323Z",
+    "updated_at": "2026-07-03T08:16:35.939917Z"
+  }
+]

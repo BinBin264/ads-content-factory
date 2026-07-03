@@ -9,6 +9,7 @@ from app.routes.generation import router as generation_router
 from app.routes.projects import router as projects_router
 from app.services.llm_provider import LLMProviderError
 from app.services.storage_service import ProjectNotFoundError
+from app.services.video_provider import VideoProviderError
 
 
 ensure_app_dirs()
@@ -16,7 +17,7 @@ ensure_app_dirs()
 app = FastAPI(
     title="AI Ads Video Factory API",
     version="0.1.0",
-    description="Backend MVP for product analysis, creative angles, ad variants, and mock video outputs.",
+    description="Backend MVP for product analysis, creative angles, ad variants, and video provider integration.",
 )
 
 app.add_middleware(
@@ -43,6 +44,11 @@ async def value_error_handler(_: Request, exc: ValueError) -> JSONResponse:
 
 @app.exception_handler(LLMProviderError)
 async def llm_provider_error_handler(_: Request, exc: LLMProviderError) -> JSONResponse:
+    return JSONResponse(status_code=503, content={"detail": str(exc)})
+
+
+@app.exception_handler(VideoProviderError)
+async def video_provider_error_handler(_: Request, exc: VideoProviderError) -> JSONResponse:
     return JSONResponse(status_code=503, content={"detail": str(exc)})
 
 

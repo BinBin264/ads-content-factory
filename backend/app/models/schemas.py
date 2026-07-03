@@ -157,7 +157,7 @@ class Variant(BaseModel):
     selected_playbook: str | None = None
     angle_type: str | None = None
     video_status: Literal["draft", "rendering", "ready", "failed"] = "draft"
-    mock_video_url: str | None = None
+    video_url: str | None = None
     export_9x16_url: str | None = None
     export_1x1_url: str | None = None
 
