@@ -42,6 +42,77 @@ const goalOptions = [
   { value: "awareness", label: "Build awareness" },
 ];
 
+const sampleInputs: Array<{ label: string; description: string; values: Omit<CreateProjectValues, "files"> }> = [
+  {
+    label: "Coin Scanner App",
+    description: "Old coin discovery, estimated reference value, app install.",
+    values: {
+      productName: "Coin Scanner App",
+      productCategory: "Mobile app",
+      productDescription: "An app that helps users scan old coins, identify coin details, and view estimated reference value.",
+      audience: "People who find old coins at home, casual coin collectors, adults with coin jars.",
+      goal: "app_install",
+      platform: "tiktok",
+      duration: "20s",
+      tone: "Natural UGC, relatable, curiosity-driven, realistic, not too polished.",
+      cta: "Download now and scan your old coins.",
+      claimsToAvoid: "Guaranteed value, 100% accurate appraisal, you will make money, this coin is definitely worth money.",
+      brandColors: "Blue, white, gold",
+    },
+  },
+  {
+    label: "ClearGlow Acne Serum",
+    description: "Skincare routine, texture demo, safe beauty claims.",
+    values: {
+      productName: "ClearGlow Acne Serum",
+      productCategory: "Skincare / beauty",
+      productDescription: "A lightweight serum for people with oily and acne-prone skin. Helps improve the look of rough, bumpy skin.",
+      audience: "Young adults with acne-prone skin.",
+      goal: "purchase",
+      platform: "tiktok",
+      duration: "20s",
+      tone: "Natural skincare routine, clean, realistic, soft lighting.",
+      cta: "Shop now.",
+      claimsToAvoid: "Cures acne, guaranteed clear skin overnight, medical treatment claims.",
+      brandColors: "White, soft blue, pale green",
+    },
+  },
+  {
+    label: "Sunny Brew Iced Latte",
+    description: "F&B craving hook, close-up drink, order CTA.",
+    values: {
+      productName: "Sunny Brew Iced Latte",
+      productCategory: "Food & beverage",
+      productDescription: "A creamy iced latte for hot afternoons, available for delivery.",
+      audience: "Office workers and students.",
+      goal: "purchase",
+      platform: "tiktok",
+      duration: "20s",
+      tone: "Fun, refreshing, craving-driven, energetic.",
+      cta: "Order now.",
+      claimsToAvoid: "Health claims.",
+      brandColors: "Cream, sky blue, sunny yellow",
+    },
+  },
+  {
+    label: "SpeakEasy German",
+    description: "Education app, speaking practice, beginner learning win.",
+    values: {
+      productName: "SpeakEasy German",
+      productCategory: "Education / course",
+      productDescription: "An app that helps beginners practice German speaking for daily situations.",
+      audience: "Beginner German learners.",
+      goal: "app_install",
+      platform: "tiktok",
+      duration: "20s",
+      tone: "Helpful, encouraging, student-friendly, realistic.",
+      cta: "Start practicing today.",
+      claimsToAvoid: "Become fluent instantly, guaranteed exam pass.",
+      brandColors: "Blue, white, lime",
+    },
+  },
+];
+
 const helpText = {
   productName: "Tên sản phẩm/app/brand. Agent dùng tên này trong brief, hook, script, title và CTA.",
   productCategory: "Chọn ngành gần nhất để agent biết logic quảng cáo phù hợp. Ví dụ mobile app sẽ ưu tiên demo màn hình app, skincare sẽ tránh claim y tế.",
@@ -62,6 +133,10 @@ export default function ProjectForm({ loading, onSubmit }: ProjectFormProps) {
     setValues((current) => ({ ...current, [key]: value }));
   };
 
+  const applySample = (sample: (typeof sampleInputs)[number]) => {
+    setValues((current) => ({ ...current, ...sample.values }));
+  };
+
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     await onSubmit(values);
@@ -79,6 +154,25 @@ export default function ProjectForm({ loading, onSubmit }: ProjectFormProps) {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
+        <div className="rounded-lg border border-teal-200 bg-teal-50 p-4 md:col-span-2">
+          <div className="mb-3">
+            <p className="text-xs font-bold uppercase tracking-wide text-teal-700">Try sample inputs</p>
+            <p className="mt-1 text-sm text-slate-600">Fill the form with a demo scenario.</p>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {sampleInputs.map((sample) => (
+              <button
+                key={sample.label}
+                className="rounded-lg border border-slate-200 bg-white p-3 text-left transition hover:border-teal-300 hover:shadow-sm"
+                type="button"
+                onClick={() => applySample(sample)}
+              >
+                <span className="block text-sm font-black text-slate-950">{sample.label}</span>
+                <span className="mt-1 block text-xs leading-5 text-slate-500">{sample.description}</span>
+              </button>
+            ))}
+          </div>
+        </div>
         <label className="space-y-1">
           <FieldLabel help={helpText.productName}>Product name</FieldLabel>
           <input className="field-input" required value={values.productName} onChange={(event) => update("productName", event.target.value)} />

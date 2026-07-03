@@ -1,8 +1,18 @@
 import json
 from typing import Any, Protocol
 
-from app.models.schemas import CreativeAngle, ProductBrief, ProductIntelligenceBrief, Project, StoryboardScene, Variant
+from app.models.schemas import (
+    CreativeAngle,
+    ProductBrief,
+    ProductIntelligenceBrief,
+    Project,
+    StoryboardScene,
+    Variant,
+)
+from app.services.character_planner import GeminiCharacterPlanner
+from app.services.character_reference_generator import GeminiCharacterReferenceGenerator
 from app.services.llm_provider import LLMProvider, build_llm_provider
+from app.services.production_prompt_generator import GeminiProductionPromptGenerator
 
 
 BASE_NEGATIVE_PROMPT = (
@@ -92,6 +102,9 @@ class GeminiVariantScriptGenerator:
 
     def __init__(self, llm_provider: LLMProvider | None = None) -> None:
         self.llm_provider = llm_provider or build_llm_provider()
+        self.character_planner = GeminiCharacterPlanner(self.llm_provider)
+        self.character_reference_generator = GeminiCharacterReferenceGenerator(self.llm_provider)
+        self.production_prompt_generator = GeminiProductionPromptGenerator(self.llm_provider)
 
     def generate(
         self,
@@ -148,6 +161,28 @@ class GeminiVariantScriptGenerator:
             variant.subtitles = [scene.voiceover_line for scene in variant.storyboard]
         if not variant.voiceover:
             variant.voiceover = " ".join(variant.subtitles)
+        character_plan, character_bible = self.character_planner.plan(
+            product_intelligence=intelligence,
+            creative_angle=angle,
+            variant=variant,
+            platform=project.platform,
+            tone=project.tone,
+        )
+        character_reference_prompts = self.character_reference_generator.generate(
+            character_bible=character_bible,
+            product_intelligence=intelligence,
+            creative_angle=angle,
+            variant=variant,
+        )
+        variant.production_package = self.production_prompt_generator.generate(
+            project=project,
+            product_intelligence=intelligence,
+            creative_angle=angle,
+            variant=variant,
+            character_plan=character_plan,
+            character_bible=character_bible,
+            character_reference_prompts=character_reference_prompts,
+        )
         return variant
 
     def _coerce_variant(

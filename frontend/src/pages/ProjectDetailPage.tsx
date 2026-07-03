@@ -8,6 +8,7 @@ import VariantCard from "../components/VariantCard";
 import {
   analyzeProject,
   deleteProject,
+  exportProductionPackage,
   generateAngles,
   generateVariants,
   getProject,
@@ -17,7 +18,7 @@ import { getApiErrorMessage, toApiUrl } from "../api/client";
 import type { Project } from "../types";
 import { compactId, formatDate, formatList } from "../utils/format";
 
-type ActionName = "load" | "analyze" | "angles" | "variants" | "render" | "delete";
+type ActionName = "load" | "analyze" | "angles" | "variants" | "export" | "render" | "delete";
 type ProjectPhase = "assets" | "intelligence" | "angles" | "variants";
 
 interface ProjectDetailPageProps {
@@ -334,24 +335,24 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs font-bold uppercase tracking-wide text-indigo-700">Phase 3</p>
-              <h3 className="section-heading">Variants Output</h3>
-              <p className="section-subtitle">Review scripts, storyboards, prompts, captions, and render exports.</p>
+              <h3 className="section-heading">Video Production Packages</h3>
+              <p className="section-subtitle">Review scripts, character plans, reference prompts, production scenes, overlays, and export package files.</p>
             </div>
-            <button
-              className="btn-primary"
-              disabled={!canAct || !project?.variants.length}
-              onClick={() => void runAction("render", () => renderProject(id as string))}
-              type="button"
-            >
-              {loadingAction === "render" ? "Rendering..." : "Render Video"}
-            </button>
           </div>
         </div>
 
         {project?.variants.length ? (
           <div className="space-y-4">
             {project.variants.map((variant) => (
-              <VariantCard key={variant.id} variant={variant} />
+              <VariantCard
+                key={variant.id}
+                variant={variant}
+                onExport={() => runAction("export", () => exportProductionPackage(id as string))}
+                onRender={() => runAction("render", () => renderProject(id as string))}
+                exporting={loadingAction === "export"}
+                rendering={loadingAction === "render"}
+                disabled={!canAct}
+              />
             ))}
           </div>
         ) : (

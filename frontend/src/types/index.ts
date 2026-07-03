@@ -1,4 +1,4 @@
-export type VideoStatus = "draft" | "rendering" | "ready" | "failed";
+export type VideoStatus = "draft" | "package_exported" | "rendering" | "ready" | "failed";
 
 export interface UploadedFileInfo {
   id: string;
@@ -97,6 +97,116 @@ export interface StoryboardScene {
   negative_prompt: string;
 }
 
+export interface CharacterPlan {
+  recommended_character_type: string;
+  reason: string;
+  gender: string;
+  age_range: string;
+  ethnicity_or_look: string;
+  face_details: string;
+  hair: string;
+  facial_hair: string;
+  body_type: string;
+  outfit: string;
+  setting: string;
+  props: string[];
+  personality: string[];
+  speaking_style: string;
+  visual_style: string;
+  role_in_ad: string;
+  consistency_locks: string[];
+  negative_identity_changes: string[];
+}
+
+export interface CharacterBible {
+  character_id: string;
+  display_name: string;
+  role: string;
+  gender: string;
+  age_range: string;
+  ethnicity_or_look: string;
+  face_details: string;
+  hair: string;
+  facial_hair: string;
+  body_type: string;
+  outfit: string;
+  props: string[];
+  setting: string;
+  personality: string[];
+  speaking_style: string;
+  visual_style: string;
+  consistency_locks: string[];
+  negative_identity_changes: string[];
+  base_prompt: string;
+  identity_lock_prompt: string;
+}
+
+export interface CharacterReferencePrompt {
+  reference_id: string;
+  purpose: string;
+  aspect_ratio: string;
+  prompt: string;
+  negative_prompt: string;
+  notes: string;
+}
+
+export interface UIOverlayItem {
+  overlay_type: "app_screen" | "subtitle" | "cta" | "disclaimer" | "logo" | "price_label" | "button" | "highlight";
+  text: string;
+  start_time: string;
+  end_time: string;
+  position: string;
+  style_notes: string;
+  safety_notes: string;
+}
+
+export interface ProductionScene {
+  scene_number: number;
+  duration_seconds: number;
+  creative_objective: string;
+  shot_type: string;
+  camera_angle: string;
+  generation_mode: "text_to_image" | "image_to_video" | "reference_to_video" | "overlay_only";
+  required_reference_assets: string[];
+  visual_description: string;
+  action_description: string;
+  keyframe_prompt: string;
+  video_prompt: string;
+  motion_instruction: string;
+  consistency_instruction: string;
+  negative_prompt: string;
+  ui_overlay_plan: UIOverlayItem[];
+  voiceover_line: string;
+  on_screen_text: string;
+  transition: string;
+  safety_notes: string;
+}
+
+export interface EditPlan {
+  total_duration: string;
+  pacing_notes: string;
+  music_direction: string;
+  subtitle_style: string;
+  cut_sequence: string[];
+  export_ratios: string[];
+  required_post_production_steps: string[];
+  platform_notes: string;
+}
+
+export interface VideoProductionPackage {
+  variant_id: string;
+  creative_angle_id: string;
+  character_plan: CharacterPlan;
+  character_bible: CharacterBible;
+  character_reference_prompts: CharacterReferencePrompt[];
+  production_scenes: ProductionScene[];
+  edit_plan: EditPlan;
+  app_ui_overlay_notes: string;
+  asset_checklist: string[];
+  compliance_notes: string[];
+  render_sequence: string[];
+}
+
 export interface Variant {
   id: string;
   angle_id: string;
@@ -112,12 +222,17 @@ export interface Variant {
   title: string;
   caption: string;
   cover_prompt: string;
+  character_bible?: Record<string, unknown> | null;
+  visual_bible?: Record<string, unknown> | null;
+  asset_reference_map?: Record<string, unknown> | null;
+  production_package?: VideoProductionPackage | null;
   selected_playbook?: string | null;
   angle_type?: string | null;
   video_status: VideoStatus;
   video_url?: string | null;
   export_9x16_url?: string | null;
   export_1x1_url?: string | null;
+  export_package_url?: string | null;
 }
 
 export interface Project {

@@ -71,6 +71,11 @@ export async function renderProject(id: string): Promise<Project> {
   return response.data;
 }
 
+export async function exportProductionPackage(id: string): Promise<Project> {
+  const response = await apiClient.post<Project>(`/api/projects/${id}/export-production-package`);
+  return response.data;
+}
+
 export async function deleteProject(id: string): Promise<void> {
   await apiClient.delete(`/api/projects/${id}`);
 }

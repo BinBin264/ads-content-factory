@@ -1,5 +1,10 @@
+import json
+import zipfile
+from pathlib import Path
+
 from fastapi import UploadFile
 
+from app.config import OUTPUTS_DIR
 from app.models.schemas import AnalyzeProjectResponse, CreativeAngle, GenerateVariantsRequest, ProductBrief, Project, Variant, VisionAnalysis
 from app.services.angle_generator import CreativeAngleGenerator, GeminiCreativeAngleGenerator
 from app.services.product_analyzer import ProductAnalyzer, ProductIntelligenceAnalyzer
@@ -103,11 +108,26 @@ class ProjectService:
     def render_videos(self, project_id: str) -> Project:
         project = self.storage.get_project(project_id)
         if not project.variants:
-            request = GenerateVariantsRequest(variant_count=2)
-            self.generate_variants(project_id, request)
-            project = self.storage.get_project(project_id)
+            raise ValueError("Generate variants before rendering video")
 
         project.variants = self.video_provider.render(project, project.variants)
+        return self.storage.save_project(project)
+
+    def export_production_package(self, project_id: str) -> Project:
+        project = self.storage.get_project(project_id)
+        if not project.variants:
+            raise ValueError("Generate variants before exporting a production package")
+
+        for variant in project.variants:
+            if not variant.production_package:
+                raise ValueError("Generate variants again to create a production package")
+            variant_dir = OUTPUTS_DIR / project.id / variant.id
+            variant_dir.mkdir(parents=True, exist_ok=True)
+            self._write_variant_package_files(variant_dir, variant)
+            zip_path = self._zip_variant_package(variant_dir)
+            variant.video_status = "package_exported"
+            variant.export_package_url = self._output_url(zip_path)
+
         return self.storage.save_project(project)
 
     def delete_project(self, project_id: str) -> None:
@@ -160,3 +180,69 @@ class ProjectService:
             parts = item.replace("\n", ",").replace(";", ",").split(",")
             cleaned.extend(part.strip() for part in parts if part.strip())
         return cleaned
+
+    def _write_variant_package_files(self, variant_dir: Path, variant: Variant) -> None:
+        package = variant.production_package
+        if package is None:
+            raise ValueError("Variant is missing production_package")
+
+        self._write_json(variant_dir / "character_bible.json", package.character_bible.model_dump(mode="json"))
+        self._write_text(
+            variant_dir / "character_reference_prompts.txt",
+            "\n\n".join(
+                [
+                    f"{prompt.reference_id} ({prompt.aspect_ratio})\nPurpose: {prompt.purpose}\nPrompt:\n{prompt.prompt}\nNegative:\n{prompt.negative_prompt}\nNotes: {prompt.notes}"
+                    for prompt in package.character_reference_prompts
+                ]
+            ),
+        )
+        self._write_json(variant_dir / "production_scenes.json", [scene.model_dump(mode="json") for scene in package.production_scenes])
+        self._write_text(
+            variant_dir / "keyframe_prompts.txt",
+            "\n\n".join([f"Scene {scene.scene_number}\n{scene.keyframe_prompt}" for scene in package.production_scenes]),
+        )
+        self._write_text(
+            variant_dir / "video_prompts.txt",
+            "\n\n".join([f"Scene {scene.scene_number}\n{scene.video_prompt}" for scene in package.production_scenes]),
+        )
+        self._write_text(
+            variant_dir / "ui_overlay_plan.txt",
+            "\n\n".join(
+                [
+                    f"Scene {scene.scene_number}\n"
+                    + "\n".join(
+                        [
+                            f"- {item.overlay_type}: {item.text} ({item.start_time}-{item.end_time}, {item.position}) | {item.style_notes} | {item.safety_notes}"
+                            for item in scene.ui_overlay_plan
+                        ]
+                    )
+                    for scene in package.production_scenes
+                ]
+            ),
+        )
+        self._write_text(
+            variant_dir / "edit_plan.txt",
+            json.dumps(package.edit_plan.model_dump(mode="json"), ensure_ascii=False, indent=2),
+        )
+        self._write_text(variant_dir / "script.txt", variant.script)
+        self._write_json(variant_dir / "storyboard.json", [scene.model_dump(mode="json") for scene in variant.storyboard])
+        self._write_text(variant_dir / "caption.txt", f"{variant.title}\n\n{variant.caption}\n\nCover prompt:\n{variant.cover_prompt}")
+
+    def _zip_variant_package(self, variant_dir: Path) -> Path:
+        zip_path = variant_dir / "production_package.zip"
+        with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            for path in variant_dir.iterdir():
+                if path == zip_path or not path.is_file():
+                    continue
+                archive.write(path, arcname=path.name)
+        return zip_path
+
+    def _write_json(self, path: Path, data: object) -> None:
+        path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    def _write_text(self, path: Path, content: str) -> None:
+        path.write_text(content, encoding="utf-8")
+
+    def _output_url(self, path: Path) -> str:
+        relative = path.relative_to(OUTPUTS_DIR).as_posix()
+        return f"/outputs/{relative}"

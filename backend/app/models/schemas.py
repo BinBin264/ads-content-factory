@@ -129,6 +129,116 @@ class StoryboardScene(BaseModel):
     negative_prompt: str
 
 
+class CharacterPlan(BaseModel):
+    recommended_character_type: str
+    reason: str
+    gender: str
+    age_range: str
+    ethnicity_or_look: str
+    face_details: str
+    hair: str
+    facial_hair: str
+    body_type: str
+    outfit: str
+    setting: str
+    props: list[str] = Field(default_factory=list)
+    personality: list[str] = Field(default_factory=list)
+    speaking_style: str
+    visual_style: str
+    role_in_ad: str
+    consistency_locks: list[str] = Field(default_factory=list)
+    negative_identity_changes: list[str] = Field(default_factory=list)
+
+
+class CharacterBible(BaseModel):
+    character_id: str = Field(default_factory=lambda: new_id("character"))
+    display_name: str
+    role: str
+    gender: str
+    age_range: str
+    ethnicity_or_look: str
+    face_details: str
+    hair: str
+    facial_hair: str
+    body_type: str
+    outfit: str
+    props: list[str] = Field(default_factory=list)
+    setting: str
+    personality: list[str] = Field(default_factory=list)
+    speaking_style: str
+    visual_style: str
+    consistency_locks: list[str] = Field(default_factory=list)
+    negative_identity_changes: list[str] = Field(default_factory=list)
+    base_prompt: str
+    identity_lock_prompt: str
+
+
+class CharacterReferencePrompt(BaseModel):
+    reference_id: str
+    purpose: str
+    aspect_ratio: str
+    prompt: str
+    negative_prompt: str
+    notes: str
+
+
+class UIOverlayItem(BaseModel):
+    overlay_type: Literal["app_screen", "subtitle", "cta", "disclaimer", "logo", "price_label", "button", "highlight"]
+    text: str
+    start_time: str
+    end_time: str
+    position: str
+    style_notes: str
+    safety_notes: str
+
+
+class ProductionScene(BaseModel):
+    scene_number: int
+    duration_seconds: int
+    creative_objective: str
+    shot_type: str
+    camera_angle: str
+    generation_mode: Literal["text_to_image", "image_to_video", "reference_to_video", "overlay_only"]
+    required_reference_assets: list[str] = Field(default_factory=list)
+    visual_description: str
+    action_description: str
+    keyframe_prompt: str
+    video_prompt: str
+    motion_instruction: str
+    consistency_instruction: str
+    negative_prompt: str
+    ui_overlay_plan: list[UIOverlayItem] = Field(default_factory=list)
+    voiceover_line: str
+    on_screen_text: str
+    transition: str
+    safety_notes: str
+
+
+class EditPlan(BaseModel):
+    total_duration: str
+    pacing_notes: str
+    music_direction: str
+    subtitle_style: str
+    cut_sequence: list[str] = Field(default_factory=list)
+    export_ratios: list[str] = Field(default_factory=list)
+    required_post_production_steps: list[str] = Field(default_factory=list)
+    platform_notes: str
+
+
+class VideoProductionPackage(BaseModel):
+    variant_id: str
+    creative_angle_id: str
+    character_plan: CharacterPlan
+    character_bible: CharacterBible
+    character_reference_prompts: list[CharacterReferencePrompt] = Field(default_factory=list)
+    production_scenes: list[ProductionScene] = Field(default_factory=list)
+    edit_plan: EditPlan
+    app_ui_overlay_notes: str
+    asset_checklist: list[str] = Field(default_factory=list)
+    compliance_notes: list[str] = Field(default_factory=list)
+    render_sequence: list[str] = Field(default_factory=list)
+
+
 class OptimizedVideoPrompt(BaseModel):
     video_prompt: str
     negative_prompt: str
@@ -154,12 +264,17 @@ class Variant(BaseModel):
     title: str
     caption: str
     cover_prompt: str
+    character_bible: dict[str, Any] | None = None
+    visual_bible: dict[str, Any] | None = None
+    asset_reference_map: dict[str, Any] | None = None
+    production_package: VideoProductionPackage | None = None
     selected_playbook: str | None = None
     angle_type: str | None = None
-    video_status: Literal["draft", "rendering", "ready", "failed"] = "draft"
+    video_status: Literal["draft", "package_exported", "rendering", "ready", "failed"] = "draft"
     video_url: str | None = None
     export_9x16_url: str | None = None
     export_1x1_url: str | None = None
+    export_package_url: str | None = None
 
 
 class Project(BaseModel):
