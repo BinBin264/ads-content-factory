@@ -59,11 +59,22 @@ The current MVP still uses rule-based mock services. These files define the futu
 The analyze flow calls:
 
 1. `MockVisionProvider`
-2. `ProductIntelligenceService`
+2. `ProductIntelligenceService` with Gemini when `GEMINI_API_KEY` is configured
 3. `PlaybookEngine`
 4. compatibility mapper to `ProductBrief`
 
 Supported product types: `mobile_app`, `skincare`, `fnb`, `ecommerce`, `education`, and `general`.
+
+## Gemini API
+
+Create `backend/.env` from `.env.example`:
+
+```text
+GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+Gemini is used for Product Intelligence, Creative Angles, and Script + Storyboard. Local rule-based fallback remains available when the key is missing or the API response cannot be validated.
 
 ## Example flow
 

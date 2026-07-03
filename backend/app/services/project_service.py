@@ -1,6 +1,6 @@
 from fastapi import UploadFile
 
-from app.models.schemas import AnalyzeProjectResponse, CreativeAngle, GenerateVariantsRequest, ProductBrief, Project, Variant
+from app.models.schemas import AnalyzeProjectResponse, CreativeAngle, GenerateVariantsRequest, ProductBrief, Project, Variant, VisionAnalysis
 from app.services.angle_generator import CreativeAngleGenerator, RuleBasedCreativeAngleGenerator
 from app.services.product_analyzer import ProductAnalyzer, RuleBasedProductAnalyzer
 from app.services.script_generator import RuleBasedVariantScriptGenerator, VariantScriptGenerator
@@ -66,6 +66,7 @@ class ProjectService:
     def analyze_project(self, project_id: str) -> AnalyzeProjectResponse:
         project = self.storage.get_project(project_id)
         analysis = self.analyzer.analyze(project)
+        project.vision_analysis = analysis.vision_analysis
         project.product_intelligence = analysis.product_intelligence
         project.product_brief = analysis.product_brief
         self.storage.save_project(project)
@@ -78,6 +79,7 @@ class ProjectService:
         intelligence = analysis.product_intelligence
         project.product_brief = brief
         project.product_intelligence = intelligence
+        project.vision_analysis = analysis.vision_analysis
         project.creative_angles = self.angle_generator.generate(project, brief, intelligence)
         self.storage.save_project(project)
         return project.creative_angles
@@ -92,6 +94,7 @@ class ProjectService:
 
         project.product_brief = brief
         project.product_intelligence = intelligence
+        project.vision_analysis = analysis.vision_analysis
         project.creative_angles = angles
         project.variants = self.script_generator.generate(project, brief, selected_angles, intelligence)
         self.storage.save_project(project)
@@ -115,7 +118,8 @@ class ProjectService:
             return AnalyzeProjectResponse(
                 product_intelligence=project.product_intelligence,
                 product_brief=project.product_brief,
-                vision_analysis=self.analyzer.analyze(project).vision_analysis,
+                vision_analysis=project.vision_analysis
+                or VisionAnalysis(detected_product_type=project.product_intelligence.product_type),
             )
         return self.analyzer.analyze(project)
 

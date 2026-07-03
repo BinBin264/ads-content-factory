@@ -12,6 +12,14 @@ The current flow is:
 
 No real AI API is required for this version. The backend uses mock providers and rule-based playbooks, but the architecture is ready to swap in real LLM, Vision, image, and video providers later.
 
+If `GEMINI_API_KEY` is configured, the backend uses Gemini for:
+
+- Product Intelligence
+- Creative Angles
+- Script + Storyboard
+
+If the key is missing or Gemini returns invalid JSON, the backend falls back to the local rule-based providers.
+
 ## Product Intelligence Layer
 
 The backend analyzes:
@@ -42,6 +50,21 @@ cd backend
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000
+```
+
+Gemini setup:
+
+```powershell
+cd backend
+Copy-Item .env.example .env
+notepad .env
+```
+
+Set:
+
+```text
+GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
 Backend docs:

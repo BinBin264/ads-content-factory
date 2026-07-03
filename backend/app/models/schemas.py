@@ -176,6 +176,7 @@ class Project(BaseModel):
     claims_to_avoid: list[str] = Field(default_factory=list)
     brand_colors: list[str] = Field(default_factory=list)
     uploaded_files: list[UploadedFileInfo] = Field(default_factory=list)
+    vision_analysis: VisionAnalysis | None = None
     product_brief: ProductBrief | None = None
     product_intelligence: ProductIntelligenceBrief | None = None
     creative_angles: list[CreativeAngle] = Field(default_factory=list)

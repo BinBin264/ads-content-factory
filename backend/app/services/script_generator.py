@@ -1,6 +1,8 @@
+import json
 from typing import Protocol
 
 from app.models.schemas import CreativeAngle, ProductBrief, ProductIntelligenceBrief, Project, StoryboardScene, Variant
+from app.services.llm_provider import LLMProvider, LLMProviderError, build_llm_provider
 
 
 BASE_NEGATIVE_PROMPT = (
@@ -21,6 +23,9 @@ class VariantScriptGenerator(Protocol):
 
 
 class RuleBasedVariantScriptGenerator:
+    def __init__(self, llm_provider: LLMProvider | None = None) -> None:
+        self.llm_provider = llm_provider or build_llm_provider()
+
     def generate(
         self,
         project: Project,
@@ -29,10 +34,66 @@ class RuleBasedVariantScriptGenerator:
         intelligence: ProductIntelligenceBrief | None = None,
     ) -> list[Variant]:
         intelligence = intelligence or self._fallback_intelligence(project, brief)
+        if self.llm_provider.is_configured:
+            variants: list[Variant] = []
+            for index, angle in enumerate(angles, start=1):
+                try:
+                    variants.append(self._build_variant_with_llm(project, intelligence, angle, index))
+                except (LLMProviderError, ValueError, TypeError):
+                    variants.append(self._build_variant(project, brief, intelligence, angle, index))
+            return variants
+
         return [
             self._build_variant(project, brief, intelligence, angle, index)
             for index, angle in enumerate(angles, start=1)
         ]
+
+    def _build_variant_with_llm(
+        self,
+        project: Project,
+        intelligence: ProductIntelligenceBrief,
+        angle: CreativeAngle,
+        index: int,
+    ) -> Variant:
+        playbook = intelligence.recommended_ad_playbooks[0].model_dump(mode="json") if intelligence.recommended_ad_playbooks else None
+        prompt = (
+            "You are the Script + Storyboard Agent for a short-form video ad factory. "
+            "Create one publish-ready UGC video ad variant from the selected creative angle. "
+            "Return JSON only in this shape: {\"variant\": {...}}. "
+            "Create exactly 4 storyboard scenes. "
+            "Scene 1: hook. Scene 2: problem/setup. Scene 3: product demo/proof. Scene 4: result + CTA. "
+            "Every scene must include scene_number, duration_seconds, objective, visual_description, camera_angle, "
+            "on_screen_text, voiceover_line, transition, generation_prompt, negative_prompt. "
+            "Negative prompts must include: different product, wrong brand, unreadable text, distorted hands, "
+            "extra fingers, deformed face, blurry product, low quality, random logo, fake UI text. "
+            "For app products, generation_prompt must say: phone screen should be clean and simple for later UI overlay, "
+            "do not generate unreadable app text. Avoid unsafe or exaggerated claims.\n\n"
+            f"Project:\n{json.dumps(project.model_dump(mode='json'), ensure_ascii=False, indent=2)}\n\n"
+            f"Product intelligence:\n{json.dumps(intelligence.model_dump(mode='json'), ensure_ascii=False, indent=2)}\n\n"
+            f"Selected creative angle:\n{json.dumps(angle.model_dump(mode='json'), ensure_ascii=False, indent=2)}\n\n"
+            f"Selected playbook:\n{json.dumps(playbook, ensure_ascii=False, indent=2)}\n\n"
+            f"Variant index: {index}"
+        )
+        data = self.llm_provider.generate_json(prompt, temperature=0.55)
+        raw_variant = data.get("variant")
+        if not isinstance(raw_variant, dict):
+            raise ValueError("Gemini script response must include a variant object")
+        raw_variant.setdefault("angle_id", angle.id)
+        raw_variant.setdefault("hook", angle.hook)
+        raw_variant.setdefault("duration", project.duration)
+        raw_variant.setdefault("format", "9:16")
+        raw_variant.setdefault("selected_playbook", playbook["name"] if playbook else None)
+        raw_variant.setdefault("angle_type", angle.angle_type)
+        variant = Variant.model_validate(raw_variant)
+        if len(variant.storyboard) != 4:
+            raise ValueError("Gemini variant must include exactly 4 storyboard scenes")
+        if not variant.scene_prompts:
+            variant.scene_prompts = [scene.generation_prompt for scene in variant.storyboard]
+        if not variant.subtitles:
+            variant.subtitles = [scene.voiceover_line for scene in variant.storyboard]
+        if not variant.voiceover:
+            variant.voiceover = " ".join(variant.subtitles)
+        return variant
 
     def _build_variant(
         self,

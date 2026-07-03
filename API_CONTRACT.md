@@ -18,6 +18,7 @@ Shared project shape for backend and frontend integration.
     "claims_to_avoid": ["guaranteed value", "100% accurate appraisal"],
     "brand_colors": ["#1E88E5", "#FFFFFF"],
     "uploaded_files": [],
+    "vision_analysis": {},
     "product_intelligence": {},
     "product_brief": {},
     "creative_angles": [],

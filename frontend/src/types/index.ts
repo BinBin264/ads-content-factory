@@ -134,6 +134,7 @@ export interface Project {
   claims_to_avoid: string[];
   brand_colors: string[];
   uploaded_files: UploadedFileInfo[];
+  vision_analysis?: VisionAnalysis | null;
   product_brief?: ProductBrief | null;
   product_intelligence?: ProductIntelligenceBrief | null;
   creative_angles: CreativeAngle[];

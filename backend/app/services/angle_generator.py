@@ -1,6 +1,8 @@
+import json
 from typing import Protocol
 
 from app.models.schemas import CreativeAngle, ProductBrief, ProductIntelligenceBrief, Project
+from app.services.llm_provider import LLMProvider, LLMProviderError, build_llm_provider
 
 
 class CreativeAngleGenerator(Protocol):
@@ -14,6 +16,9 @@ class CreativeAngleGenerator(Protocol):
 
 
 class RuleBasedCreativeAngleGenerator:
+    def __init__(self, llm_provider: LLMProvider | None = None) -> None:
+        self.llm_provider = llm_provider or build_llm_provider()
+
     def generate(
         self,
         project: Project,
@@ -21,6 +26,33 @@ class RuleBasedCreativeAngleGenerator:
         intelligence: ProductIntelligenceBrief | None = None,
     ) -> list[CreativeAngle]:
         intelligence = intelligence or self._fallback_intelligence(project, brief)
+        if self.llm_provider.is_configured:
+            try:
+                return self._generate_with_llm(project, intelligence)
+            except (LLMProviderError, ValueError, TypeError):
+                pass
+
+        return self._generate_rule_based(project, intelligence)
+
+    def _generate_with_llm(self, project: Project, intelligence: ProductIntelligenceBrief) -> list[CreativeAngle]:
+        prompt = (
+            "You are the Creative Angle Agent for TikTok, Reels, and Shorts. "
+            "Generate exactly 5 meaningfully different short-form ad angles. "
+            "Return JSON only in this shape: {\"angles\": [CreativeAngle...]}. "
+            "Required angle types in order: storytelling, product_demo, problem_solution, curiosity, social_proof. "
+            "Hooks must be simple spoken language and strong in the first 2 seconds. "
+            "Avoid generic hooks like Introducing or This product is amazing. "
+            "Make every angle specific to the product intelligence.\n\n"
+            f"Project:\n{json.dumps(project.model_dump(mode='json'), ensure_ascii=False, indent=2)}\n\n"
+            f"Product intelligence:\n{json.dumps(intelligence.model_dump(mode='json'), ensure_ascii=False, indent=2)}"
+        )
+        data = self.llm_provider.generate_json(prompt, temperature=0.65)
+        raw_angles = data.get("angles")
+        if not isinstance(raw_angles, list) or len(raw_angles) < 5:
+            raise ValueError("Gemini angle response must include at least 5 angles")
+        return [CreativeAngle.model_validate(item) for item in raw_angles[:5]]
+
+    def _generate_rule_based(self, project: Project, intelligence: ProductIntelligenceBrief) -> list[CreativeAngle]:
         cta = intelligence.recommended_cta or project.cta or self._default_cta(project.goal)
         audience = intelligence.primary_audience
         hooks = self._five_hooks(project, intelligence)
