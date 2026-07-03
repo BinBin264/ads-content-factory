@@ -12,9 +12,11 @@ def _lower_join(*values: str | None) -> str:
     return " ".join(value or "" for value in values).lower()
 
 
-def _split_claims(value: str | None) -> list[str]:
+def _split_claims(value: list[str] | str | None) -> list[str]:
     if not value:
         return []
+    if isinstance(value, list):
+        return value
     normalized = value.replace("\n", ",").replace(";", ",")
     return [item.strip() for item in normalized.split(",") if item.strip()]
 

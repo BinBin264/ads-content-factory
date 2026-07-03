@@ -37,8 +37,8 @@ class ProjectService:
         duration: str,
         tone: str,
         cta: str | None,
-        claims_to_avoid: str | None,
-        brand_colors: str | None,
+        claims_to_avoid: list[str] | str | None,
+        brand_colors: list[str] | str | None,
         files: list[UploadFile] | None,
     ) -> Project:
         project = Project(
@@ -51,8 +51,8 @@ class ProjectService:
             duration=duration or "20s",
             tone=tone or "UGC, natural, realistic",
             cta=self._clean_optional(cta),
-            claims_to_avoid=self._clean_optional(claims_to_avoid),
-            brand_colors=self._clean_optional(brand_colors),
+            claims_to_avoid=self._clean_list(claims_to_avoid),
+            brand_colors=self._clean_list(brand_colors),
         )
         project.uploaded_files = await self.file_storage.save_uploads(project.id, files)
         return self.storage.save_project(project)
@@ -122,3 +122,14 @@ class ProjectService:
             return None
         value = value.strip()
         return value or None
+
+    def _clean_list(self, value: list[str] | str | None) -> list[str]:
+        if value is None:
+            return []
+
+        values = value if isinstance(value, list) else [value]
+        cleaned: list[str] = []
+        for item in values:
+            parts = item.replace("\n", ",").replace(";", ",").split(",")
+            cleaned.extend(part.strip() for part in parts if part.strip())
+        return cleaned

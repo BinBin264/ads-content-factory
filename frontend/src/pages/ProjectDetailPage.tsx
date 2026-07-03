@@ -14,7 +14,7 @@ import {
 } from "../api/projects";
 import { getApiErrorMessage, toApiUrl } from "../api/client";
 import type { Project } from "../types";
-import { compactId, formatDate } from "../utils/format";
+import { compactId, formatDate, formatList } from "../utils/format";
 
 type ActionName = "load" | "analyze" | "angles" | "variants" | "render" | "delete";
 
@@ -125,7 +125,7 @@ export default function ProjectDetailPage() {
           <h2 className="mt-2 text-2xl font-bold text-slate-950">{project?.product_name ?? "Project"}</h2>
           {project ? (
             <p className="mt-1 text-sm text-slate-500">
-              {project.product_category || "General product"} · {compactId(project.id)} · Updated {formatDate(project.updated_at)}
+              {project.product_category || "General product"} / {compactId(project.id)} / Updated {formatDate(project.updated_at)}
             </p>
           ) : null}
         </div>
@@ -163,8 +163,16 @@ export default function ProjectDetailPage() {
             <div className="rounded-lg bg-slate-50 p-4">
               <p className="field-label">Setup</p>
               <p className="mt-1 text-sm text-slate-700">
-                {project.goal} · {project.platform} · {project.duration}
+                {project.goal} / {project.platform} / {project.duration}
               </p>
+            </div>
+            <div className="rounded-lg bg-slate-50 p-4">
+              <p className="field-label">Brand colors</p>
+              <p className="mt-1 text-sm text-slate-700">{formatList(project.brand_colors)}</p>
+            </div>
+            <div className="rounded-lg bg-slate-50 p-4">
+              <p className="field-label">Claims to avoid</p>
+              <p className="mt-1 text-sm text-slate-700">{formatList(project.claims_to_avoid)}</p>
             </div>
             <div className="rounded-lg bg-slate-50 p-4">
               <p className="field-label">Uploaded files</p>

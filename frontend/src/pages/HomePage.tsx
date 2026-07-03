@@ -68,7 +68,7 @@ export default function HomePage() {
                     <div className="min-w-0">
                       <p className="truncate text-sm font-bold text-slate-950">{project.product_name}</p>
                       <p className="mt-1 text-xs text-slate-500">
-                        {project.product_category || "General"} · {compactId(project.id)}
+                        {project.product_category || "General"} / {compactId(project.id)}
                       </p>
                     </div>
                     <span className="text-xs text-slate-400">{formatDate(project.updated_at)}</span>

@@ -38,6 +38,10 @@ Uploads and outputs are served as static files from:
 - `POST /api/projects/{project_id}/mock-render` - create mock video output files and URLs
 - `DELETE /api/projects/{project_id}` - delete project and related files
 
+## API contract
+
+Shared BE/FE contract: `../API_CONTRACT.md`
+
 ## Example flow
 
 Create a project:

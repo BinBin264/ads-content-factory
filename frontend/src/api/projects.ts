@@ -8,6 +8,14 @@ function appendIfPresent(formData: FormData, key: string, value: string): void {
   }
 }
 
+function appendListField(formData: FormData, key: string, value: string): void {
+  value
+    .split(/[,\n;]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .forEach((item) => formData.append(key, item));
+}
+
 export async function createProject(values: CreateProjectValues): Promise<Project> {
   const formData = new FormData();
   formData.append("product_name", values.productName.trim());
@@ -19,8 +27,8 @@ export async function createProject(values: CreateProjectValues): Promise<Projec
   formData.append("duration", values.duration);
   appendIfPresent(formData, "tone", values.tone);
   appendIfPresent(formData, "cta", values.cta);
-  appendIfPresent(formData, "claims_to_avoid", values.claimsToAvoid);
-  appendIfPresent(formData, "brand_colors", values.brandColors);
+  appendListField(formData, "claims_to_avoid", values.claimsToAvoid);
+  appendListField(formData, "brand_colors", values.brandColors);
 
   values.files.forEach((file) => {
     formData.append("files", file);

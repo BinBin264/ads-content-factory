@@ -1,8 +1,8 @@
 from datetime import datetime, timezone
-from typing import Literal
+from typing import Any, Literal
 from uuid import uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 def new_id(prefix: str) -> str:
@@ -11,6 +11,20 @@ def new_id(prefix: str) -> str:
 
 def utc_now() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def normalize_string_list(value: Any) -> list[str]:
+    if value is None:
+        return []
+
+    values = value if isinstance(value, list) else [value]
+    normalized: list[str] = []
+    for item in values:
+        if item is None:
+            continue
+        parts = str(item).replace("\n", ",").replace(";", ",").split(",")
+        normalized.extend(part.strip() for part in parts if part.strip())
+    return normalized
 
 
 class UploadedFileInfo(BaseModel):
@@ -99,14 +113,19 @@ class Project(BaseModel):
     duration: str = "20s"
     tone: str = "UGC, natural, realistic"
     cta: str | None = None
-    claims_to_avoid: str | None = None
-    brand_colors: str | None = None
+    claims_to_avoid: list[str] = Field(default_factory=list)
+    brand_colors: list[str] = Field(default_factory=list)
     uploaded_files: list[UploadedFileInfo] = Field(default_factory=list)
     product_brief: ProductBrief | None = None
     creative_angles: list[CreativeAngle] = Field(default_factory=list)
     variants: list[Variant] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
+
+    @field_validator("claims_to_avoid", "brand_colors", mode="before")
+    @classmethod
+    def normalize_list_fields(cls, value: Any) -> list[str]:
+        return normalize_string_list(value)
 
 
 class GenerateVariantsRequest(BaseModel):

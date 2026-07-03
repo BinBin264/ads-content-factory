@@ -22,8 +22,8 @@ async def create_project(
     duration: Annotated[str, Form()] = "20s",
     tone: Annotated[str, Form()] = "UGC, natural, realistic",
     cta: Annotated[str | None, Form()] = None,
-    claims_to_avoid: Annotated[str | None, Form()] = None,
-    brand_colors: Annotated[str | None, Form()] = None,
+    claims_to_avoid: Annotated[list[str] | None, Form()] = None,
+    brand_colors: Annotated[list[str] | None, Form()] = None,
     files: Annotated[list[UploadFile] | None, File()] = None,
 ) -> Project:
     return await project_service.create_project(

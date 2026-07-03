@@ -86,8 +86,8 @@ export interface Project {
   duration: string;
   tone: string;
   cta?: string | null;
-  claims_to_avoid?: string | null;
-  brand_colors?: string | null;
+  claims_to_avoid: string[];
+  brand_colors: string[];
   uploaded_files: UploadedFileInfo[];
   product_brief?: ProductBrief | null;
   creative_angles: CreativeAngle[];

@@ -46,3 +46,7 @@ http://127.0.0.1:5173
 5. Generate 2 Variants to create scripts, storyboards, prompts, captions, and cover prompts.
 6. Mock Render to create placeholder export URLs for 9:16 and 1:1 outputs.
 7. Use Project JSON Debug to inspect the raw backend response.
+
+## API contract
+
+Shared FE/BE contract: `../API_CONTRACT.md`

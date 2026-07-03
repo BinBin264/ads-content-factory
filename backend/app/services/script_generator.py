@@ -17,7 +17,8 @@ class RuleBasedVariantScriptGenerator:
         cta = project.cta or angle.cta
         style = brief.recommended_visual_style
         product = project.product_name
-        brand_colors = f" Brand colors: {project.brand_colors}." if project.brand_colors else ""
+        brand_color_text = ", ".join(project.brand_colors)
+        brand_colors = f" Brand colors: {brand_color_text}." if brand_color_text else ""
 
         scenes = [
             StoryboardScene(
