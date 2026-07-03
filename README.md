@@ -1,40 +1,38 @@
-# AI Ads Content Factory MVP
+# AI Ads Production Factory
 
-AI Ads Content Factory is a full-stack MVP for turning minimal product input, brand kit assets, screenshots, or product images into short-form video ad concepts.
+Full-stack MVP for turning product inputs, app screenshots, product images, logos, and brand kits into production-ready short-form AI video ad packages.
 
-The current flow is:
+Pipeline:
 
-1. Create project with product details and uploads.
-2. Analyze product through Gemini Vision and Product Intelligence.
-3. Generate five creative angles.
-4. Generate two video ad variants with script, storyboard, scene prompts, title, caption, and cover prompt.
-5. Render video through a configured video provider.
+1. Product / BrandKit input
+2. Product Intelligence with Gemini Vision / Gemini LLM
+3. Creative Angles
+4. Script + basic Storyboard
+5. Auto Character Planner
+6. Character Bible
+7. Character Reference Prompts
+8. Production Scenes
+9. Keyframe Prompts
+10. Video Prompts
+11. UI Overlay Plan
+12. Edit Plan
+13. Export Production Package
+14. Real Render Provider
 
-Gemini is required for text and vision intelligence. Video rendering requires a configured production video provider.
+The repo does not create local video output without a configured video provider. Generate Variants creates a production package only. Export Production Package writes prompt and planning files so you can manually test image generation, image-to-video, or reference-to-video tools. Render Video only calls a real configured provider.
 
-If `GEMINI_API_KEYS` or legacy `GEMINI_API_KEY` is configured, the backend uses Gemini for:
+## Environment
 
-- Product Intelligence
-- Creative Angles
-- Script + Storyboard
+Backend env:
 
-If all keys are missing or Gemini returns invalid JSON, the backend returns an API error so the user knows Gemini is not configured correctly.
+```text
+GEMINI_API_KEYS=your_key_1,your_key_2
+GEMINI_MODEL=gemini-2.5-flash
+VIDEO_PROVIDER_NAME=your_provider_name
+VIDEO_PROVIDER_API_KEY=your_video_provider_key
+```
 
-## Product Intelligence Layer
-
-The backend analyzes:
-
-- Product name, category, description, audience, goal, CTA, and claims to avoid
-- Uploaded file names and content types
-- Brand colors
-- Product-type keywords
-
-It then creates:
-
-- `VisionAnalysis`
-- `ProductIntelligenceBrief`
-- legacy `ProductBrief` for compatibility
-- recommended playbooks for mobile apps, skincare, F&B, ecommerce, education, or general UGC
+`GEMINI_API_KEYS` is required for Product Intelligence and all content generation. If the video provider env is missing, `/render` returns a clear configuration error.
 
 ## Run Backend
 
@@ -52,24 +50,7 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000
 ```
 
-Gemini setup:
-
-```powershell
-cd backend
-Copy-Item .env.example .env
-notepad .env
-```
-
-Set:
-
-```text
-GEMINI_API_KEYS=your_first_gemini_api_key,your_second_gemini_api_key
-GEMINI_MODEL=gemini-2.5-flash
-```
-
-The backend rotates configured Gemini keys per request and retries the next key when Gemini returns quota, rate-limit, auth, or provider errors.
-
-Backend docs:
+Docs:
 
 ```text
 http://localhost:8000/docs
@@ -89,17 +70,22 @@ Frontend:
 http://127.0.0.1:5173
 ```
 
-## Demo Input
+## Coin Scanner App Test
 
-Enter:
+Create a project:
 
 ```text
 Product name: Coin Scanner App
 Category: Mobile app
 Description: An app that helps users scan old coins, identify coin details, and view estimated reference value.
-Campaign objective: Get app installs
+Audience: People who find old coins at home, casual coin collectors, adults with coin jars.
+Goal: app_install
+Platform: TikTok
+Duration: 20s
+Tone: Natural UGC, relatable, curiosity-driven, realistic, not too polished.
 CTA: Download now and scan your old coins.
-Claims to avoid: Guaranteed value, 100% accurate appraisal, you will make money.
+Claims to avoid: Guaranteed value, 100% accurate appraisal, you will make money, this coin is definitely worth money.
+Brand colors: Blue, white, gold
 ```
 
 Then run:
@@ -107,11 +93,8 @@ Then run:
 1. Analyze Product
 2. Generate Angles
 3. Generate 2 Variants
-4. Render Video
+4. Review Character, Reference Prompts, Production Scenes, and Overlay / Edit Plan tabs
+5. Export Production Package
+6. Use the exported keyframe and video prompts in your image/video tool
 
-Expected first two hooks:
-
-- `I almost spent this old coin...`
-- `Here's how to check an old coin in 5 seconds.`
-
-Video render requires `VIDEO_PROVIDER_NAME` and `VIDEO_PROVIDER_API_KEY`. No local video output is generated without a provider.
+Expected Coin Scanner production output includes a warm, trustworthy UGC character, five character reference prompts, four production scenes, safe estimated-value language, and the disclaimer: `Estimated reference value only. Actual value may vary.`

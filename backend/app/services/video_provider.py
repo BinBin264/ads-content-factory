@@ -28,6 +28,4 @@ class ExternalVideoProvider:
                 "Video provider is not configured. Set VIDEO_PROVIDER_NAME and VIDEO_PROVIDER_API_KEY."
             )
 
-        raise VideoProviderError(
-            f"Video provider '{self.provider_name}' is configured but no production adapter is implemented yet."
-        )
+        raise VideoProviderError("Provider is configured but render adapter is not implemented yet.")

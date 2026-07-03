@@ -22,6 +22,11 @@ def generate_variants(project_id: str, request: GenerateVariantsRequest) -> list
     return project_service.generate_variants(project_id, request)
 
 
+@router.post("/{project_id}/export-production-package", response_model=Project)
+def export_production_package(project_id: str) -> Project:
+    return project_service.export_production_package(project_id)
+
+
 @router.post("/{project_id}/render", response_model=Project)
 def render(project_id: str) -> Project:
     return project_service.render_videos(project_id)

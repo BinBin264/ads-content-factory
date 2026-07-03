@@ -25,7 +25,7 @@ function OutputLink({ label, path }: { label: string; path?: string | null }) {
   );
 }
 
-function CopyKlingPackButton({ variant }: { variant: Variant }) {
+function CopyProductionPackButton({ variant }: { variant: Variant }) {
   const [copied, setCopied] = useState(false);
 
   const copy = async () => {
@@ -36,7 +36,7 @@ function CopyKlingPackButton({ variant }: { variant: Variant }) {
 
   return (
     <button className="btn-secondary" type="button" onClick={copy} disabled={!variant.storyboard.length}>
-      {copied ? "Copied" : "Copy Kling Pack"}
+      {copied ? "Copied" : "Copy Production Pack"}
     </button>
   );
 }
@@ -49,7 +49,7 @@ export default function OutputPanel({ variant }: OutputPanelProps) {
           <span className="font-semibold text-slate-600">Status:</span>{" "}
           <span className={variant.video_status === "ready" ? "font-bold text-emerald-700" : "font-bold text-slate-700"}>{variant.video_status}</span>
         </div>
-        <CopyKlingPackButton variant={variant} />
+        <CopyProductionPackButton variant={variant} />
       </div>
       <div className="grid gap-3 md:grid-cols-3">
         <OutputLink label="Video output" path={variant.video_url} />

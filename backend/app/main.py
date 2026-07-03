@@ -44,7 +44,10 @@ async def value_error_handler(_: Request, exc: ValueError) -> JSONResponse:
 
 @app.exception_handler(LLMProviderError)
 async def llm_provider_error_handler(_: Request, exc: LLMProviderError) -> JSONResponse:
-    return JSONResponse(status_code=503, content={"detail": str(exc)})
+    detail = str(exc)
+    if not detail.startswith("GEMINI_API_KEYS is required"):
+        detail = f"Gemini provider failed. Please check GEMINI_API_KEYS and request format. {detail}"
+    return JSONResponse(status_code=503, content={"detail": detail})
 
 
 @app.exception_handler(VideoProviderError)

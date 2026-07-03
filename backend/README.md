@@ -1,8 +1,8 @@
-# AI Ads Video Factory Backend MVP
+# AI Ads Production Factory Backend
 
-FastAPI backend MVP for creating ad projects, generating product intelligence, creative angles, video ad variants, and provider-based video outputs.
+FastAPI backend for product intelligence, creative angles, ad script generation, automatic character planning, production prompts, package export, and real video-provider rendering.
 
-## Run locally
+## Run Locally
 
 ```bash
 cd backend
@@ -19,82 +19,97 @@ Open:
 
 - Project data: `app/data/projects.json`
 - Uploads: `app/uploads/{project_id}/`
-- Outputs: `app/outputs/{project_id}/`
+- Exported production packages: `app/outputs/{project_id}/{variant_id}/`
 
-Uploads and outputs are served as static files from:
+Uploads and outputs are served from:
 
 - `/uploads/...`
 - `/outputs/...`
 
-## Main endpoints
+## Environment
 
-- `GET /` - health check
-- `POST /api/projects` - create project from multipart form data
-- `GET /api/projects` - list projects
-- `GET /api/projects/{project_id}` - get project detail
-- `POST /api/projects/{project_id}/analyze` - generate Product Intelligence, Product Brief, and Vision Analysis
-- `POST /api/projects/{project_id}/angles` - generate 5 creative angles
-- `POST /api/projects/{project_id}/generate-variants` - generate ad variants
-- `POST /api/projects/{project_id}/render` - render video through configured video provider
-- `DELETE /api/projects/{project_id}` - delete project and related files
-
-## API contract
-
-Shared BE/FE contract: `../API_CONTRACT.md`
-
-## LLM prompt templates
-
-Reusable prompt templates for future real providers live in `app/prompts/`:
-
-- `product_intelligence_agent.md`
-- `creative_angle_agent.md`
-- `script_storyboard_agent.md`
-- `video_prompt_optimizer_agent.md`
-- `demo_coin_scanner.md`
-
-These files define the LLM contract used by Gemini-backed agents.
-
-## Product Intelligence Layer
-
-The analyze flow calls:
-
-1. `GeminiVisionProvider`
-2. `ProductIntelligenceService` with Gemini when `GEMINI_API_KEYS` or `GEMINI_API_KEY` is configured
-3. `PlaybookEngine`
-4. compatibility mapper to `ProductBrief`
-
-Supported product types: `mobile_app`, `skincare`, `fnb`, `ecommerce`, `education`, and `general`.
-
-## Gemini API
-
-Create `backend/.env` from `.env.example`:
+Create `backend/.env`:
 
 ```text
 GEMINI_API_KEYS=your_first_gemini_api_key,your_second_gemini_api_key
 GEMINI_MODEL=gemini-2.5-flash
+VIDEO_PROVIDER_NAME=your_provider_name
+VIDEO_PROVIDER_API_KEY=your_video_provider_key
 ```
 
-`GEMINI_API_KEY=your_gemini_api_key_here` is still supported for one-key local setups. When `GEMINI_API_KEYS` contains multiple comma-separated keys, the backend rotates keys per request and retries the next key on Gemini quota, rate-limit, auth, or provider errors.
+`GEMINI_API_KEYS` is required for Vision Analysis, Product Intelligence, Creative Angles, Script, Character Planner, Reference Prompts, and Production Scenes. The backend rotates configured Gemini keys per request and retries the next key on quota, auth, rate-limit, or provider errors.
 
-Gemini is required for Vision Analysis, Product Intelligence, Creative Angles, and Script + Storyboard. If all Gemini keys are missing or the API response cannot be validated, the backend returns an API error.
+Render Video requires `VIDEO_PROVIDER_NAME` and `VIDEO_PROVIDER_API_KEY`. If the provider env is missing, `/render` returns:
 
-## Example flow
+```json
+{"detail": "Video provider is not configured. Set VIDEO_PROVIDER_NAME and VIDEO_PROVIDER_API_KEY."}
+```
 
-Create a project:
+If provider env exists but no adapter is implemented, `/render` returns:
+
+```json
+{"detail": "Provider is configured but render adapter is not implemented yet."}
+```
+
+## Main Endpoints
+
+- `POST /api/projects` - create project from multipart form data
+- `GET /api/projects` - list projects
+- `GET /api/projects/{project_id}` - get project detail
+- `POST /api/projects/{project_id}/analyze` - generate Vision Analysis, Product Intelligence, and compatibility Product Brief
+- `POST /api/projects/{project_id}/angles` - generate creative angles
+- `POST /api/projects/{project_id}/generate-variants` - generate variants with `production_package`
+- `POST /api/projects/{project_id}/export-production-package` - export package files and zip
+- `POST /api/projects/{project_id}/render` - call a real configured video provider
+- `DELETE /api/projects/{project_id}` - delete project and related files
+
+## Production Package
+
+Each generated variant keeps the legacy fields (`script`, `storyboard`, `caption`, `title`) and adds:
+
+- `production_package.character_plan`
+- `production_package.character_bible`
+- `production_package.character_reference_prompts`
+- `production_package.production_scenes`
+- `production_package.edit_plan`
+- `production_package.app_ui_overlay_notes`
+- `production_package.asset_checklist`
+- `production_package.compliance_notes`
+- `production_package.render_sequence`
+
+Export Production Package writes:
+
+- `character_bible.json`
+- `character_reference_prompts.txt`
+- `production_scenes.json`
+- `keyframe_prompts.txt`
+- `video_prompts.txt`
+- `ui_overlay_plan.txt`
+- `edit_plan.txt`
+- `script.txt`
+- `storyboard.json`
+- `caption.txt`
+- `production_package.zip`
+
+## Example Flow
 
 ```bash
 curl -X POST http://localhost:8000/api/projects \
-  -F "product_name=FocusFlow" \
-  -F "product_category=mobile app" \
-  -F "product_description=A productivity app that turns messy tasks into a daily action plan" \
-  -F "audience=busy founders and operators" \
+  -F "product_name=Coin Scanner App" \
+  -F "product_category=Mobile app" \
+  -F "product_description=An app that helps users scan old coins, identify coin details, and view estimated reference value." \
+  -F "audience=People who find old coins at home, casual coin collectors, adults with coin jars." \
   -F "goal=app_install" \
   -F "platform=tiktok" \
   -F "duration=20s" \
-  -F "tone=UGC, natural, realistic"
+  -F "tone=Natural UGC, relatable, curiosity-driven, realistic, not too polished." \
+  -F "cta=Download now and scan your old coins." \
+  -F "claims_to_avoid=Guaranteed value" \
+  -F "claims_to_avoid=100% accurate appraisal" \
+  -F "claims_to_avoid=you will make money"
 ```
 
-Then call the generation endpoints with the returned `project_id`:
+Then call:
 
 ```bash
 curl -X POST http://localhost:8000/api/projects/{project_id}/analyze
@@ -102,7 +117,6 @@ curl -X POST http://localhost:8000/api/projects/{project_id}/angles
 curl -X POST http://localhost:8000/api/projects/{project_id}/generate-variants \
   -H "Content-Type: application/json" \
   -d "{\"variant_count\":2}"
+curl -X POST http://localhost:8000/api/projects/{project_id}/export-production-package
 curl -X POST http://localhost:8000/api/projects/{project_id}/render
 ```
-
-The render endpoint requires a production adapter behind `services/video_provider.py`.
