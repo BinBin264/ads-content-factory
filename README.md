@@ -18,7 +18,7 @@ If `GEMINI_API_KEY` is configured, the backend uses Gemini for:
 - Creative Angles
 - Script + Storyboard
 
-If the key is missing or Gemini returns invalid JSON, the backend falls back to the local rule-based providers.
+If the key is missing or Gemini returns invalid JSON, the backend returns an API error so the user knows Gemini is not configured correctly.
 
 ## Product Intelligence Layer
 

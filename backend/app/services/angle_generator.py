@@ -2,7 +2,7 @@ import json
 from typing import Protocol
 
 from app.models.schemas import CreativeAngle, ProductBrief, ProductIntelligenceBrief, Project
-from app.services.llm_provider import LLMProvider, LLMProviderError, build_llm_provider
+from app.services.llm_provider import LLMProvider, build_llm_provider
 
 
 class CreativeAngleGenerator(Protocol):
@@ -25,14 +25,8 @@ class RuleBasedCreativeAngleGenerator:
         brief: ProductBrief,
         intelligence: ProductIntelligenceBrief | None = None,
     ) -> list[CreativeAngle]:
-        intelligence = intelligence or self._fallback_intelligence(project, brief)
-        if self.llm_provider.is_configured:
-            try:
-                return self._generate_with_llm(project, intelligence)
-            except (LLMProviderError, ValueError, TypeError):
-                pass
-
-        return self._generate_rule_based(project, intelligence)
+        intelligence = intelligence or self._compat_intelligence(project, brief)
+        return self._generate_with_llm(project, intelligence)
 
     def _generate_with_llm(self, project: Project, intelligence: ProductIntelligenceBrief) -> list[CreativeAngle]:
         prompt = (
@@ -142,13 +136,13 @@ class RuleBasedCreativeAngleGenerator:
             hooks.append(f"Here's why {project.product_name} is worth checking before you decide.")
         return hooks[:5]
 
-    def _pad(self, values: list[str], fallback: str) -> list[str]:
+    def _pad(self, values: list[str], default_value: str) -> list[str]:
         padded = list(values)
         while len(padded) < 4:
-            padded.append(fallback)
+            padded.append(default_value)
         return padded
 
-    def _fallback_intelligence(self, project: Project, brief: ProductBrief) -> ProductIntelligenceBrief:
+    def _compat_intelligence(self, project: Project, brief: ProductBrief) -> ProductIntelligenceBrief:
         return ProductIntelligenceBrief(
             detected_product=project.product_name,
             product_category=brief.category,

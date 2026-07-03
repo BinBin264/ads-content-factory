@@ -74,7 +74,7 @@ GEMINI_API_KEY=your_gemini_api_key_here
 GEMINI_MODEL=gemini-2.5-flash
 ```
 
-Gemini is used for Product Intelligence, Creative Angles, and Script + Storyboard. Local rule-based fallback remains available when the key is missing or the API response cannot be validated.
+Gemini is required for Product Intelligence, Creative Angles, and Script + Storyboard. If `GEMINI_API_KEY` is missing or the API response cannot be validated, the backend returns an API error.
 
 ## Example flow
 

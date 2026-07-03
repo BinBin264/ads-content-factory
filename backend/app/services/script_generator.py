@@ -2,7 +2,7 @@ import json
 from typing import Protocol
 
 from app.models.schemas import CreativeAngle, ProductBrief, ProductIntelligenceBrief, Project, StoryboardScene, Variant
-from app.services.llm_provider import LLMProvider, LLMProviderError, build_llm_provider
+from app.services.llm_provider import LLMProvider, build_llm_provider
 
 
 BASE_NEGATIVE_PROMPT = (
@@ -33,18 +33,9 @@ class RuleBasedVariantScriptGenerator:
         angles: list[CreativeAngle],
         intelligence: ProductIntelligenceBrief | None = None,
     ) -> list[Variant]:
-        intelligence = intelligence or self._fallback_intelligence(project, brief)
-        if self.llm_provider.is_configured:
-            variants: list[Variant] = []
-            for index, angle in enumerate(angles, start=1):
-                try:
-                    variants.append(self._build_variant_with_llm(project, intelligence, angle, index))
-                except (LLMProviderError, ValueError, TypeError):
-                    variants.append(self._build_variant(project, brief, intelligence, angle, index))
-            return variants
-
+        intelligence = intelligence or self._compat_intelligence(project, brief)
         return [
-            self._build_variant(project, brief, intelligence, angle, index)
+            self._build_variant_with_llm(project, intelligence, angle, index)
             for index, angle in enumerate(angles, start=1)
         ]
 
@@ -310,7 +301,7 @@ class RuleBasedVariantScriptGenerator:
             )
         return f"Then {project.product_name} shows a clear result: {self._benefit(intelligence, 0)}."
 
-    def _fallback_intelligence(self, project: Project, brief: ProductBrief) -> ProductIntelligenceBrief:
+    def _compat_intelligence(self, project: Project, brief: ProductBrief) -> ProductIntelligenceBrief:
         return ProductIntelligenceBrief(
             detected_product=project.product_name,
             product_category=brief.category,

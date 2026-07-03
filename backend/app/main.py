@@ -7,6 +7,7 @@ from app.config import ALLOWED_ORIGINS, OUTPUTS_DIR, UPLOADS_DIR, ensure_app_dir
 from app.models.schemas import HealthResponse
 from app.routes.generation import router as generation_router
 from app.routes.projects import router as projects_router
+from app.services.llm_provider import LLMProviderError
 from app.services.storage_service import ProjectNotFoundError
 
 
@@ -38,6 +39,11 @@ async def project_not_found_handler(_: Request, exc: ProjectNotFoundError) -> JS
 @app.exception_handler(ValueError)
 async def value_error_handler(_: Request, exc: ValueError) -> JSONResponse:
     return JSONResponse(status_code=400, content={"detail": str(exc)})
+
+
+@app.exception_handler(LLMProviderError)
+async def llm_provider_error_handler(_: Request, exc: LLMProviderError) -> JSONResponse:
+    return JSONResponse(status_code=503, content={"detail": str(exc)})
 
 
 @app.get("/", response_model=HealthResponse)

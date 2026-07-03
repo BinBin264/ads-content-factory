@@ -27,25 +27,6 @@ class LLMProvider(Protocol):
         ...
 
 
-class MockLLMProvider:
-    @property
-    def is_configured(self) -> bool:
-        return False
-
-    def generate_json(
-        self,
-        prompt: str,
-        *,
-        temperature: float = 0.4,
-        response_schema: dict[str, Any] | None = None,
-    ) -> dict[str, Any]:
-        return {
-            "provider": "mock",
-            "prompt_preview": prompt[:240],
-            "note": "GEMINI_API_KEY is not configured; rule-based fallback was used.",
-        }
-
-
 class GeminiLLMProvider:
     def __init__(
         self,
@@ -132,5 +113,4 @@ class GeminiLLMProvider:
 
 
 def build_llm_provider() -> LLMProvider:
-    provider = GeminiLLMProvider()
-    return provider if provider.is_configured else MockLLMProvider()
+    return GeminiLLMProvider()

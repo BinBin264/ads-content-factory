@@ -1,12 +1,12 @@
 import json
 
 from app.models.schemas import ProductBrief, ProductIntelligenceBrief, Project, VisionAnalysis
-from app.services.llm_provider import LLMProvider, LLMProviderError, build_llm_provider
+from app.services.llm_provider import LLMProvider, build_llm_provider
 from app.services.playbook_engine import PlaybookEngine
 
 
-def _first(values: list[str], fallback: str) -> str:
-    return values[0] if values else fallback
+def _first(values: list[str], default: str) -> str:
+    return values[0] if values else default
 
 
 class ProductIntelligenceService:
@@ -19,13 +19,7 @@ class ProductIntelligenceService:
         self.llm_provider = llm_provider or build_llm_provider()
 
     def build(self, project: Project, vision: VisionAnalysis) -> ProductIntelligenceBrief:
-        if self.llm_provider.is_configured:
-            try:
-                return self._build_with_llm(project, vision)
-            except (LLMProviderError, ValueError, TypeError):
-                pass
-
-        return self._build_rule_based(project, vision)
+        return self._build_with_llm(project, vision)
 
     def _build_with_llm(self, project: Project, vision: VisionAnalysis) -> ProductIntelligenceBrief:
         prompt = self._build_prompt(project, vision)
