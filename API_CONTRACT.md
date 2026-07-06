@@ -2,6 +2,26 @@
 
 Shared project shape for backend and frontend integration.
 
+Main flow:
+
+```text
+Brief
+-> Creative Plan
+-> 2 Video Variants
+-> Production Package
+-> Render/Edit Pipeline
+```
+
+Endpoint flow:
+
+```text
+POST /api/projects
+POST /api/projects/{project_id}/creative-plan
+POST /api/projects/{project_id}/generate-variants
+POST /api/projects/{project_id}/export-production-package
+POST /api/projects/{project_id}/render
+```
+
 ```json
 {
   "project": {
@@ -66,7 +86,7 @@ Response:
 }
 ```
 
-`creative_plan` is the primary production planning artifact. The current frontend uses `/creative-plan`; `/analyze` remains only for older integrations that still expect `product_intelligence`, `product_brief`, and `vision_analysis` in the same response.
+`creative_plan` is the primary production planning artifact. It replaces the old separate planning steps and returns exactly two default variant directions. The current frontend uses `/creative-plan`; `/analyze` remains only for older integrations that still expect `product_intelligence`, `product_brief`, and `vision_analysis` in the same response.
 
 ```json
 {
@@ -121,7 +141,17 @@ Response:
 
 ## Variant Shape
 
-`POST /api/projects/{project_id}/generate-variants` returns `Variant[]`. The core path uses `project.creative_plan.variant_directions` directly and generates exactly two variants: Storytelling / Problem-led and Product Demo / Benefit-led. `angle_ids` is accepted for request compatibility but is ignored by the new main flow. Legacy fields are kept for compatibility and each new variant includes `production_package` and `generation_pipeline`.
+`POST /api/projects/{project_id}/generate-variants` returns `Variant[]`.
+
+Rules:
+
+- The request does not need `selected_angles`.
+- The user does not need to choose angles manually.
+- The backend uses `project.creative_plan.variant_directions`.
+- If the project does not have `creative_plan`, the backend can generate it before variant generation.
+- The core path generates exactly two variants: Storytelling / Problem-led and Product Demo / Benefit-led.
+- `angle_ids` is accepted for request compatibility but is ignored by the new main flow.
+- Legacy fields are kept for compatibility and each new variant includes `production_package` and `generation_pipeline`.
 
 ```json
 {
@@ -498,7 +528,29 @@ Behavior:
 - Requires existing variants.
 - Requires every exported variant to have `production_package`.
 - Creates `backend/app/outputs/{project_id}/{variant_id}/`.
+- Creates `backend/app/outputs/{project_id}/project_output/`.
 - Writes:
+  - `project_output/creative_plan.json`
+  - `project_output/variant_A.json`
+  - `project_output/variant_B.json`
+  - `project_output/variant_A/script.txt`
+  - `project_output/variant_A/storyboard.json`
+  - `project_output/variant_A/video_prompts.txt`
+  - `project_output/variant_A/keyframe_prompts.txt`
+  - `project_output/variant_A/voiceover.txt`
+  - `project_output/variant_A/subtitles.srt`
+  - `project_output/variant_A/cover_prompt.txt`
+  - `project_output/variant_A/caption.txt`
+  - `project_output/variant_A/edit_plan.txt`
+  - `project_output/variant_B/script.txt`
+  - `project_output/variant_B/storyboard.json`
+  - `project_output/variant_B/video_prompts.txt`
+  - `project_output/variant_B/keyframe_prompts.txt`
+  - `project_output/variant_B/voiceover.txt`
+  - `project_output/variant_B/subtitles.srt`
+  - `project_output/variant_B/cover_prompt.txt`
+  - `project_output/variant_B/caption.txt`
+  - `project_output/variant_B/edit_plan.txt`
   - `character_bible.json`
   - `character_reference_prompts.txt`
   - `production_scenes.json`

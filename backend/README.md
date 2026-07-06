@@ -1,6 +1,6 @@
 # AI Ads Production Factory Backend
 
-FastAPI backend for product intelligence, creative angles, ad script generation, automatic character planning, production prompts, package export, and real video-provider rendering.
+FastAPI backend for turning a product brief and uploaded assets into a Creative Plan, two video variants, production prompts, package exports, and real video-provider rendering.
 
 ## Run Locally
 
@@ -37,7 +37,7 @@ VIDEO_PROVIDER_NAME=your_provider_name
 VIDEO_PROVIDER_API_KEY=your_video_provider_key
 ```
 
-`GEMINI_API_KEYS` is required for Vision Analysis, Product Intelligence, Creative Angles, Script, Character Planner, Reference Prompts, and Production Scenes. The backend rotates configured Gemini keys per request and retries the next key on quota, auth, rate-limit, or provider errors.
+`GEMINI_API_KEYS` is required for Creative Plan, Script + Storyboard, Character Planner, Reference Prompts, and Production Scenes. The backend rotates configured Gemini keys per request and retries the next key on quota, auth, rate-limit, or provider errors.
 
 Render Video requires `VIDEO_PROVIDER_NAME` and `VIDEO_PROVIDER_API_KEY`. If the provider env is missing, `/render` returns:
 
@@ -56,12 +56,26 @@ If provider env exists but no adapter is implemented, `/render` returns:
 - `POST /api/projects` - create project from multipart form data
 - `GET /api/projects` - list projects
 - `GET /api/projects/{project_id}` - get project detail
-- `POST /api/projects/{project_id}/analyze` - generate Vision Analysis, Product Intelligence, and compatibility Product Brief
-- `POST /api/projects/{project_id}/angles` - generate creative angles
-- `POST /api/projects/{project_id}/generate-variants` - generate variants with `production_package`
+- `POST /api/projects/{project_id}/creative-plan` - generate the compact Creative Plan and two variant directions
+- `POST /api/projects/{project_id}/generate-variants` - generate exactly two variants from `project.creative_plan`
 - `POST /api/projects/{project_id}/export-production-package` - export package files and zip
 - `POST /api/projects/{project_id}/render` - call a real configured video provider
 - `DELETE /api/projects/{project_id}` - delete project and related files
+
+Legacy endpoints:
+
+- `POST /api/projects/{project_id}/analyze` - legacy compatibility response with Creative Plan plus old compatibility fields
+- `POST /api/projects/{project_id}/angles` - deprecated legacy endpoint
+
+Main endpoint flow:
+
+```text
+POST /api/projects
+POST /api/projects/{project_id}/creative-plan
+POST /api/projects/{project_id}/generate-variants
+POST /api/projects/{project_id}/export-production-package
+POST /api/projects/{project_id}/render
+```
 
 ## Production Package
 
@@ -79,17 +93,36 @@ Each generated variant keeps the legacy fields (`script`, `storyboard`, `caption
 
 Export Production Package writes:
 
-- `character_bible.json`
-- `character_reference_prompts.txt`
-- `production_scenes.json`
-- `keyframe_prompts.txt`
-- `video_prompts.txt`
-- `ui_overlay_plan.txt`
-- `edit_plan.txt`
-- `script.txt`
-- `storyboard.json`
-- `caption.txt`
-- `production_package.zip`
+```text
+/project_output
+  creative_plan.json
+  variant_A.json
+  variant_B.json
+
+  /variant_A
+    script.txt
+    storyboard.json
+    video_prompts.txt
+    keyframe_prompts.txt
+    voiceover.txt
+    subtitles.srt
+    cover_prompt.txt
+    caption.txt
+    edit_plan.txt
+
+  /variant_B
+    script.txt
+    storyboard.json
+    video_prompts.txt
+    keyframe_prompts.txt
+    voiceover.txt
+    subtitles.srt
+    cover_prompt.txt
+    caption.txt
+    edit_plan.txt
+```
+
+Each variant folder under `app/outputs/{project_id}/{variant_id}/` also includes production package files such as `character_bible.json`, `character_reference_prompts.txt`, `production_scenes.json`, `ui_overlay_plan.txt`, `generation_pipeline.json`, and `production_package.zip`.
 
 ## Example Flow
 
@@ -112,8 +145,7 @@ curl -X POST http://localhost:8000/api/projects \
 Then call:
 
 ```bash
-curl -X POST http://localhost:8000/api/projects/{project_id}/analyze
-curl -X POST http://localhost:8000/api/projects/{project_id}/angles
+curl -X POST http://localhost:8000/api/projects/{project_id}/creative-plan
 curl -X POST http://localhost:8000/api/projects/{project_id}/generate-variants \
   -H "Content-Type: application/json" \
   -d "{\"variant_count\":2}"

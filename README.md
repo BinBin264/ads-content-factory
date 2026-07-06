@@ -4,18 +4,22 @@ Full-stack MVP for turning product inputs, app screenshots, product images, logo
 
 Pipeline:
 
-1. Product / BrandKit input
-2. Brief Normalizer
-3. Creative Plan
-4. Variant A: Storytelling / Problem-led
-5. Variant B: Product Demo / Benefit-led
-6. Scene Builder
-7. Prompt Builder
-8. Character Bible and Reference Prompts when needed
-9. UI Overlay Plan and Edit Plan
-10. Executable Generation Pipeline
-11. Export Production Package
-12. Real Render Provider
+1. Product / Brand Kit Input
+2. Creative Plan
+3. 2 Variant Directions
+4. Script + Storyboard
+5. Character Bible / Reference Prompts
+6. Production Scenes
+7. Keyframe + Video Prompts
+8. UI Overlay + Edit Plan
+9. Export / Render
+
+`Creative Plan` replaces the old separate analysis and angle-planning steps. Each project creates exactly two default variant directions:
+
+- Variant A: Storytelling / Problem-led / Emotional
+- Variant B: Product Demo / Benefit-led / Direct Response
+
+The main flow does not ask users to generate or choose from five angles. `/angles` remains only for backward compatibility with older clients.
 
 The repo does not create local video output without a configured video provider. Generate Variants creates a production package and a step-by-step generation pipeline. Manual mode lets you copy prompts, create assets in web tools, and upload step outputs. Render Video runs the same pipeline with real configured providers. No mock or placeholder video is created.
 
@@ -95,8 +99,8 @@ Then run:
 
 1. Generate Creative Plan
 2. Generate 2 Video Variants
-3. Follow the Generation Pipeline cards: create character refs, upload them, create keyframes, upload clips, overlay app UI, assemble, and export
-4. Export Production Package
-5. Or configure providers and use Render Video / Run Full Pipeline
+3. Review Production Package
+4. Follow the Generation Pipeline cards: create character refs, upload them, create keyframes, upload clips, overlay app UI, assemble, and export
+5. Export Production Package or configure providers and use Render Video / Run Full Pipeline
 
 Expected Coin Scanner production output includes one compact Creative Plan, exactly two video variants, four scenes for 15s or five scenes for 20-30s, a warm trustworthy UGC character when needed, keyframe/video prompts, overlay/edit/export steps, safe estimated-value language, and the disclaimer: `Estimated reference value only. Actual value may vary.`

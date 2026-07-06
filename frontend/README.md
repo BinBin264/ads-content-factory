@@ -40,20 +40,18 @@ http://127.0.0.1:5173
 ## User flow
 
 1. Create a project with product details and optional uploads.
-2. Analyze Product to create a Product Intelligence Brief.
-3. Generate Angles to create five creative angle cards.
-4. Select two angles or leave selection incomplete so the backend auto-selects.
-5. Generate 2 Variants to create scripts, storyboards, prompts, captions, and cover prompts.
-6. Render Video through the configured backend video provider.
-7. Use Project JSON Debug to inspect the raw backend response.
+2. Generate Creative Plan.
+3. Generate 2 Video Variants.
+4. Review Production Package.
+5. Export / Render Video through the configured backend video provider.
+
+Legacy angle generation is available only for backward compatibility and is not part of the main flow.
 
 ## API contract
 
 Shared FE/BE contract: `../API_CONTRACT.md`
 
-The Product Brief response uses arrays for `target_audience`, `emotional_triggers`, `functional_benefits`, `proof_elements`, `safe_claims`, `claims_to_avoid`, and `recommended_ad_formats`.
-
-The UI also displays the richer `product_intelligence` response when available, with fallback to the legacy Product Brief.
+The main frontend flow uses `CreativePlan`, `Variant`, `VideoProductionPackage`, and `VariantGenerationPipeline`. Legacy compatibility fields may still exist in the API response, but they are not displayed as required user steps.
 
 ## Demo samples
 

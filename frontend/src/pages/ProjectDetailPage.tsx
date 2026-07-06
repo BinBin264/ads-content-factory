@@ -19,16 +19,17 @@ import type { Project } from "../types";
 import { compactId, formatDate, formatList } from "../utils/format";
 
 type ActionName = "load" | "analyze" | "variants" | "export" | "render" | "runPipeline" | "runStep" | "uploadStep" | "delete";
-type ProjectPhase = "assets" | "intelligence" | "variants";
+type ProjectPhase = "brief" | "creative-plan" | "variants" | "production";
 
 interface ProjectDetailPageProps {
   phase: ProjectPhase;
 }
 
 const phaseItems: Array<{ id: ProjectPhase; label: string; description: string }> = [
-  { id: "assets", label: "Assets", description: "Inputs and files" },
-  { id: "intelligence", label: "Creative Plan", description: "Brief + variant directions" },
-  { id: "variants", label: "Video Variants", description: "A, B, package, render" },
+  { id: "brief", label: "Brief Input", description: "Project setup and files" },
+  { id: "creative-plan", label: "Creative Plan", description: "Two variant directions" },
+  { id: "variants", label: "Variant A / Variant B", description: "Script and storyboard" },
+  { id: "production", label: "Production Package / Render", description: "Export and provider workflow" },
 ];
 
 export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
@@ -120,21 +121,22 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
 
   const projectBase = id ? `/projects/${id}` : "/projects";
   const hasCreativePlan = Boolean(project?.creative_plan);
+  const hasVariants = Boolean(project?.variants.length);
   const hasVideoWorkflow = Boolean(project?.variants.some((variant) => variant.production_package));
   const phaseState = (item: ProjectPhase): "current" | "complete" | "ready" | "locked" => {
     if (item === phase) {
       return "current";
     }
-    if (item === "assets") {
+    if (item === "brief") {
       return "complete";
     }
-    if (item === "intelligence") {
+    if (item === "creative-plan") {
       return hasCreativePlan ? "complete" : "ready";
     }
-    if (hasVideoWorkflow) {
-      return "complete";
+    if (item === "variants") {
+      return hasVariants ? "complete" : hasCreativePlan ? "ready" : "locked";
     }
-    return hasCreativePlan ? "ready" : "locked";
+    return hasVideoWorkflow ? "complete" : hasVariants ? "ready" : "locked";
   };
   const phaseClass = (state: ReturnType<typeof phaseState>) => {
     if (state === "current") {
@@ -198,7 +200,7 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
       <ProgressSteps project={project} />
 
       <nav className="card-accent p-4">
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-4">
           {phaseItems.map((item, index) => {
             const state = phaseState(item.id);
             const content = (
@@ -231,13 +233,13 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
         </div>
       </nav>
 
-      {project && phase === "assets" ? (
+      {project && phase === "brief" ? (
         <section className="card-accent overflow-hidden">
           <div className="border-b border-slate-200/80 px-6 py-5">
             <div>
               <p className="text-xs font-bold uppercase tracking-wide text-teal-700">Input package</p>
-              <h3 className="section-heading">Project Assets</h3>
-              <p className="section-subtitle">Uploaded file preview names and project inputs.</p>
+              <h3 className="section-heading">Brief Input</h3>
+              <p className="section-subtitle">Product setup, uploaded files, campaign settings, and claim boundaries.</p>
             </div>
           </div>
           <div className="space-y-7 px-6 py-6">
@@ -291,7 +293,7 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
           </div>
           <div className="border-t border-slate-200 px-6 py-5">
             <div className="flex justify-end">
-            <Link className="btn-primary" to={`${projectBase}/intelligence`}>
+            <Link className="btn-primary" to={`${projectBase}/creative-plan`}>
               Next: Creative Plan
             </Link>
             </div>
@@ -299,12 +301,12 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
         </section>
       ) : null}
 
-      {phase === "intelligence" ? (
+      {phase === "creative-plan" ? (
       <section className="card-accent p-5">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="section-heading">Creative Plan</h3>
-            <p className="section-subtitle">Normalize the brief and create two practical variant directions without a 5-angle selection step.</p>
+            <p className="section-subtitle">Normalize the brief into one production plan and two practical variant directions.</p>
           </div>
           <button
             className="btn-primary"
@@ -331,8 +333,8 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
         <div className="card-accent p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="section-heading">2 Video Variants + Production Package</h3>
-              <p className="section-subtitle">Generate Variant A and Variant B directly from the Creative Plan, then follow the production workflow.</p>
+              <h3 className="section-heading">Variant A / Variant B</h3>
+              <p className="section-subtitle">Generate two video variants directly from the Creative Plan: script, storyboard, timeline, voiceover, captions, and prompts.</p>
             </div>
             <button
               className="btn-primary"
@@ -344,6 +346,65 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
             >
               {loadingAction === "variants" ? "Generating..." : hasVideoWorkflow ? "Regenerate 2 Video Variants" : "Generate 2 Video Variants"}
             </button>
+          </div>
+        </div>
+
+        {project?.variants.length ? (
+          <div className="space-y-4">
+            <div className="grid gap-4 lg:grid-cols-2">
+              {project.variants.map((variant, index) => (
+                <article key={variant.id} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs font-black uppercase tracking-wide text-teal-700">Variant {index === 0 ? "A" : "B"}</p>
+                    <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-bold text-slate-600">
+                      {variant.target_metric || "production"}
+                    </span>
+                  </div>
+                  <h4 className="mt-2 text-lg font-black text-slate-950">{variant.name}</h4>
+                  <p className="mt-3 rounded-md bg-slate-950 px-3 py-3 text-sm font-bold leading-6 text-white">{variant.hook}</p>
+                  {variant.script_summary ? <p className="mt-3 text-sm leading-6 text-slate-700">{variant.script_summary}</p> : null}
+                  <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                    <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                      <p className="text-lg font-black text-slate-950">{variant.storyboard.length}</p>
+                      <p className="text-xs text-slate-500">Scenes</p>
+                    </div>
+                    <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                      <p className="text-lg font-black text-slate-950">{variant.timeline.length}</p>
+                      <p className="text-xs text-slate-500">Timeline</p>
+                    </div>
+                    <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                      <p className="text-lg font-black text-slate-950">{variant.production_package ? "Yes" : "No"}</p>
+                      <p className="text-xs text-slate-500">Package</p>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+            <div className="flex justify-end">
+              <Link className="btn-primary" to={`${projectBase}/production`}>
+                Next: Production Package / Render
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="empty-state">
+            Variants will appear after generation.
+          </div>
+        )}
+      </section>
+      ) : null}
+
+      {phase === "production" ? (
+      <section className="space-y-4">
+        <div className="card-accent p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="section-heading">Production Package / Render</h3>
+              <p className="section-subtitle">Review the executable generation pipeline, export package files, upload manual step outputs, or run configured providers.</p>
+            </div>
+            <Link className="btn-secondary" to={`${projectBase}/variants`}>
+              Back to Variants
+            </Link>
           </div>
         </div>
 
@@ -369,7 +430,7 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
           </div>
         ) : (
           <div className="empty-state">
-            Variants will appear after generation.
+            Generate Variant A and Variant B before reviewing the production package.
           </div>
         )}
       </section>
