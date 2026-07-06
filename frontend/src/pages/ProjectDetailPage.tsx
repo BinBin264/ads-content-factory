@@ -12,12 +12,15 @@ import {
   generateVariants,
   getProject,
   renderProject,
+  runPipelineStep,
+  runVariantPipeline,
+  uploadPipelineStepResult,
 } from "../api/projects";
 import { getApiErrorMessage, toApiUrl } from "../api/client";
 import type { Project } from "../types";
 import { compactId, formatDate, formatList } from "../utils/format";
 
-type ActionName = "load" | "analyze" | "angles" | "variants" | "export" | "render" | "delete";
+type ActionName = "load" | "analyze" | "angles" | "variants" | "export" | "render" | "runPipeline" | "runStep" | "uploadStep" | "delete";
 type ProjectPhase = "assets" | "intelligence" | "angles" | "variants";
 
 interface ProjectDetailPageProps {
@@ -443,8 +446,14 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
                 variant={variant}
                 onExport={() => runAction("export", () => exportProductionPackage(id as string))}
                 onRender={() => runAction("render", () => renderProject(id as string))}
+                onRunPipeline={() => runAction("runPipeline", () => runVariantPipeline(id as string, variant.id))}
+                onRunStep={(stepId) => runAction("runStep", () => runPipelineStep(id as string, variant.id, stepId))}
+                onUploadStepResult={(stepId, file, assetKey) => runAction("uploadStep", () => uploadPipelineStepResult(id as string, variant.id, stepId, file, assetKey))}
                 exporting={loadingAction === "export"}
                 rendering={loadingAction === "render"}
+                runningPipeline={loadingAction === "runPipeline"}
+                runningStep={loadingAction === "runStep"}
+                uploadingStep={loadingAction === "uploadStep"}
                 disabled={!canAct}
               />
             ))}

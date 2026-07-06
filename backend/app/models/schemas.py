@@ -183,7 +183,18 @@ class CharacterReferencePrompt(BaseModel):
 
 
 class UIOverlayItem(BaseModel):
-    overlay_type: Literal["app_screen", "subtitle", "cta", "disclaimer", "logo", "price_label", "button", "highlight"]
+    overlay_type: Literal[
+        "app_screen",
+        "app_screen_overlay",
+        "text_overlay",
+        "subtitle",
+        "cta",
+        "disclaimer",
+        "logo",
+        "price_label",
+        "button",
+        "highlight",
+    ]
     text: str
     start_time: str
     end_time: str
@@ -239,6 +250,105 @@ class VideoProductionPackage(BaseModel):
     render_sequence: list[str] = Field(default_factory=list)
 
 
+PipelineAssetType = Literal["image", "video", "audio", "app_screenshot", "subtitle", "json", "zip"]
+PipelineAssetSource = Literal["uploaded_by_user", "generated_by_provider", "project_upload", "exported"]
+PipelineStage = Literal[
+    "character_reference",
+    "scene_keyframe",
+    "video_clip",
+    "app_ui_overlay",
+    "voiceover",
+    "subtitles",
+    "assembly",
+    "export",
+]
+PipelineToolType = Literal[
+    "image_generation",
+    "video_generation",
+    "image_editing",
+    "video_editing",
+    "tts",
+    "subtitle_generation",
+    "final_assembly",
+    "export",
+]
+PipelineExecutionMode = Literal["manual_or_provider", "provider_only", "manual_only"]
+PipelineStepStatus = Literal["pending", "ready", "running", "completed", "failed", "skipped"]
+PipelineStatus = Literal["draft", "in_progress", "completed", "failed"]
+
+
+class PipelineAsset(BaseModel):
+    asset_id: str = Field(default_factory=lambda: new_id("asset"))
+    asset_key: str
+    asset_type: PipelineAssetType
+    label: str
+    url: str | None = None
+    path: str | None = None
+    source: PipelineAssetSource
+    source_step_id: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class PipelineRequiredInput(BaseModel):
+    asset_key: str
+    asset_type: str
+    label: str
+    required: bool = True
+    accepted_sources: list[str] = Field(default_factory=list)
+    instructions: str
+
+
+class PipelineExpectedOutput(BaseModel):
+    asset_key: str
+    asset_type: str
+    label: str
+    file_name_hint: str
+    required_for_next_steps: list[str] = Field(default_factory=list)
+
+
+class PipelineStep(BaseModel):
+    step_id: str
+    step_number: int
+    stage: PipelineStage
+    stage_label: str | None = None
+    stage_purpose: str | None = None
+    title: str
+    goal: str
+    tool_type: PipelineToolType
+    execution_mode: PipelineExecutionMode = "manual_or_provider"
+    provider_capability: str | None = None
+    source_artifacts: list[str] = Field(default_factory=list)
+    required_inputs: list[PipelineRequiredInput] = Field(default_factory=list)
+    prompt_to_copy: str | None = None
+    negative_prompt_to_copy: str | None = None
+    motion_instruction: str | None = None
+    consistency_instruction: str | None = None
+    settings: dict[str, Any] = Field(default_factory=dict)
+    expected_outputs: list[PipelineExpectedOutput] = Field(default_factory=list)
+    review_focus: list[str] = Field(default_factory=list)
+    success_criteria: list[str] = Field(default_factory=list)
+    status: PipelineStepStatus = "pending"
+    output_assets: list[PipelineAsset] = Field(default_factory=list)
+    manual_instructions: list[str] = Field(default_factory=list)
+    provider_options: list[dict[str, Any]] = Field(default_factory=list)
+    provider_payload: dict[str, Any] = Field(default_factory=dict)
+    error_message: str | None = None
+
+
+class VariantGenerationPipeline(BaseModel):
+    pipeline_id: str = Field(default_factory=lambda: new_id("pipeline"))
+    variant_id: str
+    pipeline_name: str = "ad_video_generation"
+    pipeline_version: str = "1.0"
+    objective: str = "Generate a linked manual-or-provider video production workflow."
+    status: PipelineStatus = "draft"
+    source_artifacts: list[dict[str, Any]] = Field(default_factory=list)
+    stage_contracts: list[dict[str, Any]] = Field(default_factory=list)
+    provider_contracts: list[dict[str, Any]] = Field(default_factory=list)
+    assets: list[PipelineAsset] = Field(default_factory=list)
+    steps: list[PipelineStep] = Field(default_factory=list)
+
+
 class OptimizedVideoPrompt(BaseModel):
     video_prompt: str
     negative_prompt: str
@@ -268,6 +378,7 @@ class Variant(BaseModel):
     visual_bible: dict[str, Any] | None = None
     asset_reference_map: dict[str, Any] | None = None
     production_package: VideoProductionPackage | None = None
+    generation_pipeline: VariantGenerationPipeline | None = None
     selected_playbook: str | None = None
     angle_type: str | None = None
     video_status: Literal["draft", "package_exported", "rendering", "ready", "failed"] = "draft"

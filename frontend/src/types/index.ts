@@ -151,7 +151,7 @@ export interface CharacterReferencePrompt {
 }
 
 export interface UIOverlayItem {
-  overlay_type: "app_screen" | "subtitle" | "cta" | "disclaimer" | "logo" | "price_label" | "button" | "highlight";
+  overlay_type: "app_screen" | "app_screen_overlay" | "text_overlay" | "subtitle" | "cta" | "disclaimer" | "logo" | "price_label" | "button" | "highlight";
   text: string;
   start_time: string;
   end_time: string;
@@ -207,6 +207,102 @@ export interface VideoProductionPackage {
   render_sequence: string[];
 }
 
+export type PipelineAssetType = "image" | "video" | "audio" | "app_screenshot" | "subtitle" | "json" | "zip";
+export type PipelineAssetSource = "uploaded_by_user" | "generated_by_provider" | "project_upload" | "exported";
+export type PipelineStage =
+  | "character_reference"
+  | "scene_keyframe"
+  | "video_clip"
+  | "app_ui_overlay"
+  | "voiceover"
+  | "subtitles"
+  | "assembly"
+  | "export";
+export type PipelineToolType =
+  | "image_generation"
+  | "video_generation"
+  | "image_editing"
+  | "video_editing"
+  | "tts"
+  | "subtitle_generation"
+  | "final_assembly"
+  | "export";
+export type PipelineExecutionMode = "manual_or_provider" | "provider_only" | "manual_only";
+export type PipelineStepStatus = "pending" | "ready" | "running" | "completed" | "failed" | "skipped";
+export type PipelineStatus = "draft" | "in_progress" | "completed" | "failed";
+
+export interface PipelineAsset {
+  asset_id: string;
+  asset_key: string;
+  asset_type: PipelineAssetType;
+  label: string;
+  url?: string | null;
+  path?: string | null;
+  source: PipelineAssetSource;
+  source_step_id?: string | null;
+  metadata: Record<string, unknown>;
+}
+
+export interface PipelineRequiredInput {
+  asset_key: string;
+  asset_type: string;
+  label: string;
+  required: boolean;
+  accepted_sources: string[];
+  instructions: string;
+}
+
+export interface PipelineExpectedOutput {
+  asset_key: string;
+  asset_type: string;
+  label: string;
+  file_name_hint: string;
+  required_for_next_steps: string[];
+}
+
+export interface PipelineStep {
+  step_id: string;
+  step_number: number;
+  stage: PipelineStage;
+  stage_label?: string | null;
+  stage_purpose?: string | null;
+  title: string;
+  goal: string;
+  tool_type: PipelineToolType;
+  execution_mode: PipelineExecutionMode;
+  provider_capability?: string | null;
+  source_artifacts: string[];
+  required_inputs: PipelineRequiredInput[];
+  prompt_to_copy?: string | null;
+  negative_prompt_to_copy?: string | null;
+  motion_instruction?: string | null;
+  consistency_instruction?: string | null;
+  settings: Record<string, unknown>;
+  expected_outputs: PipelineExpectedOutput[];
+  review_focus: string[];
+  success_criteria: string[];
+  status: PipelineStepStatus;
+  output_assets: PipelineAsset[];
+  manual_instructions: string[];
+  provider_options: Record<string, unknown>[];
+  provider_payload: Record<string, unknown>;
+  error_message?: string | null;
+}
+
+export interface VariantGenerationPipeline {
+  pipeline_id: string;
+  variant_id: string;
+  pipeline_name: string;
+  pipeline_version: string;
+  objective: string;
+  status: PipelineStatus;
+  source_artifacts: Record<string, unknown>[];
+  stage_contracts: Record<string, unknown>[];
+  provider_contracts: Record<string, unknown>[];
+  assets: PipelineAsset[];
+  steps: PipelineStep[];
+}
+
 export interface Variant {
   id: string;
   angle_id: string;
@@ -226,6 +322,7 @@ export interface Variant {
   visual_bible?: Record<string, unknown> | null;
   asset_reference_map?: Record<string, unknown> | null;
   production_package?: VideoProductionPackage | null;
+  generation_pipeline?: VariantGenerationPipeline | null;
   selected_playbook?: string | null;
   angle_type?: string | null;
   video_status: VideoStatus;

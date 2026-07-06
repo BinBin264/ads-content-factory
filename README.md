@@ -16,10 +16,17 @@ Pipeline:
 10. Video Prompts
 11. UI Overlay Plan
 12. Edit Plan
-13. Export Production Package
-14. Real Render Provider
+13. Executable Generation Pipeline
+14. Export Production Package
+15. Real Render Provider
 
-The repo does not create local video output without a configured video provider. Generate Variants creates a production package only. Export Production Package writes prompt and planning files so you can manually test image generation, image-to-video, or reference-to-video tools. Render Video only calls a real configured provider.
+The repo does not create local video output without a configured video provider. Generate Variants creates a production package and a step-by-step generation pipeline. Manual mode lets you copy prompts, create assets in web tools, and upload step outputs. Render Video runs the same pipeline with real configured providers. No mock or placeholder video is created.
+
+The generation workflow now follows three OpenMontage-inspired rules:
+
+- `backend/app/pipeline_manifests/ad_video_generation.json` is the workflow contract for stages, required artifacts, outputs, review focus, and success criteria.
+- `backend/app/services/video_provider.py` exposes a small provider registry contract for each tool type. It shows manual paths and required env, but does not fake provider output.
+- Every variant pipeline carries source artifacts from earlier phases so product intelligence, selected angle, script, storyboard, production package, prompts, uploaded assets, and final exports stay connected.
 
 ## Environment
 
@@ -91,9 +98,9 @@ Then run:
 
 1. Analyze Product
 2. Generate Angles
-3. Generate 2 Variants
-4. Review Character, Reference Prompts, Production Scenes, and Overlay / Edit Plan tabs
+3. Generate Video Workflow
+4. Follow the Generation Pipeline cards: create character refs, upload them, create keyframes, upload clips, overlay app UI, assemble, and export
 5. Export Production Package
-6. Use the exported keyframe and video prompts in your image/video tool
+6. Or configure providers and use Render Video / Run Full Pipeline
 
-Expected Coin Scanner production output includes a warm, trustworthy UGC character, five character reference prompts, four production scenes, safe estimated-value language, and the disclaimer: `Estimated reference value only. Actual value may vary.`
+Expected Coin Scanner production output includes a warm, trustworthy UGC character, five character reference steps, four keyframe steps, four video clip steps, overlay/edit/export steps, safe estimated-value language, and the disclaimer: `Estimated reference value only. Actual value may vary.`

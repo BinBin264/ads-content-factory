@@ -100,7 +100,7 @@ The backend also accepts comma, semicolon, or newline-separated values for compa
 
 ## Variant Shape
 
-`POST /api/projects/{project_id}/generate-variants` returns `Variant[]`. Legacy fields are kept for compatibility and each new variant includes `production_package`.
+`POST /api/projects/{project_id}/generate-variants` returns `Variant[]`. Legacy fields are kept for compatibility and each new variant includes `production_package` and `generation_pipeline`.
 
 ```json
 {
@@ -119,6 +119,7 @@ The backend also accepts comma, semicolon, or newline-separated values for compa
   "caption": "",
   "cover_prompt": "",
   "production_package": {},
+  "generation_pipeline": {},
   "selected_playbook": "Discovery & Reveal",
   "angle_type": "storytelling",
   "video_status": "draft",
@@ -279,8 +280,10 @@ text_to_image, image_to_video, reference_to_video, overlay_only
 Allowed `overlay_type` values:
 
 ```text
-app_screen, subtitle, cta, disclaimer, logo, price_label, button, highlight
+app_screen_overlay, text_overlay, subtitle, cta, disclaimer, logo, price_label, button, highlight
 ```
+
+`app_screen` may appear only in old saved projects for compatibility. New generation should use `app_screen_overlay`.
 
 `EditPlan`:
 
@@ -297,6 +300,168 @@ app_screen, subtitle, cta, disclaimer, logo, price_label, button, highlight
 }
 ```
 
+## Generation Pipeline Shape
+
+`Variant.generation_pipeline`:
+
+```json
+{
+  "pipeline_id": "pipeline_001",
+  "variant_id": "variant_001",
+  "pipeline_name": "ad_video_generation",
+  "pipeline_version": "1.0",
+  "objective": "Turn product intelligence, selected angle, script, storyboard, and production package into a connected step-by-step video creation workflow.",
+  "status": "in_progress",
+  "source_artifacts": [],
+  "stage_contracts": [],
+  "provider_contracts": [],
+  "assets": [],
+  "steps": []
+}
+```
+
+`source_artifacts` explains how prior phases feed the workflow:
+
+```json
+{
+  "artifact_key": "product_intelligence",
+  "label": "Product intelligence",
+  "source_phase": "intelligence",
+  "description": "Used to decide proof points, safe claims, product role, and visual direction."
+}
+```
+
+`stage_contracts` are loaded from `backend/app/pipeline_manifests/ad_video_generation.json`. Each stage documents:
+
+```json
+{
+  "stage": "video_clip",
+  "label": "Image-to-video clips",
+  "purpose": "Animate each approved keyframe into a short scene clip while preserving identity, product context, and timing.",
+  "required_artifacts_in": ["scene_keyframe_images", "character_reference_images", "production_package.production_scenes"],
+  "produces": ["raw_scene_clips"],
+  "tool_type": "video_generation",
+  "provider_capability": "video_generation",
+  "review_focus": [],
+  "success_criteria": []
+}
+```
+
+`provider_contracts` describe the current provider/manual path. They do not create mock output:
+
+```json
+{
+  "tool_type": "video_generation",
+  "capability": "video_generation",
+  "provider_name": "manual_web_tool",
+  "configured": false,
+  "adapter_status": "configured_no_adapter",
+  "status": "missing_env",
+  "manual_supported": true,
+  "required_env": ["VIDEO_PROVIDER_NAME", "VIDEO_PROVIDER_API_KEY"],
+  "recommended_manual_tools": ["Kling image-to-video", "Runway", "Veo", "Luma"],
+  "notes": "Used for image-to-video scene clips."
+}
+```
+
+`PipelineAsset`:
+
+```json
+{
+  "asset_id": "asset_001",
+  "asset_key": "scene_1_keyframe",
+  "asset_type": "image",
+  "label": "Scene 1 keyframe",
+  "url": "/outputs/project_001/variant_001/assets/scene_1_keyframe.png",
+  "path": "backend/app/outputs/project_001/variant_001/assets/scene_1_keyframe.png",
+  "source": "uploaded_by_user",
+  "source_step_id": "scene_1_keyframe",
+  "metadata": {}
+}
+```
+
+Allowed asset types:
+
+```text
+image, video, audio, app_screenshot, subtitle, json, zip
+```
+
+Allowed asset sources:
+
+```text
+uploaded_by_user, generated_by_provider, project_upload, exported
+```
+
+`PipelineStep` contains executable manual and provider instructions:
+
+```json
+{
+  "step_id": "scene_1_keyframe",
+  "step_number": 6,
+  "stage": "scene_keyframe",
+  "stage_label": "Scene keyframes",
+  "stage_purpose": "Create one controllable still image per production scene before video generation.",
+  "title": "Generate scene 1 keyframe",
+  "goal": "Hook the viewer.",
+  "tool_type": "image_generation",
+  "execution_mode": "manual_or_provider",
+  "provider_capability": "image_generation",
+  "source_artifacts": ["character_reference_images", "product_intelligence", "selected_angle", "storyboard", "production_package.production_scenes"],
+  "required_inputs": [],
+  "prompt_to_copy": "Prompt for web/manual generation.",
+  "negative_prompt_to_copy": "Negative prompt.",
+  "motion_instruction": null,
+  "consistency_instruction": null,
+  "settings": {"aspect_ratio": "9:16"},
+  "expected_outputs": [],
+  "review_focus": [],
+  "success_criteria": [],
+  "status": "ready",
+  "output_assets": [],
+  "manual_instructions": [],
+  "provider_options": [],
+  "provider_payload": {},
+  "error_message": null
+}
+```
+
+Allowed step stages:
+
+```text
+character_reference, scene_keyframe, video_clip, app_ui_overlay, voiceover, subtitles, assembly, export
+```
+
+Allowed tool types:
+
+```text
+image_generation, video_generation, image_editing, video_editing, tts, subtitle_generation, final_assembly, export
+```
+
+Allowed step statuses:
+
+```text
+pending, ready, running, completed, failed, skipped
+```
+
+Pipeline endpoints:
+
+```text
+GET  /api/projects/{project_id}/variants/{variant_id}/pipeline
+POST /api/projects/{project_id}/variants/{variant_id}/pipeline/steps/{step_id}/upload-result
+POST /api/projects/{project_id}/variants/{variant_id}/pipeline/steps/{step_id}/run
+POST /api/projects/{project_id}/variants/{variant_id}/pipeline/run
+```
+
+Upload step result uses multipart form data:
+
+```text
+file=<generated image/video>
+asset_key=scene_1_keyframe
+notes=optional notes
+```
+
+Manual and auto render use the same `generation_pipeline.steps`. Manual mode uploads step output assets; auto mode calls configured providers by each step `tool_type`.
+
 ## Export Production Package
 
 `POST /api/projects/{project_id}/export-production-package`
@@ -312,6 +477,11 @@ Behavior:
   - `character_bible.json`
   - `character_reference_prompts.txt`
   - `production_scenes.json`
+  - `pipeline_manifest.json`
+  - `generation_pipeline.json`
+  - `asset_registry.json`
+  - `pipeline_prompts.txt`
+  - `manual_generation_instructions.txt`
   - `keyframe_prompts.txt`
   - `video_prompts.txt`
   - `ui_overlay_plan.txt`
@@ -319,6 +489,10 @@ Behavior:
   - `script.txt`
   - `storyboard.json`
   - `caption.txt`
+  - `generation_pipeline.json`
+  - `asset_registry.json`
+  - `pipeline_prompts.txt`
+  - `manual_generation_instructions.txt`
   - `production_package.zip`
 - Sets `variant.video_status = "package_exported"`.
 - Sets `variant.export_package_url` to the zip URL.
@@ -342,7 +516,7 @@ Response: `Project`
 
 Behavior:
 
-- Calls only the configured real video provider.
+- Runs each variant `generation_pipeline` step-by-step with configured real providers.
 - Does not create fake video files.
 - Does not create placeholder video files.
 - Does not create `mock_video_9x16.txt` or `mock_video_1x1.txt`.
@@ -350,11 +524,11 @@ Behavior:
 If provider env is missing:
 
 ```json
-{"detail": "Video provider is not configured. Set VIDEO_PROVIDER_NAME and VIDEO_PROVIDER_API_KEY."}
+{"detail": "Provider for image_generation is not configured."}
 ```
 
 If provider env exists but no adapter is implemented:
 
 ```json
-{"detail": "Provider is configured but render adapter is not implemented yet."}
+{"detail": "Provider 'provider-name' is configured but image_generation adapter is not implemented yet."}
 ```

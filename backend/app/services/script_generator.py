@@ -13,6 +13,7 @@ from app.services.character_planner import GeminiCharacterPlanner
 from app.services.character_reference_generator import GeminiCharacterReferenceGenerator
 from app.services.intelligence_context import compact_intelligence_context, compact_project_context
 from app.services.llm_provider import LLMProvider, build_llm_provider
+from app.services.pipeline_builder import build_generation_pipeline
 from app.services.production_prompt_generator import GeminiProductionPromptGenerator
 
 
@@ -176,6 +177,7 @@ class GeminiVariantScriptGenerator:
             character_bible=character_bible,
             character_reference_prompts=character_reference_prompts,
         )
+        variant.generation_pipeline = build_generation_pipeline(project, variant)
         return variant
 
     def _coerce_variant(

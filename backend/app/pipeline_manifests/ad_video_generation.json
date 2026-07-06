@@ -1,0 +1,201 @@
+{
+  "name": "ad_video_generation",
+  "version": "1.0",
+  "objective": "Turn product intelligence, selected angle, script, storyboard, and production package into a connected step-by-step video creation workflow.",
+  "source_artifacts": [
+    {
+      "artifact_key": "project_inputs",
+      "label": "Project inputs",
+      "source_phase": "assets",
+      "description": "Product name, category, short description, audience, goal, platform, duration, tone, CTA, claims to avoid, and uploaded files."
+    },
+    {
+      "artifact_key": "product_intelligence",
+      "label": "Product intelligence",
+      "source_phase": "intelligence",
+      "description": "The compact product brief used to decide proof points, audience, product role, safe claims, and visual direction."
+    },
+    {
+      "artifact_key": "selected_angle",
+      "label": "Selected creative angle",
+      "source_phase": "angles",
+      "description": "The hook, pain point, emotional trigger, product role, proof moment, CTA, and score selected for this variant."
+    },
+    {
+      "artifact_key": "variant_script",
+      "label": "Variant script",
+      "source_phase": "variants",
+      "description": "The final ad script, voiceover, title, caption, cover prompt, and storyboard generated for this variant."
+    },
+    {
+      "artifact_key": "production_package",
+      "label": "Production package",
+      "source_phase": "variants",
+      "description": "Character bible, character reference prompts, production scenes, UI overlay plan, edit plan, and render sequence."
+    }
+  ],
+  "stages": [
+    {
+      "stage": "character_reference",
+      "label": "Character lock",
+      "purpose": "Create a stable actor identity before generating scenes so later keyframes and clips look like the same person.",
+      "required_artifacts_in": ["product_intelligence", "selected_angle", "variant_script", "production_package.character_bible"],
+      "produces": ["character_reference_images"],
+      "tool_type": "image_generation",
+      "provider_capability": "image_generation",
+      "manual_goal": "Generate or choose reference images for the actor, then upload the approved files back to the workflow.",
+      "review_focus": [
+        "The same actor identity is preserved across all reference images.",
+        "Only pose, framing, or expression changes between references.",
+        "The actor can plausibly perform the selected ad angle."
+      ],
+      "success_criteria": [
+        "A clean reference image exists for each required reference id.",
+        "Face, age, hair, wardrobe, and overall identity stay consistent.",
+        "Reference images are suitable as inputs for keyframe and video generation."
+      ]
+    },
+    {
+      "stage": "scene_keyframe",
+      "label": "Scene keyframes",
+      "purpose": "Create one controllable still image per production scene before video generation.",
+      "required_artifacts_in": ["character_reference_images", "product_intelligence", "selected_angle", "storyboard", "production_package.production_scenes"],
+      "produces": ["scene_keyframe_images"],
+      "tool_type": "image_generation",
+      "provider_capability": "image_generation",
+      "manual_goal": "Upload reference images into an image tool, paste the keyframe prompt, and return one approved keyframe per scene.",
+      "review_focus": [
+        "The scene advances the chosen hook and proof moment.",
+        "The character still matches the reference identity.",
+        "Product/app UI areas are clean enough for readable overlays later."
+      ],
+      "success_criteria": [
+        "One 9:16 keyframe exists for each scene.",
+        "Each keyframe matches its storyboard beat and visual objective.",
+        "No generated fake app text conflicts with the later UI overlay plan."
+      ]
+    },
+    {
+      "stage": "video_clip",
+      "label": "Image-to-video clips",
+      "purpose": "Animate each approved keyframe into a short scene clip while preserving identity, product context, and timing.",
+      "required_artifacts_in": ["scene_keyframe_images", "character_reference_images", "production_package.production_scenes"],
+      "produces": ["raw_scene_clips"],
+      "tool_type": "video_generation",
+      "provider_capability": "video_generation",
+      "manual_goal": "Upload each keyframe to a video tool such as Kling image-to-video, paste the video prompt and motion notes, then upload the generated clip.",
+      "review_focus": [
+        "Identity remains stable across the clip.",
+        "Motion follows the action description and does not invent extra story beats.",
+        "The clip duration and aspect ratio match the scene settings."
+      ],
+      "success_criteria": [
+        "One raw video clip exists for each scene.",
+        "The clip has no major face morphing, product hallucination, or unusable camera movement.",
+        "Clip output can be edited in the final assembly stage."
+      ]
+    },
+    {
+      "stage": "app_ui_overlay",
+      "label": "Product and UI overlays",
+      "purpose": "Add real app screenshots, subtitles, disclaimers, CTA, or logo as editor overlays after video generation.",
+      "required_artifacts_in": ["raw_scene_clips", "project_inputs.uploaded_files", "production_package.ui_overlay_plan"],
+      "produces": ["overlay_scene_clips"],
+      "tool_type": "video_editing",
+      "provider_capability": "video_editing",
+      "manual_goal": "Use a video editor to place uploaded app/product assets and safety copy on top of generated clips.",
+      "review_focus": [
+        "App UI and disclaimers are readable on mobile.",
+        "Overlay timing matches voiceover and scene action.",
+        "Safe claims from Product Intelligence are respected."
+      ],
+      "success_criteria": [
+        "Every overlay scene has a finished edited clip.",
+        "No required disclaimer, CTA, or app UI moment is missing.",
+        "Overlays do not hide important action or faces."
+      ]
+    },
+    {
+      "stage": "assembly",
+      "label": "Edit assembly",
+      "purpose": "Cut the completed scene clips into one ad with voiceover, subtitles, music, CTA, and pacing.",
+      "required_artifacts_in": ["raw_scene_clips", "overlay_scene_clips", "variant_script", "production_package.edit_plan"],
+      "produces": ["final_video_master"],
+      "tool_type": "final_assembly",
+      "provider_capability": "final_assembly",
+      "manual_goal": "Assemble clips in timeline order, add audio/subtitles/music, and upload the master video.",
+      "review_focus": [
+        "The final timeline follows hook -> demo/proof -> payoff -> CTA.",
+        "Voiceover, subtitle, and scene timing stay aligned.",
+        "The ad fits the requested duration and platform."
+      ],
+      "success_criteria": [
+        "A final master video exists.",
+        "No timeline gaps, missing scenes, unreadable subtitles, or broken audio.",
+        "The master is ready for platform-specific exports."
+      ]
+    },
+    {
+      "stage": "export",
+      "label": "Platform exports",
+      "purpose": "Create placement-ready versions such as 9:16 and 1:1 from the approved master.",
+      "required_artifacts_in": ["final_video_master", "project_inputs.platform", "project_inputs.goal"],
+      "produces": ["final_video_9x16", "final_video_1x1"],
+      "tool_type": "export",
+      "provider_capability": "export",
+      "manual_goal": "Resize, crop, and check readable safe zones for every final placement.",
+      "review_focus": [
+        "Captions, CTA, app UI, and logo remain in safe zones.",
+        "Export specs match the selected platform.",
+        "The output file can be uploaded to ads platforms."
+      ],
+      "success_criteria": [
+        "Required final export files exist.",
+        "Each export is playable and readable on mobile.",
+        "The exported filenames and aspect ratios are clear."
+      ]
+    }
+  ],
+  "provider_requirements": [
+    {
+      "tool_type": "image_generation",
+      "capability": "image_generation",
+      "required_env": ["VIDEO_PROVIDER_NAME", "VIDEO_PROVIDER_API_KEY"],
+      "manual_supported": true,
+      "recommended_manual_tools": ["Midjourney", "ChatGPT image", "Gemini image", "Krea"],
+      "notes": "Used for character reference images and scene keyframes."
+    },
+    {
+      "tool_type": "video_generation",
+      "capability": "video_generation",
+      "required_env": ["VIDEO_PROVIDER_NAME", "VIDEO_PROVIDER_API_KEY"],
+      "manual_supported": true,
+      "recommended_manual_tools": ["Kling image-to-video", "Runway", "Veo", "Luma"],
+      "notes": "Used for image-to-video scene clips."
+    },
+    {
+      "tool_type": "video_editing",
+      "capability": "video_editing",
+      "required_env": ["VIDEO_PROVIDER_NAME", "VIDEO_PROVIDER_API_KEY"],
+      "manual_supported": true,
+      "recommended_manual_tools": ["CapCut", "Premiere Pro", "After Effects", "Canva"],
+      "notes": "Used for product UI overlays and compliance copy."
+    },
+    {
+      "tool_type": "final_assembly",
+      "capability": "final_assembly",
+      "required_env": ["VIDEO_PROVIDER_NAME", "VIDEO_PROVIDER_API_KEY"],
+      "manual_supported": true,
+      "recommended_manual_tools": ["CapCut", "Premiere Pro", "DaVinci Resolve"],
+      "notes": "Used to cut all scenes into the final ad."
+    },
+    {
+      "tool_type": "export",
+      "capability": "export",
+      "required_env": ["VIDEO_PROVIDER_NAME", "VIDEO_PROVIDER_API_KEY"],
+      "manual_supported": true,
+      "recommended_manual_tools": ["CapCut", "Premiere Pro", "FFmpeg"],
+      "notes": "Used for final aspect-ratio exports."
+    }
+  ]
+}

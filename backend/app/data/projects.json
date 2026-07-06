@@ -834,6 +834,1616 @@
             "Post-production: Overlay UI elements, text, voiceover, music, and sound effects according to the edit plan and UI overlay plan. Apply color grading and final export."
           ]
         },
+        "generation_pipeline": {
+          "pipeline_id": "pipeline_d0d7f5782bcc",
+          "variant_id": "variant_3c0f2a5beea2",
+          "status": "in_progress",
+          "assets": [
+            {
+              "asset_id": "asset_be0419f309c5",
+              "asset_key": "project_upload_file_47dd089276bf",
+              "asset_type": "app_screenshot",
+              "label": "mobile_app.jpg",
+              "url": "/uploads/project_bc92697eb7bc/01_mobile_app.jpg",
+              "path": "D:\\DTP_COMPANY\\ads-content-factory\\backend\\app\\uploads\\project_bc92697eb7bc\\01_mobile_app.jpg",
+              "source": "project_upload",
+              "source_step_id": null,
+              "metadata": {
+                "content_type": "image/jpeg",
+                "size_bytes": 78226
+              }
+            },
+            {
+              "asset_id": "asset_9512f04d1e40",
+              "asset_key": "app_screenshot",
+              "asset_type": "app_screenshot",
+              "label": "App screenshot: mobile_app.jpg",
+              "url": "/uploads/project_bc92697eb7bc/01_mobile_app.jpg",
+              "path": "D:\\DTP_COMPANY\\ads-content-factory\\backend\\app\\uploads\\project_bc92697eb7bc\\01_mobile_app.jpg",
+              "source": "project_upload",
+              "source_step_id": null,
+              "metadata": {
+                "alias_for": "project_upload_file_47dd089276bf",
+                "content_type": "image/jpeg",
+                "size_bytes": 78226
+              }
+            },
+            {
+              "asset_id": "asset_59201940f902",
+              "asset_key": "project_upload_file_065a9d5c2181",
+              "asset_type": "app_screenshot",
+              "label": "mobile_app2.jpg",
+              "url": "/uploads/project_bc92697eb7bc/02_mobile_app2.jpg",
+              "path": "D:\\DTP_COMPANY\\ads-content-factory\\backend\\app\\uploads\\project_bc92697eb7bc\\02_mobile_app2.jpg",
+              "source": "project_upload",
+              "source_step_id": null,
+              "metadata": {
+                "content_type": "image/jpeg",
+                "size_bytes": 48415
+              }
+            }
+          ],
+          "steps": [
+            {
+              "step_id": "character_reference_front_portrait",
+              "step_number": 1,
+              "stage": "character_reference",
+              "title": "Create Master identity reference",
+              "goal": "Generate one reference image of the same main actor. Change only pose/framing for this reference.",
+              "tool_type": "image_generation",
+              "execution_mode": "manual_or_provider",
+              "provider_capability": "image_generation",
+              "required_inputs": [],
+              "prompt_to_copy": "A relatable female, 35-45 years old, light-skinned, average build, with an approachable and friendly appearance. She has expressive eyes showing curiosity and a warm, natural smile. Her hair is medium length, natural light brown or blonde, styled simply and casually. She wears a neutral beige casual shirt. The setting is a warm, well-lit kitchen dining table or a cozy living room area, suggesting a home environment. Authentic, natural lighting, clean but not sterile. Front-facing portrait, looking at camera with a curious and friendly expression, simple home background.",
+              "negative_prompt_to_copy": "ugly, deformed, disfigured, bad anatomy, extra limbs, missing limbs, malformed limbs, extra fingers, missing fingers, fused fingers, too many fingers, too few fingers, mutated hands, distorted hands, different character, different face, different hair, different outfit, different age, different skin tone, different body type, overly glamorous, professional attire, dramatic reactions, exaggerated reactions, stylized hair, heavy makeup, expert numismatist, professional appraiser, sterile environment, dark, poorly lit, text, logo, watermark, UI, app interface, screen content, brand, words, letters, numbers, complex text",
+              "motion_instruction": null,
+              "consistency_instruction": null,
+              "settings": {
+                "aspect_ratio": "4:5",
+                "style": "realistic UGC reference image"
+              },
+              "expected_outputs": [
+                {
+                  "asset_key": "front_portrait",
+                  "asset_type": "image",
+                  "label": "Master identity reference",
+                  "file_name_hint": "front_portrait.png",
+                  "required_for_next_steps": []
+                }
+              ],
+              "status": "ready",
+              "output_assets": [],
+              "manual_instructions": [
+                "Open your image generation tool.",
+                "Paste the prompt and negative prompt.",
+                "Use the exact aspect ratio shown in settings.",
+                "Export one clean image and upload it back to this step."
+              ],
+              "provider_payload": {
+                "prompt": "A relatable female, 35-45 years old, light-skinned, average build, with an approachable and friendly appearance. She has expressive eyes showing curiosity and a warm, natural smile. Her hair is medium length, natural light brown or blonde, styled simply and casually. She wears a neutral beige casual shirt. The setting is a warm, well-lit kitchen dining table or a cozy living room area, suggesting a home environment. Authentic, natural lighting, clean but not sterile. Front-facing portrait, looking at camera with a curious and friendly expression, simple home background.",
+                "negative_prompt": "ugly, deformed, disfigured, bad anatomy, extra limbs, missing limbs, malformed limbs, extra fingers, missing fingers, fused fingers, too many fingers, too few fingers, mutated hands, distorted hands, different character, different face, different hair, different outfit, different age, different skin tone, different body type, overly glamorous, professional attire, dramatic reactions, exaggerated reactions, stylized hair, heavy makeup, expert numismatist, professional appraiser, sterile environment, dark, poorly lit, text, logo, watermark, UI, app interface, screen content, brand, words, letters, numbers, complex text",
+                "aspect_ratio": "4:5"
+              },
+              "error_message": null
+            },
+            {
+              "step_id": "character_reference_three_quarter_portrait",
+              "step_number": 2,
+              "stage": "character_reference",
+              "title": "Create 3/4 face reference",
+              "goal": "Generate one reference image of the same main actor. Change only pose/framing for this reference.",
+              "tool_type": "image_generation",
+              "execution_mode": "manual_or_provider",
+              "provider_capability": "image_generation",
+              "required_inputs": [],
+              "prompt_to_copy": "A relatable female, 35-45 years old, light-skinned, average build, with an approachable and friendly appearance. She has expressive eyes showing curiosity and a warm, natural smile. Her hair is medium length, natural light brown or blonde, styled simply and casually. She wears a neutral beige casual shirt. The setting is a warm, well-lit kitchen dining table or a cozy living room area, suggesting a home environment. Authentic, natural lighting, clean but not sterile. Three-quarter portrait, looking slightly off-camera with a genuinely surprised expression, simple home background.",
+              "negative_prompt_to_copy": "ugly, deformed, disfigured, bad anatomy, extra limbs, missing limbs, malformed limbs, extra fingers, missing fingers, fused fingers, too many fingers, too few fingers, mutated hands, distorted hands, different character, different face, different hair, different outfit, different age, different skin tone, different body type, overly glamorous, professional attire, dramatic reactions, exaggerated reactions, stylized hair, heavy makeup, expert numismatist, professional appraiser, sterile environment, dark, poorly lit, text, logo, watermark, UI, app interface, screen content, brand, words, letters, numbers, complex text",
+              "motion_instruction": null,
+              "consistency_instruction": null,
+              "settings": {
+                "aspect_ratio": "4:5",
+                "style": "realistic UGC reference image"
+              },
+              "expected_outputs": [
+                {
+                  "asset_key": "three_quarter_portrait",
+                  "asset_type": "image",
+                  "label": "3/4 face reference",
+                  "file_name_hint": "three_quarter_portrait.png",
+                  "required_for_next_steps": []
+                }
+              ],
+              "status": "ready",
+              "output_assets": [],
+              "manual_instructions": [
+                "Open your image generation tool.",
+                "Paste the prompt and negative prompt.",
+                "Use the exact aspect ratio shown in settings.",
+                "Export one clean image and upload it back to this step."
+              ],
+              "provider_payload": {
+                "prompt": "A relatable female, 35-45 years old, light-skinned, average build, with an approachable and friendly appearance. She has expressive eyes showing curiosity and a warm, natural smile. Her hair is medium length, natural light brown or blonde, styled simply and casually. She wears a neutral beige casual shirt. The setting is a warm, well-lit kitchen dining table or a cozy living room area, suggesting a home environment. Authentic, natural lighting, clean but not sterile. Three-quarter portrait, looking slightly off-camera with a genuinely surprised expression, simple home background.",
+                "negative_prompt": "ugly, deformed, disfigured, bad anatomy, extra limbs, missing limbs, malformed limbs, extra fingers, missing fingers, fused fingers, too many fingers, too few fingers, mutated hands, distorted hands, different character, different face, different hair, different outfit, different age, different skin tone, different body type, overly glamorous, professional attire, dramatic reactions, exaggerated reactions, stylized hair, heavy makeup, expert numismatist, professional appraiser, sterile environment, dark, poorly lit, text, logo, watermark, UI, app interface, screen content, brand, words, letters, numbers, complex text",
+                "aspect_ratio": "4:5"
+              },
+              "error_message": null
+            },
+            {
+              "step_id": "character_reference_seated_in_main_setting",
+              "step_number": 3,
+              "stage": "character_reference",
+              "title": "Create Same character in main ad setting",
+              "goal": "Generate one reference image of the same main actor. Change only pose/framing for this reference.",
+              "tool_type": "image_generation",
+              "execution_mode": "manual_or_provider",
+              "provider_capability": "image_generation",
+              "required_inputs": [],
+              "prompt_to_copy": "A relatable female, 35-45 years old, light-skinned, average build, with an approachable and friendly appearance. She has expressive eyes showing curiosity and a warm, natural smile. Her hair is medium length, natural light brown or blonde, styled simply and casually. She wears a neutral beige casual shirt. Seated at a warm, well-lit kitchen dining table or a cozy living room area, suggesting a home environment. She looks curious and relatable. Authentic, natural lighting, clean but not sterile.",
+              "negative_prompt_to_copy": "ugly, deformed, disfigured, bad anatomy, extra limbs, missing limbs, malformed limbs, extra fingers, missing fingers, fused fingers, too many fingers, too few fingers, mutated hands, distorted hands, different character, different face, different hair, different outfit, different age, different skin tone, different body type, overly glamorous, professional attire, dramatic reactions, exaggerated reactions, stylized hair, heavy makeup, expert numismatist, professional appraiser, sterile environment, dark, poorly lit, text, logo, watermark, UI, app interface, screen content, brand, words, letters, numbers, complex text",
+              "motion_instruction": null,
+              "consistency_instruction": null,
+              "settings": {
+                "aspect_ratio": "9:16",
+                "style": "realistic UGC reference image"
+              },
+              "expected_outputs": [
+                {
+                  "asset_key": "seated_in_main_setting",
+                  "asset_type": "image",
+                  "label": "Same character in main ad setting",
+                  "file_name_hint": "seated_in_main_setting.png",
+                  "required_for_next_steps": [
+                    "scene_1_keyframe",
+                    "scene_2_keyframe"
+                  ]
+                }
+              ],
+              "status": "ready",
+              "output_assets": [],
+              "manual_instructions": [
+                "Open your image generation tool.",
+                "Paste the prompt and negative prompt.",
+                "Use the exact aspect ratio shown in settings.",
+                "Export one clean image and upload it back to this step."
+              ],
+              "provider_payload": {
+                "prompt": "A relatable female, 35-45 years old, light-skinned, average build, with an approachable and friendly appearance. She has expressive eyes showing curiosity and a warm, natural smile. Her hair is medium length, natural light brown or blonde, styled simply and casually. She wears a neutral beige casual shirt. Seated at a warm, well-lit kitchen dining table or a cozy living room area, suggesting a home environment. She looks curious and relatable. Authentic, natural lighting, clean but not sterile.",
+                "negative_prompt": "ugly, deformed, disfigured, bad anatomy, extra limbs, missing limbs, malformed limbs, extra fingers, missing fingers, fused fingers, too many fingers, too few fingers, mutated hands, distorted hands, different character, different face, different hair, different outfit, different age, different skin tone, different body type, overly glamorous, professional attire, dramatic reactions, exaggerated reactions, stylized hair, heavy makeup, expert numismatist, professional appraiser, sterile environment, dark, poorly lit, text, logo, watermark, UI, app interface, screen content, brand, words, letters, numbers, complex text",
+                "aspect_ratio": "9:16"
+              },
+              "error_message": null
+            },
+            {
+              "step_id": "character_reference_holding_key_object",
+              "step_number": 4,
+              "stage": "character_reference",
+              "title": "Create Same character holding key object or product",
+              "goal": "Generate one reference image of the same main actor. Change only pose/framing for this reference.",
+              "tool_type": "image_generation",
+              "execution_mode": "manual_or_provider",
+              "provider_capability": "image_generation",
+              "required_inputs": [],
+              "prompt_to_copy": "A relatable female, 35-45 years old, light-skinned, average build, with an approachable and friendly appearance. She has expressive eyes showing curiosity and a warm, natural smile. Her hair is medium length, natural light brown or blonde, styled simply and casually. She wears a neutral beige casual shirt. Seated at a warm, well-lit kitchen dining table or a cozy living room area, suggesting a home environment. She is holding an old, slightly tarnished coin (penny or nickel) between her fingers, examining it closely with a curious expression. Close-up on hands and coin. Authentic, natural lighting, clean but not sterile.",
+              "negative_prompt_to_copy": "ugly, deformed, disfigured, bad anatomy, extra limbs, missing limbs, malformed limbs, extra fingers, missing fingers, fused fingers, too many fingers, too few fingers, mutated hands, distorted hands, different character, different face, different hair, different outfit, different age, different skin tone, different body type, overly glamorous, professional attire, dramatic reactions, exaggerated reactions, stylized hair, heavy makeup, expert numismatist, professional appraiser, sterile environment, dark, poorly lit, text, logo, watermark, UI, app interface, screen content, brand, words, letters, numbers, complex text",
+              "motion_instruction": null,
+              "consistency_instruction": null,
+              "settings": {
+                "aspect_ratio": "9:16",
+                "style": "realistic UGC reference image"
+              },
+              "expected_outputs": [
+                {
+                  "asset_key": "holding_key_object",
+                  "asset_type": "image",
+                  "label": "Same character holding key object or product",
+                  "file_name_hint": "holding_key_object.png",
+                  "required_for_next_steps": [
+                    "scene_1_keyframe",
+                    "scene_2_keyframe",
+                    "scene_3_keyframe"
+                  ]
+                }
+              ],
+              "status": "ready",
+              "output_assets": [],
+              "manual_instructions": [
+                "Open your image generation tool.",
+                "Paste the prompt and negative prompt.",
+                "Use the exact aspect ratio shown in settings.",
+                "Export one clean image and upload it back to this step."
+              ],
+              "provider_payload": {
+                "prompt": "A relatable female, 35-45 years old, light-skinned, average build, with an approachable and friendly appearance. She has expressive eyes showing curiosity and a warm, natural smile. Her hair is medium length, natural light brown or blonde, styled simply and casually. She wears a neutral beige casual shirt. Seated at a warm, well-lit kitchen dining table or a cozy living room area, suggesting a home environment. She is holding an old, slightly tarnished coin (penny or nickel) between her fingers, examining it closely with a curious expression. Close-up on hands and coin. Authentic, natural lighting, clean but not sterile.",
+                "negative_prompt": "ugly, deformed, disfigured, bad anatomy, extra limbs, missing limbs, malformed limbs, extra fingers, missing fingers, fused fingers, too many fingers, too few fingers, mutated hands, distorted hands, different character, different face, different hair, different outfit, different age, different skin tone, different body type, overly glamorous, professional attire, dramatic reactions, exaggerated reactions, stylized hair, heavy makeup, expert numismatist, professional appraiser, sterile environment, dark, poorly lit, text, logo, watermark, UI, app interface, screen content, brand, words, letters, numbers, complex text",
+                "aspect_ratio": "9:16"
+              },
+              "error_message": null
+            },
+            {
+              "step_id": "character_reference_holding_phone_or_cta_pose",
+              "step_number": 5,
+              "stage": "character_reference",
+              "title": "Create Same character holding phone or CTA pose",
+              "goal": "Generate one reference image of the same main actor. Change only pose/framing for this reference.",
+              "tool_type": "image_generation",
+              "execution_mode": "manual_or_provider",
+              "provider_capability": "image_generation",
+              "required_inputs": [],
+              "prompt_to_copy": "A relatable female, 35-45 years old, light-skinned, average build, with an approachable and friendly appearance. She has expressive eyes showing curiosity and a warm, natural smile. Her hair is medium length, natural light brown or blonde, styled simply and casually. She wears a neutral beige casual shirt. Seated at a warm, well-lit kitchen dining table or a cozy living room area, suggesting a home environment. She is holding a smartphone in her hand, looking at the screen with a surprised and satisfied expression. Close-up on hands and phone. The phone screen is blank and clean. Authentic, natural lighting, clean but not sterile.",
+              "negative_prompt_to_copy": "ugly, deformed, disfigured, bad anatomy, extra limbs, missing limbs, malformed limbs, extra fingers, missing fingers, fused fingers, too many fingers, too few fingers, mutated hands, distorted hands, different character, different face, different hair, different outfit, different age, different skin tone, different body type, overly glamorous, professional attire, dramatic reactions, exaggerated reactions, stylized hair, heavy makeup, expert numismatist, professional appraiser, sterile environment, dark, poorly lit, text, logo, watermark, UI, app interface, screen content, brand, words, letters, numbers, complex text",
+              "motion_instruction": null,
+              "consistency_instruction": null,
+              "settings": {
+                "aspect_ratio": "9:16",
+                "style": "realistic UGC reference image"
+              },
+              "expected_outputs": [
+                {
+                  "asset_key": "holding_phone_or_cta_pose",
+                  "asset_type": "image",
+                  "label": "Same character holding phone or CTA pose",
+                  "file_name_hint": "holding_phone_or_cta_pose.png",
+                  "required_for_next_steps": [
+                    "scene_3_keyframe",
+                    "scene_4_keyframe"
+                  ]
+                }
+              ],
+              "status": "ready",
+              "output_assets": [],
+              "manual_instructions": [
+                "Open your image generation tool.",
+                "Paste the prompt and negative prompt.",
+                "Use the exact aspect ratio shown in settings.",
+                "Export one clean image and upload it back to this step."
+              ],
+              "provider_payload": {
+                "prompt": "A relatable female, 35-45 years old, light-skinned, average build, with an approachable and friendly appearance. She has expressive eyes showing curiosity and a warm, natural smile. Her hair is medium length, natural light brown or blonde, styled simply and casually. She wears a neutral beige casual shirt. Seated at a warm, well-lit kitchen dining table or a cozy living room area, suggesting a home environment. She is holding a smartphone in her hand, looking at the screen with a surprised and satisfied expression. Close-up on hands and phone. The phone screen is blank and clean. Authentic, natural lighting, clean but not sterile.",
+                "negative_prompt": "ugly, deformed, disfigured, bad anatomy, extra limbs, missing limbs, malformed limbs, extra fingers, missing fingers, fused fingers, too many fingers, too few fingers, mutated hands, distorted hands, different character, different face, different hair, different outfit, different age, different skin tone, different body type, overly glamorous, professional attire, dramatic reactions, exaggerated reactions, stylized hair, heavy makeup, expert numismatist, professional appraiser, sterile environment, dark, poorly lit, text, logo, watermark, UI, app interface, screen content, brand, words, letters, numbers, complex text",
+                "aspect_ratio": "9:16"
+              },
+              "error_message": null
+            },
+            {
+              "step_id": "scene_1_keyframe",
+              "step_number": 6,
+              "stage": "scene_keyframe",
+              "title": "Generate scene 1 keyframe",
+              "goal": "Grab attention with a discovery moment, leveraging curiosity about old finds.",
+              "tool_type": "image_generation",
+              "execution_mode": "manual_or_provider",
+              "provider_capability": "image_generation",
+              "required_inputs": [
+                {
+                  "asset_key": "holding_key_object",
+                  "asset_type": "image",
+                  "label": "Holding Key Object",
+                  "required": true,
+                  "accepted_sources": [
+                    "uploaded_by_user",
+                    "generated_by_provider"
+                  ],
+                  "instructions": "Use this actor/reference image as input so the generated keyframe keeps the same identity."
+                },
+                {
+                  "asset_key": "seated_in_main_setting",
+                  "asset_type": "image",
+                  "label": "Seated In Main Setting",
+                  "required": true,
+                  "accepted_sources": [
+                    "uploaded_by_user",
+                    "generated_by_provider"
+                  ],
+                  "instructions": "Use this actor/reference image as input so the generated keyframe keeps the same identity."
+                }
+              ],
+              "prompt_to_copy": "POV, a relatable female hand digging into a clear glass coin jar, pulling out an old, dusty coin. Close-up on the coin, showing its aged details, natural lighting, realistic, not polished, high detail, home setting.",
+              "negative_prompt_to_copy": "different person, changed face, different hairstyle, different shirt, older man, younger man, distorted hands, extra fingers, missing fingers, deformed phone, unreadable text, fake UI text, random logo, bad anatomy, blurry face, low quality, identity change, face morphing, plastic skin, cartoon, anime, over-polished commercial look, unrealistic expression",
+              "motion_instruction": null,
+              "consistency_instruction": null,
+              "settings": {
+                "aspect_ratio": "9:16",
+                "scene_number": 1,
+                "global_timeline": {
+                  "start_seconds": 0.0,
+                  "end_seconds": 4.0
+                }
+              },
+              "expected_outputs": [
+                {
+                  "asset_key": "scene_1_keyframe",
+                  "asset_type": "image",
+                  "label": "Scene 1 keyframe",
+                  "file_name_hint": "scene_1_keyframe.png",
+                  "required_for_next_steps": [
+                    "scene_1_clip"
+                  ]
+                }
+              ],
+              "status": "pending",
+              "output_assets": [],
+              "manual_instructions": [
+                "Upload the required character references into your image tool.",
+                "Paste the keyframe prompt.",
+                "Keep phone screens blank or clean for app UI overlay later.",
+                "Upload the generated keyframe image back to this step."
+              ],
+              "provider_payload": {
+                "prompt": "POV, a relatable female hand digging into a clear glass coin jar, pulling out an old, dusty coin. Close-up on the coin, showing its aged details, natural lighting, realistic, not polished, high detail, home setting.",
+                "negative_prompt": "different person, changed face, different hairstyle, different shirt, older man, younger man, distorted hands, extra fingers, missing fingers, deformed phone, unreadable text, fake UI text, random logo, bad anatomy, blurry face, low quality, identity change, face morphing, plastic skin, cartoon, anime, over-polished commercial look, unrealistic expression",
+                "required_reference_assets": [
+                  "holding_key_object",
+                  "seated_in_main_setting"
+                ],
+                "aspect_ratio": "9:16"
+              },
+              "error_message": null
+            },
+            {
+              "step_id": "scene_2_keyframe",
+              "step_number": 7,
+              "stage": "scene_keyframe",
+              "title": "Generate scene 2 keyframe",
+              "goal": "Establish the problem: uncertainty about the coin's identity and value, building curiosity.",
+              "tool_type": "image_generation",
+              "execution_mode": "manual_or_provider",
+              "provider_capability": "image_generation",
+              "required_inputs": [
+                {
+                  "asset_key": "holding_key_object",
+                  "asset_type": "image",
+                  "label": "Holding Key Object",
+                  "required": true,
+                  "accepted_sources": [
+                    "uploaded_by_user",
+                    "generated_by_provider"
+                  ],
+                  "instructions": "Use this actor/reference image as input so the generated keyframe keeps the same identity."
+                },
+                {
+                  "asset_key": "seated_in_main_setting",
+                  "asset_type": "image",
+                  "label": "Seated In Main Setting",
+                  "required": true,
+                  "accepted_sources": [
+                    "uploaded_by_user",
+                    "generated_by_provider"
+                  ],
+                  "instructions": "Use this actor/reference image as input so the generated keyframe keeps the same identity."
+                }
+              ],
+              "prompt_to_copy": "Relatable Home Discoverer, female, 35-45, light-skinned, average build, wearing a neutral beige casual shirt, seated at a warm, well-lit kitchen dining table. She holds an old, slightly tarnished coin, looking curious and slightly puzzled, trying to discern faint details on the coin. Medium shot, soft lighting, realistic, not polished.",
+              "negative_prompt_to_copy": "different person, changed face, different hairstyle, different shirt, older man, younger man, distorted hands, extra fingers, missing fingers, deformed phone, unreadable text, fake UI text, random logo, bad anatomy, blurry face, low quality, identity change, face morphing, plastic skin, cartoon, anime, over-polished commercial look, unrealistic expression",
+              "motion_instruction": null,
+              "consistency_instruction": null,
+              "settings": {
+                "aspect_ratio": "9:16",
+                "scene_number": 2,
+                "global_timeline": {
+                  "start_seconds": 4.0,
+                  "end_seconds": 8.0
+                }
+              },
+              "expected_outputs": [
+                {
+                  "asset_key": "scene_2_keyframe",
+                  "asset_type": "image",
+                  "label": "Scene 2 keyframe",
+                  "file_name_hint": "scene_2_keyframe.png",
+                  "required_for_next_steps": [
+                    "scene_2_clip"
+                  ]
+                }
+              ],
+              "status": "pending",
+              "output_assets": [],
+              "manual_instructions": [
+                "Upload the required character references into your image tool.",
+                "Paste the keyframe prompt.",
+                "Keep phone screens blank or clean for app UI overlay later.",
+                "Upload the generated keyframe image back to this step."
+              ],
+              "provider_payload": {
+                "prompt": "Relatable Home Discoverer, female, 35-45, light-skinned, average build, wearing a neutral beige casual shirt, seated at a warm, well-lit kitchen dining table. She holds an old, slightly tarnished coin, looking curious and slightly puzzled, trying to discern faint details on the coin. Medium shot, soft lighting, realistic, not polished.",
+                "negative_prompt": "different person, changed face, different hairstyle, different shirt, older man, younger man, distorted hands, extra fingers, missing fingers, deformed phone, unreadable text, fake UI text, random logo, bad anatomy, blurry face, low quality, identity change, face morphing, plastic skin, cartoon, anime, over-polished commercial look, unrealistic expression",
+                "required_reference_assets": [
+                  "holding_key_object",
+                  "seated_in_main_setting"
+                ],
+                "aspect_ratio": "9:16"
+              },
+              "error_message": null
+            },
+            {
+              "step_id": "scene_3_keyframe",
+              "step_number": 8,
+              "stage": "scene_keyframe",
+              "title": "Generate scene 3 keyframe",
+              "goal": "Demonstrate the app's core functionality: scanning, instant identification, and estimated value, providing a clear solution.",
+              "tool_type": "image_generation",
+              "execution_mode": "manual_or_provider",
+              "provider_capability": "image_generation",
+              "required_inputs": [
+                {
+                  "asset_key": "holding_phone_or_cta_pose",
+                  "asset_type": "image",
+                  "label": "Holding Phone Or Cta Pose",
+                  "required": true,
+                  "accepted_sources": [
+                    "uploaded_by_user",
+                    "generated_by_provider"
+                  ],
+                  "instructions": "Use this actor/reference image as input so the generated keyframe keeps the same identity."
+                },
+                {
+                  "asset_key": "holding_key_object",
+                  "asset_type": "image",
+                  "label": "Holding Key Object",
+                  "required": true,
+                  "accepted_sources": [
+                    "uploaded_by_user",
+                    "generated_by_provider"
+                  ],
+                  "instructions": "Use this actor/reference image as input so the generated keyframe keeps the same identity."
+                }
+              ],
+              "prompt_to_copy": "Close-up, over-the-shoulder shot of a relatable female hand holding a smartphone, scanning an old coin with the Coin Scanner App. The app interface is clearly visible showing coin details like country, year, and an estimated value range with a disclaimer. In the background, the user's face shows genuine surprise. Natural lighting, realistic, not polished. The phone screen should be clean and simple for later UI overlay. Do not generate unreadable app text.",
+              "negative_prompt_to_copy": "different person, changed face, different hairstyle, different shirt, older man, younger man, distorted hands, extra fingers, missing fingers, deformed phone, unreadable text, fake UI text, random logo, bad anatomy, blurry face, low quality, identity change, face morphing, plastic skin, cartoon, anime, over-polished commercial look, unrealistic expression",
+              "motion_instruction": null,
+              "consistency_instruction": null,
+              "settings": {
+                "aspect_ratio": "9:16",
+                "scene_number": 3,
+                "global_timeline": {
+                  "start_seconds": 8.0,
+                  "end_seconds": 18.0
+                }
+              },
+              "expected_outputs": [
+                {
+                  "asset_key": "scene_3_keyframe",
+                  "asset_type": "image",
+                  "label": "Scene 3 keyframe",
+                  "file_name_hint": "scene_3_keyframe.png",
+                  "required_for_next_steps": [
+                    "scene_3_clip"
+                  ]
+                }
+              ],
+              "status": "pending",
+              "output_assets": [],
+              "manual_instructions": [
+                "Upload the required character references into your image tool.",
+                "Paste the keyframe prompt.",
+                "Keep phone screens blank or clean for app UI overlay later.",
+                "Upload the generated keyframe image back to this step."
+              ],
+              "provider_payload": {
+                "prompt": "Close-up, over-the-shoulder shot of a relatable female hand holding a smartphone, scanning an old coin with the Coin Scanner App. The app interface is clearly visible showing coin details like country, year, and an estimated value range with a disclaimer. In the background, the user's face shows genuine surprise. Natural lighting, realistic, not polished. The phone screen should be clean and simple for later UI overlay. Do not generate unreadable app text.",
+                "negative_prompt": "different person, changed face, different hairstyle, different shirt, older man, younger man, distorted hands, extra fingers, missing fingers, deformed phone, unreadable text, fake UI text, random logo, bad anatomy, blurry face, low quality, identity change, face morphing, plastic skin, cartoon, anime, over-polished commercial look, unrealistic expression",
+                "required_reference_assets": [
+                  "holding_phone_or_cta_pose",
+                  "holding_key_object"
+                ],
+                "aspect_ratio": "9:16"
+              },
+              "error_message": null
+            },
+            {
+              "step_id": "scene_4_keyframe",
+              "step_number": 9,
+              "stage": "scene_keyframe",
+              "title": "Generate scene 4 keyframe",
+              "goal": "Show the positive result and drive app installs with a clear call to action.",
+              "tool_type": "image_generation",
+              "execution_mode": "manual_or_provider",
+              "provider_capability": "image_generation",
+              "required_inputs": [
+                {
+                  "asset_key": "holding_phone_or_cta_pose",
+                  "asset_type": "image",
+                  "label": "Holding Phone Or Cta Pose",
+                  "required": true,
+                  "accepted_sources": [
+                    "uploaded_by_user",
+                    "generated_by_provider"
+                  ],
+                  "instructions": "Use this actor/reference image as input so the generated keyframe keeps the same identity."
+                }
+              ],
+              "prompt_to_copy": "Relatable Home Discoverer, female, 35-45, light-skinned, average build, wearing a neutral beige casual shirt, seated at a warm, well-lit kitchen dining table. She is smiling and happily scrolling through the Coin Scanner App on her smartphone, showing the 'My Coins' section with the newly added coin. Medium shot, soft lighting, realistic, not polished. The phone screen should be clean and simple for later UI overlay. Do not generate unreadable app text.",
+              "negative_prompt_to_copy": "different person, changed face, different hairstyle, different shirt, older man, younger man, distorted hands, extra fingers, missing fingers, deformed phone, unreadable text, fake UI text, random logo, bad anatomy, blurry face, low quality, identity change, face morphing, plastic skin, cartoon, anime, over-polished commercial look, unrealistic expression",
+              "motion_instruction": null,
+              "consistency_instruction": null,
+              "settings": {
+                "aspect_ratio": "9:16",
+                "scene_number": 4,
+                "global_timeline": {
+                  "start_seconds": 18.0,
+                  "end_seconds": 22.0
+                }
+              },
+              "expected_outputs": [
+                {
+                  "asset_key": "scene_4_keyframe",
+                  "asset_type": "image",
+                  "label": "Scene 4 keyframe",
+                  "file_name_hint": "scene_4_keyframe.png",
+                  "required_for_next_steps": [
+                    "scene_4_clip"
+                  ]
+                }
+              ],
+              "status": "pending",
+              "output_assets": [],
+              "manual_instructions": [
+                "Upload the required character references into your image tool.",
+                "Paste the keyframe prompt.",
+                "Keep phone screens blank or clean for app UI overlay later.",
+                "Upload the generated keyframe image back to this step."
+              ],
+              "provider_payload": {
+                "prompt": "Relatable Home Discoverer, female, 35-45, light-skinned, average build, wearing a neutral beige casual shirt, seated at a warm, well-lit kitchen dining table. She is smiling and happily scrolling through the Coin Scanner App on her smartphone, showing the 'My Coins' section with the newly added coin. Medium shot, soft lighting, realistic, not polished. The phone screen should be clean and simple for later UI overlay. Do not generate unreadable app text.",
+                "negative_prompt": "different person, changed face, different hairstyle, different shirt, older man, younger man, distorted hands, extra fingers, missing fingers, deformed phone, unreadable text, fake UI text, random logo, bad anatomy, blurry face, low quality, identity change, face morphing, plastic skin, cartoon, anime, over-polished commercial look, unrealistic expression",
+                "required_reference_assets": [
+                  "holding_phone_or_cta_pose"
+                ],
+                "aspect_ratio": "9:16"
+              },
+              "error_message": null
+            },
+            {
+              "step_id": "scene_1_clip",
+              "step_number": 10,
+              "stage": "video_clip",
+              "title": "Animate scene 1",
+              "goal": "Hand reaches into a coin jar, retrieves a coin, and brings it into close focus.",
+              "tool_type": "video_generation",
+              "execution_mode": "manual_or_provider",
+              "provider_capability": "video_generation",
+              "required_inputs": [
+                {
+                  "asset_key": "scene_1_keyframe",
+                  "asset_type": "image",
+                  "label": "Scene 1 keyframe",
+                  "required": true,
+                  "accepted_sources": [
+                    "uploaded_by_user",
+                    "generated_by_provider"
+                  ],
+                  "instructions": "Use this image as the first frame or image-to-video source."
+                },
+                {
+                  "asset_key": "holding_key_object",
+                  "asset_type": "image",
+                  "label": "Holding Key Object",
+                  "required": false,
+                  "accepted_sources": [
+                    "uploaded_by_user",
+                    "generated_by_provider"
+                  ],
+                  "instructions": "Use if the video provider supports character/reference images."
+                },
+                {
+                  "asset_key": "seated_in_main_setting",
+                  "asset_type": "image",
+                  "label": "Seated In Main Setting",
+                  "required": false,
+                  "accepted_sources": [
+                    "uploaded_by_user",
+                    "generated_by_provider"
+                  ],
+                  "instructions": "Use if the video provider supports character/reference images."
+                }
+              ],
+              "prompt_to_copy": "POV, a relatable female hand digging into a clear glass coin jar, pulling out an old, dusty coin. Close-up on the coin, showing its aged details, natural lighting, realistic, not polished, high detail, home setting. Use the same character from the generated character reference images. Preserve face, hairstyle, facial hair, age, skin tone, body type, outfit, and setting. Do not change identity across scenes.",
+              "negative_prompt_to_copy": "different person, changed face, different hairstyle, different shirt, older man, younger man, distorted hands, extra fingers, missing fingers, deformed phone, unreadable text, fake UI text, random logo, bad anatomy, blurry face, low quality, identity change, face morphing, plastic skin, cartoon, anime, over-polished commercial look, unrealistic expression",
+              "motion_instruction": "Slow, deliberate hand movement revealing the coin, then a slight rotation of the coin to show both sides.",
+              "consistency_instruction": "Ensure the hand matches the character's skin tone and style. The coin jar and coin should maintain consistent appearance.",
+              "settings": {
+                "duration_seconds": 4,
+                "aspect_ratio": "9:16",
+                "generation_mode": "image_to_video",
+                "global_timeline": {
+                  "start_seconds": 0.0,
+                  "end_seconds": 4.0
+                }
+              },
+              "expected_outputs": [
+                {
+                  "asset_key": "scene_1_clip",
+                  "asset_type": "video",
+                  "label": "Scene 1 raw clip",
+                  "file_name_hint": "scene_1_clip.mp4",
+                  "required_for_next_steps": [
+                    "scene_1_overlay",
+                    "assembly_master"
+                  ]
+                }
+              ],
+              "status": "pending",
+              "output_assets": [],
+              "manual_instructions": [
+                "Open your video generation tool.",
+                "Upload the scene keyframe as image-to-video input.",
+                "Paste the video prompt, motion instruction, and consistency instruction.",
+                "Use the duration/aspect ratio from settings.",
+                "Upload the generated clip back to this step."
+              ],
+              "provider_payload": {
+                "prompt": "POV, a relatable female hand digging into a clear glass coin jar, pulling out an old, dusty coin. Close-up on the coin, showing its aged details, natural lighting, realistic, not polished, high detail, home setting. Use the same character from the generated character reference images. Preserve face, hairstyle, facial hair, age, skin tone, body type, outfit, and setting. Do not change identity across scenes.",
+                "negative_prompt": "different person, changed face, different hairstyle, different shirt, older man, younger man, distorted hands, extra fingers, missing fingers, deformed phone, unreadable text, fake UI text, random logo, bad anatomy, blurry face, low quality, identity change, face morphing, plastic skin, cartoon, anime, over-polished commercial look, unrealistic expression",
+                "motion_instruction": "Slow, deliberate hand movement revealing the coin, then a slight rotation of the coin to show both sides.",
+                "consistency_instruction": "Ensure the hand matches the character's skin tone and style. The coin jar and coin should maintain consistent appearance.",
+                "duration_seconds": 4,
+                "aspect_ratio": "9:16"
+              },
+              "error_message": null
+            },
+            {
+              "step_id": "scene_2_clip",
+              "step_number": 11,
+              "stage": "video_clip",
+              "title": "Animate scene 2",
+              "goal": "Character examines the coin closely, turning it in her fingers with a puzzled expression.",
+              "tool_type": "video_generation",
+              "execution_mode": "manual_or_provider",
+              "provider_capability": "video_generation",
+              "required_inputs": [
+                {
+                  "asset_key": "scene_2_keyframe",
+                  "asset_type": "image",
+                  "label": "Scene 2 keyframe",
+                  "required": true,
+                  "accepted_sources": [
+                    "uploaded_by_user",
+                    "generated_by_provider"
+                  ],
+                  "instructions": "Use this image as the first frame or image-to-video source."
+                },
+                {
+                  "asset_key": "holding_key_object",
+                  "asset_type": "image",
+                  "label": "Holding Key Object",
+                  "required": false,
+                  "accepted_sources": [
+                    "uploaded_by_user",
+                    "generated_by_provider"
+                  ],
+                  "instructions": "Use if the video provider supports character/reference images."
+                },
+                {
+                  "asset_key": "seated_in_main_setting",
+                  "asset_type": "image",
+                  "label": "Seated In Main Setting",
+                  "required": false,
+                  "accepted_sources": [
+                    "uploaded_by_user",
+                    "generated_by_provider"
+                  ],
+                  "instructions": "Use if the video provider supports character/reference images."
+                }
+              ],
+              "prompt_to_copy": "Relatable Home Discoverer, female, 35-45, light-skinned, average build, wearing a neutral beige casual shirt, seated at a warm, well-lit kitchen dining table. She holds an old, slightly tarnished coin, looking curious and slightly puzzled, trying to discern faint details on the coin. Medium shot, soft lighting, realistic, not polished. Use the same character from the generated character reference images. Preserve face, hairstyle, facial hair, age, skin tone, body type, outfit, and setting. Do not change identity across scenes.",
+              "negative_prompt_to_copy": "different person, changed face, different hairstyle, different shirt, older man, younger man, distorted hands, extra fingers, missing fingers, deformed phone, unreadable text, fake UI text, random logo, bad anatomy, blurry face, low quality, identity change, face morphing, plastic skin, cartoon, anime, over-polished commercial look, unrealistic expression",
+              "motion_instruction": "Subtle head tilt and coin rotation, conveying contemplation and uncertainty.",
+              "consistency_instruction": "Maintain character's puzzled expression and consistent appearance of the coin.",
+              "settings": {
+                "duration_seconds": 4,
+                "aspect_ratio": "9:16",
+                "generation_mode": "image_to_video",
+                "global_timeline": {
+                  "start_seconds": 4.0,
+                  "end_seconds": 8.0
+                }
+              },
+              "expected_outputs": [
+                {
+                  "asset_key": "scene_2_clip",
+                  "asset_type": "video",
+                  "label": "Scene 2 raw clip",
+                  "file_name_hint": "scene_2_clip.mp4",
+                  "required_for_next_steps": [
+                    "scene_2_overlay",
+                    "assembly_master"
+                  ]
+                }
+              ],
+              "status": "pending",
+              "output_assets": [],
+              "manual_instructions": [
+                "Open your video generation tool.",
+                "Upload the scene keyframe as image-to-video input.",
+                "Paste the video prompt, motion instruction, and consistency instruction.",
+                "Use the duration/aspect ratio from settings.",
+                "Upload the generated clip back to this step."
+              ],
+              "provider_payload": {
+                "prompt": "Relatable Home Discoverer, female, 35-45, light-skinned, average build, wearing a neutral beige casual shirt, seated at a warm, well-lit kitchen dining table. She holds an old, slightly tarnished coin, looking curious and slightly puzzled, trying to discern faint details on the coin. Medium shot, soft lighting, realistic, not polished. Use the same character from the generated character reference images. Preserve face, hairstyle, facial hair, age, skin tone, body type, outfit, and setting. Do not change identity across scenes.",
+                "negative_prompt": "different person, changed face, different hairstyle, different shirt, older man, younger man, distorted hands, extra fingers, missing fingers, deformed phone, unreadable text, fake UI text, random logo, bad anatomy, blurry face, low quality, identity change, face morphing, plastic skin, cartoon, anime, over-polished commercial look, unrealistic expression",
+                "motion_instruction": "Subtle head tilt and coin rotation, conveying contemplation and uncertainty.",
+                "consistency_instruction": "Maintain character's puzzled expression and consistent appearance of the coin.",
+                "duration_seconds": 4,
+                "aspect_ratio": "9:16"
+              },
+              "error_message": null
+            },
+            {
+              "step_id": "scene_3_clip",
+              "step_number": 12,
+              "stage": "video_clip",
+              "title": "Animate scene 3",
+              "goal": "Character interacts with the app, scans the coin, and reacts to the displayed results.",
+              "tool_type": "video_generation",
+              "execution_mode": "manual_or_provider",
+              "provider_capability": "video_generation",
+              "required_inputs": [
+                {
+                  "asset_key": "scene_3_keyframe",
+                  "asset_type": "image",
+                  "label": "Scene 3 keyframe",
+                  "required": true,
+                  "accepted_sources": [
+                    "uploaded_by_user",
+                    "generated_by_provider"
+                  ],
+                  "instructions": "Use this image as the first frame or image-to-video source."
+                },
+                {
+                  "asset_key": "holding_phone_or_cta_pose",
+                  "asset_type": "image",
+                  "label": "Holding Phone Or Cta Pose",
+                  "required": false,
+                  "accepted_sources": [
+                    "uploaded_by_user",
+                    "generated_by_provider"
+                  ],
+                  "instructions": "Use if the video provider supports character/reference images."
+                },
+                {
+                  "asset_key": "holding_key_object",
+                  "asset_type": "image",
+                  "label": "Holding Key Object",
+                  "required": false,
+                  "accepted_sources": [
+                    "uploaded_by_user",
+                    "generated_by_provider"
+                  ],
+                  "instructions": "Use if the video provider supports character/reference images."
+                }
+              ],
+              "prompt_to_copy": "Close-up, over-the-shoulder shot of a relatable female hand holding a smartphone, scanning an old coin with the Coin Scanner App. The app interface is clearly visible showing coin details like country, year, and an estimated value range with a disclaimer. In the background, the user's face shows genuine surprise. Natural lighting, realistic, not polished. The phone screen should be clean and simple for later UI overlay. Do not generate unreadable app text. Use the same character from the generated character reference images. Preserve face, hairstyle, facial hair, age, skin tone, body type, outfit, and setting. Do not change identity across scenes.",
+              "negative_prompt_to_copy": "different person, changed face, different hairstyle, different shirt, older man, younger man, distorted hands, extra fingers, missing fingers, deformed phone, unreadable text, fake UI text, random logo, bad anatomy, blurry face, low quality, identity change, face morphing, plastic skin, cartoon, anime, over-polished commercial look, unrealistic expression",
+              "motion_instruction": "Smooth transition from tapping the app, positioning the coin, to the app processing animation, followed by a quick pan to the user's surprised face.",
+              "consistency_instruction": "Maintain consistent app interface style (clean, modern). Ensure the coin details and estimated value appear clearly. Character's reaction should be authentic.",
+              "settings": {
+                "duration_seconds": 6,
+                "aspect_ratio": "9:16",
+                "generation_mode": "image_to_video",
+                "global_timeline": {
+                  "start_seconds": 8.0,
+                  "end_seconds": 18.0
+                }
+              },
+              "expected_outputs": [
+                {
+                  "asset_key": "scene_3_clip",
+                  "asset_type": "video",
+                  "label": "Scene 3 raw clip",
+                  "file_name_hint": "scene_3_clip.mp4",
+                  "required_for_next_steps": [
+                    "scene_3_overlay",
+                    "assembly_master"
+                  ]
+                }
+              ],
+              "status": "pending",
+              "output_assets": [],
+              "manual_instructions": [
+                "Open your video generation tool.",
+                "Upload the scene keyframe as image-to-video input.",
+                "Paste the video prompt, motion instruction, and consistency instruction.",
+                "Use the duration/aspect ratio from settings.",
+                "Upload the generated clip back to this step."
+              ],
+              "provider_payload": {
+                "prompt": "Close-up, over-the-shoulder shot of a relatable female hand holding a smartphone, scanning an old coin with the Coin Scanner App. The app interface is clearly visible showing coin details like country, year, and an estimated value range with a disclaimer. In the background, the user's face shows genuine surprise. Natural lighting, realistic, not polished. The phone screen should be clean and simple for later UI overlay. Do not generate unreadable app text. Use the same character from the generated character reference images. Preserve face, hairstyle, facial hair, age, skin tone, body type, outfit, and setting. Do not change identity across scenes.",
+                "negative_prompt": "different person, changed face, different hairstyle, different shirt, older man, younger man, distorted hands, extra fingers, missing fingers, deformed phone, unreadable text, fake UI text, random logo, bad anatomy, blurry face, low quality, identity change, face morphing, plastic skin, cartoon, anime, over-polished commercial look, unrealistic expression",
+                "motion_instruction": "Smooth transition from tapping the app, positioning the coin, to the app processing animation, followed by a quick pan to the user's surprised face.",
+                "consistency_instruction": "Maintain consistent app interface style (clean, modern). Ensure the coin details and estimated value appear clearly. Character's reaction should be authentic.",
+                "duration_seconds": 10,
+                "aspect_ratio": "9:16"
+              },
+              "error_message": null
+            },
+            {
+              "step_id": "scene_4_clip",
+              "step_number": 13,
+              "stage": "video_clip",
+              "title": "Animate scene 4",
+              "goal": "Character happily scrolls through the app, looking satisfied, then looks up at the camera with a friendly smile.",
+              "tool_type": "video_generation",
+              "execution_mode": "manual_or_provider",
+              "provider_capability": "video_generation",
+              "required_inputs": [
+                {
+                  "asset_key": "scene_4_keyframe",
+                  "asset_type": "image",
+                  "label": "Scene 4 keyframe",
+                  "required": true,
+                  "accepted_sources": [
+                    "uploaded_by_user",
+                    "generated_by_provider"
+                  ],
+                  "instructions": "Use this image as the first frame or image-to-video source."
+                },
+                {
+                  "asset_key": "holding_phone_or_cta_pose",
+                  "asset_type": "image",
+                  "label": "Holding Phone Or Cta Pose",
+                  "required": false,
+                  "accepted_sources": [
+                    "uploaded_by_user",
+                    "generated_by_provider"
+                  ],
+                  "instructions": "Use if the video provider supports character/reference images."
+                }
+              ],
+              "prompt_to_copy": "Relatable Home Discoverer, female, 35-45, light-skinned, average build, wearing a neutral beige casual shirt, seated at a warm, well-lit kitchen dining table. She is smiling and happily scrolling through the Coin Scanner App on her smartphone, showing the 'My Coins' section with the newly added coin. Medium shot, soft lighting, realistic, not polished. The phone screen should be clean and simple for later UI overlay. Do not generate unreadable app text. Use the same character from the generated character reference images. Preserve face, hairstyle, facial hair, age, skin tone, body type, outfit, and setting. Do not change identity across scenes.",
+              "negative_prompt_to_copy": "different person, changed face, different hairstyle, different shirt, older man, younger man, distorted hands, extra fingers, missing fingers, deformed phone, unreadable text, fake UI text, random logo, bad anatomy, blurry face, low quality, identity change, face morphing, plastic skin, cartoon, anime, over-polished commercial look, unrealistic expression",
+              "motion_instruction": "Gentle scrolling motion on the phone, followed by a satisfied glance at the camera.",
+              "consistency_instruction": "Maintain character's happy and satisfied expression. Ensure the phone and app interface are consistent with previous scenes.",
+              "settings": {
+                "duration_seconds": 4,
+                "aspect_ratio": "9:16",
+                "generation_mode": "image_to_video",
+                "global_timeline": {
+                  "start_seconds": 18.0,
+                  "end_seconds": 22.0
+                }
+              },
+              "expected_outputs": [
+                {
+                  "asset_key": "scene_4_clip",
+                  "asset_type": "video",
+                  "label": "Scene 4 raw clip",
+                  "file_name_hint": "scene_4_clip.mp4",
+                  "required_for_next_steps": [
+                    "scene_4_overlay",
+                    "assembly_master"
+                  ]
+                }
+              ],
+              "status": "pending",
+              "output_assets": [],
+              "manual_instructions": [
+                "Open your video generation tool.",
+                "Upload the scene keyframe as image-to-video input.",
+                "Paste the video prompt, motion instruction, and consistency instruction.",
+                "Use the duration/aspect ratio from settings.",
+                "Upload the generated clip back to this step."
+              ],
+              "provider_payload": {
+                "prompt": "Relatable Home Discoverer, female, 35-45, light-skinned, average build, wearing a neutral beige casual shirt, seated at a warm, well-lit kitchen dining table. She is smiling and happily scrolling through the Coin Scanner App on her smartphone, showing the 'My Coins' section with the newly added coin. Medium shot, soft lighting, realistic, not polished. The phone screen should be clean and simple for later UI overlay. Do not generate unreadable app text. Use the same character from the generated character reference images. Preserve face, hairstyle, facial hair, age, skin tone, body type, outfit, and setting. Do not change identity across scenes.",
+                "negative_prompt": "different person, changed face, different hairstyle, different shirt, older man, younger man, distorted hands, extra fingers, missing fingers, deformed phone, unreadable text, fake UI text, random logo, bad anatomy, blurry face, low quality, identity change, face morphing, plastic skin, cartoon, anime, over-polished commercial look, unrealistic expression",
+                "motion_instruction": "Gentle scrolling motion on the phone, followed by a satisfied glance at the camera.",
+                "consistency_instruction": "Maintain character's happy and satisfied expression. Ensure the phone and app interface are consistent with previous scenes.",
+                "duration_seconds": 4,
+                "aspect_ratio": "9:16"
+              },
+              "error_message": null
+            },
+            {
+              "step_id": "scene_1_overlay",
+              "step_number": 14,
+              "stage": "app_ui_overlay",
+              "title": "Add overlays to scene 1",
+              "goal": "Add readable UI, captions, disclaimers, CTA, and other editor overlays after video generation.",
+              "tool_type": "video_editing",
+              "execution_mode": "manual_or_provider",
+              "provider_capability": "video_editing",
+              "required_inputs": [
+                {
+                  "asset_key": "scene_1_clip",
+                  "asset_type": "video",
+                  "label": "Scene 1 raw clip",
+                  "required": true,
+                  "accepted_sources": [
+                    "uploaded_by_user",
+                    "generated_by_provider"
+                  ],
+                  "instructions": "Use this raw clip as the base layer for overlays."
+                },
+                {
+                  "asset_key": "app_screenshot",
+                  "asset_type": "app_screenshot",
+                  "label": "App screenshot",
+                  "required": true,
+                  "accepted_sources": [
+                    "project_upload",
+                    "uploaded_by_user"
+                  ],
+                  "instructions": "Use the uploaded app screenshot and overlay it onto the blank phone screen."
+                }
+              ],
+              "prompt_to_copy": null,
+              "negative_prompt_to_copy": null,
+              "motion_instruction": null,
+              "consistency_instruction": null,
+              "settings": {
+                "overlay_plan": [
+                  {
+                    "overlay_type": "app_screen_overlay",
+                    "text": "You won't believe what I found in my coin jar!",
+                    "start_time": "0:00",
+                    "end_time": "0:03",
+                    "position": "top_center",
+                    "style_notes": "Readable app_screen overlay for scene 1.",
+                    "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                  }
+                ],
+                "global_timeline": {
+                  "start_seconds": 0.0,
+                  "end_seconds": 4.0
+                }
+              },
+              "expected_outputs": [
+                {
+                  "asset_key": "scene_1_with_overlay",
+                  "asset_type": "video",
+                  "label": "Scene 1 clip with overlays",
+                  "file_name_hint": "scene_1_with_overlay.mp4",
+                  "required_for_next_steps": [
+                    "assembly_master"
+                  ]
+                }
+              ],
+              "status": "pending",
+              "output_assets": [],
+              "manual_instructions": [
+                "Open your editor or video editing tool.",
+                "Overlay the app screenshot onto the blank phone screen if this scene uses app UI.",
+                "Keep generated video free of fake app text; app UI should be readable editor overlay.",
+                "Add subtitles, disclaimer, logo, CTA, or highlight overlays using the overlay plan.",
+                "Upload the finished scene clip back to this step."
+              ],
+              "provider_payload": {
+                "overlay_plan": [
+                  {
+                    "overlay_type": "app_screen_overlay",
+                    "text": "You won't believe what I found in my coin jar!",
+                    "start_time": "0:00",
+                    "end_time": "0:03",
+                    "position": "top_center",
+                    "style_notes": "Readable app_screen overlay for scene 1.",
+                    "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                  }
+                ],
+                "base_clip_asset_key": "scene_1_clip"
+              },
+              "error_message": null
+            },
+            {
+              "step_id": "scene_2_overlay",
+              "step_number": 15,
+              "stage": "app_ui_overlay",
+              "title": "Add overlays to scene 2",
+              "goal": "Add readable UI, captions, disclaimers, CTA, and other editor overlays after video generation.",
+              "tool_type": "video_editing",
+              "execution_mode": "manual_or_provider",
+              "provider_capability": "video_editing",
+              "required_inputs": [
+                {
+                  "asset_key": "scene_2_clip",
+                  "asset_type": "video",
+                  "label": "Scene 2 raw clip",
+                  "required": true,
+                  "accepted_sources": [
+                    "uploaded_by_user",
+                    "generated_by_provider"
+                  ],
+                  "instructions": "Use this raw clip as the base layer for overlays."
+                },
+                {
+                  "asset_key": "app_screenshot",
+                  "asset_type": "app_screenshot",
+                  "label": "App screenshot",
+                  "required": true,
+                  "accepted_sources": [
+                    "project_upload",
+                    "uploaded_by_user"
+                  ],
+                  "instructions": "Use the uploaded app screenshot and overlay it onto the blank phone screen."
+                }
+              ],
+              "prompt_to_copy": null,
+              "negative_prompt_to_copy": null,
+              "motion_instruction": null,
+              "consistency_instruction": null,
+              "settings": {
+                "overlay_plan": [
+                  {
+                    "overlay_type": "app_screen_overlay",
+                    "text": "Is this old coin worth anything?",
+                    "start_time": "0:00",
+                    "end_time": "0:03",
+                    "position": "bottom_center",
+                    "style_notes": "Readable app_screen overlay for scene 2.",
+                    "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                  }
+                ],
+                "global_timeline": {
+                  "start_seconds": 4.0,
+                  "end_seconds": 8.0
+                }
+              },
+              "expected_outputs": [
+                {
+                  "asset_key": "scene_2_with_overlay",
+                  "asset_type": "video",
+                  "label": "Scene 2 clip with overlays",
+                  "file_name_hint": "scene_2_with_overlay.mp4",
+                  "required_for_next_steps": [
+                    "assembly_master"
+                  ]
+                }
+              ],
+              "status": "pending",
+              "output_assets": [],
+              "manual_instructions": [
+                "Open your editor or video editing tool.",
+                "Overlay the app screenshot onto the blank phone screen if this scene uses app UI.",
+                "Keep generated video free of fake app text; app UI should be readable editor overlay.",
+                "Add subtitles, disclaimer, logo, CTA, or highlight overlays using the overlay plan.",
+                "Upload the finished scene clip back to this step."
+              ],
+              "provider_payload": {
+                "overlay_plan": [
+                  {
+                    "overlay_type": "app_screen_overlay",
+                    "text": "Is this old coin worth anything?",
+                    "start_time": "0:00",
+                    "end_time": "0:03",
+                    "position": "bottom_center",
+                    "style_notes": "Readable app_screen overlay for scene 2.",
+                    "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                  }
+                ],
+                "base_clip_asset_key": "scene_2_clip"
+              },
+              "error_message": null
+            },
+            {
+              "step_id": "scene_3_overlay",
+              "step_number": 16,
+              "stage": "app_ui_overlay",
+              "title": "Add overlays to scene 3",
+              "goal": "Add readable UI, captions, disclaimers, CTA, and other editor overlays after video generation.",
+              "tool_type": "video_editing",
+              "execution_mode": "manual_or_provider",
+              "provider_capability": "video_editing",
+              "required_inputs": [
+                {
+                  "asset_key": "scene_3_clip",
+                  "asset_type": "video",
+                  "label": "Scene 3 raw clip",
+                  "required": true,
+                  "accepted_sources": [
+                    "uploaded_by_user",
+                    "generated_by_provider"
+                  ],
+                  "instructions": "Use this raw clip as the base layer for overlays."
+                },
+                {
+                  "asset_key": "app_screenshot",
+                  "asset_type": "app_screenshot",
+                  "label": "App screenshot",
+                  "required": true,
+                  "accepted_sources": [
+                    "project_upload",
+                    "uploaded_by_user"
+                  ],
+                  "instructions": "Use the uploaded app screenshot and overlay it onto the blank phone screen."
+                }
+              ],
+              "prompt_to_copy": null,
+              "negative_prompt_to_copy": null,
+              "motion_instruction": null,
+              "consistency_instruction": null,
+              "settings": {
+                "overlay_plan": [
+                  {
+                    "overlay_type": "app_screen_overlay",
+                    "text": "mobile_app.jpg",
+                    "start_time": "0:00",
+                    "end_time": "0:03",
+                    "position": "phone_screen",
+                    "style_notes": "Readable app_screen overlay for scene 3.",
+                    "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                  },
+                  {
+                    "overlay_type": "app_screen_overlay",
+                    "text": "Scan & Identify Instantly!",
+                    "start_time": "0:00",
+                    "end_time": "0:03",
+                    "position": "top_center",
+                    "style_notes": "Readable app_screen overlay for scene 3.",
+                    "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                  },
+                  {
+                    "overlay_type": "app_screen_overlay",
+                    "text": "Estimated Value: $XXX - $XXX (Reference Only)",
+                    "start_time": "0:00",
+                    "end_time": "0:03",
+                    "position": "bottom_center",
+                    "style_notes": "Readable app_screen overlay for scene 3.",
+                    "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                  }
+                ],
+                "global_timeline": {
+                  "start_seconds": 8.0,
+                  "end_seconds": 18.0
+                }
+              },
+              "expected_outputs": [
+                {
+                  "asset_key": "scene_3_with_overlay",
+                  "asset_type": "video",
+                  "label": "Scene 3 clip with overlays",
+                  "file_name_hint": "scene_3_with_overlay.mp4",
+                  "required_for_next_steps": [
+                    "assembly_master"
+                  ]
+                }
+              ],
+              "status": "pending",
+              "output_assets": [],
+              "manual_instructions": [
+                "Open your editor or video editing tool.",
+                "Overlay the app screenshot onto the blank phone screen if this scene uses app UI.",
+                "Keep generated video free of fake app text; app UI should be readable editor overlay.",
+                "Add subtitles, disclaimer, logo, CTA, or highlight overlays using the overlay plan.",
+                "Upload the finished scene clip back to this step."
+              ],
+              "provider_payload": {
+                "overlay_plan": [
+                  {
+                    "overlay_type": "app_screen_overlay",
+                    "text": "mobile_app.jpg",
+                    "start_time": "0:00",
+                    "end_time": "0:03",
+                    "position": "phone_screen",
+                    "style_notes": "Readable app_screen overlay for scene 3.",
+                    "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                  },
+                  {
+                    "overlay_type": "app_screen_overlay",
+                    "text": "Scan & Identify Instantly!",
+                    "start_time": "0:00",
+                    "end_time": "0:03",
+                    "position": "top_center",
+                    "style_notes": "Readable app_screen overlay for scene 3.",
+                    "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                  },
+                  {
+                    "overlay_type": "app_screen_overlay",
+                    "text": "Estimated Value: $XXX - $XXX (Reference Only)",
+                    "start_time": "0:00",
+                    "end_time": "0:03",
+                    "position": "bottom_center",
+                    "style_notes": "Readable app_screen overlay for scene 3.",
+                    "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                  }
+                ],
+                "base_clip_asset_key": "scene_3_clip"
+              },
+              "error_message": null
+            },
+            {
+              "step_id": "scene_4_overlay",
+              "step_number": 17,
+              "stage": "app_ui_overlay",
+              "title": "Add overlays to scene 4",
+              "goal": "Add readable UI, captions, disclaimers, CTA, and other editor overlays after video generation.",
+              "tool_type": "video_editing",
+              "execution_mode": "manual_or_provider",
+              "provider_capability": "video_editing",
+              "required_inputs": [
+                {
+                  "asset_key": "scene_4_clip",
+                  "asset_type": "video",
+                  "label": "Scene 4 raw clip",
+                  "required": true,
+                  "accepted_sources": [
+                    "uploaded_by_user",
+                    "generated_by_provider"
+                  ],
+                  "instructions": "Use this raw clip as the base layer for overlays."
+                },
+                {
+                  "asset_key": "app_screenshot",
+                  "asset_type": "app_screenshot",
+                  "label": "App screenshot",
+                  "required": true,
+                  "accepted_sources": [
+                    "project_upload",
+                    "uploaded_by_user"
+                  ],
+                  "instructions": "Use the uploaded app screenshot and overlay it onto the blank phone screen."
+                }
+              ],
+              "prompt_to_copy": null,
+              "negative_prompt_to_copy": null,
+              "motion_instruction": null,
+              "consistency_instruction": null,
+              "settings": {
+                "overlay_plan": [
+                  {
+                    "overlay_type": "app_screen_overlay",
+                    "text": "mobile_app2.jpg",
+                    "start_time": "0:00",
+                    "end_time": "0:03",
+                    "position": "phone_screen",
+                    "style_notes": "Readable app_screen overlay for scene 4.",
+                    "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                  },
+                  {
+                    "overlay_type": "app_screen_overlay",
+                    "text": "Discover Your Coins' Stories!",
+                    "start_time": "0:00",
+                    "end_time": "0:03",
+                    "position": "top_center",
+                    "style_notes": "Readable app_screen overlay for scene 4.",
+                    "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                  },
+                  {
+                    "overlay_type": "app_screen_overlay",
+                    "text": "Coin Scanner App",
+                    "start_time": "0:00",
+                    "end_time": "0:03",
+                    "position": "center",
+                    "style_notes": "Readable app_screen overlay for scene 4.",
+                    "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                  },
+                  {
+                    "overlay_type": "app_screen_overlay",
+                    "text": "Download Now!",
+                    "start_time": "0:00",
+                    "end_time": "0:03",
+                    "position": "bottom_center",
+                    "style_notes": "Readable app_screen overlay for scene 4.",
+                    "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                  },
+                  {
+                    "overlay_type": "app_screen_overlay",
+                    "text": "Estimated reference value only. Actual value may vary.",
+                    "start_time": "0:00",
+                    "end_time": "0:03",
+                    "position": "bottom_left",
+                    "style_notes": "Readable app_screen overlay for scene 4.",
+                    "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                  }
+                ],
+                "global_timeline": {
+                  "start_seconds": 18.0,
+                  "end_seconds": 22.0
+                }
+              },
+              "expected_outputs": [
+                {
+                  "asset_key": "scene_4_with_overlay",
+                  "asset_type": "video",
+                  "label": "Scene 4 clip with overlays",
+                  "file_name_hint": "scene_4_with_overlay.mp4",
+                  "required_for_next_steps": [
+                    "assembly_master"
+                  ]
+                }
+              ],
+              "status": "pending",
+              "output_assets": [],
+              "manual_instructions": [
+                "Open your editor or video editing tool.",
+                "Overlay the app screenshot onto the blank phone screen if this scene uses app UI.",
+                "Keep generated video free of fake app text; app UI should be readable editor overlay.",
+                "Add subtitles, disclaimer, logo, CTA, or highlight overlays using the overlay plan.",
+                "Upload the finished scene clip back to this step."
+              ],
+              "provider_payload": {
+                "overlay_plan": [
+                  {
+                    "overlay_type": "app_screen_overlay",
+                    "text": "mobile_app2.jpg",
+                    "start_time": "0:00",
+                    "end_time": "0:03",
+                    "position": "phone_screen",
+                    "style_notes": "Readable app_screen overlay for scene 4.",
+                    "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                  },
+                  {
+                    "overlay_type": "app_screen_overlay",
+                    "text": "Discover Your Coins' Stories!",
+                    "start_time": "0:00",
+                    "end_time": "0:03",
+                    "position": "top_center",
+                    "style_notes": "Readable app_screen overlay for scene 4.",
+                    "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                  },
+                  {
+                    "overlay_type": "app_screen_overlay",
+                    "text": "Coin Scanner App",
+                    "start_time": "0:00",
+                    "end_time": "0:03",
+                    "position": "center",
+                    "style_notes": "Readable app_screen overlay for scene 4.",
+                    "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                  },
+                  {
+                    "overlay_type": "app_screen_overlay",
+                    "text": "Download Now!",
+                    "start_time": "0:00",
+                    "end_time": "0:03",
+                    "position": "bottom_center",
+                    "style_notes": "Readable app_screen overlay for scene 4.",
+                    "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                  },
+                  {
+                    "overlay_type": "app_screen_overlay",
+                    "text": "Estimated reference value only. Actual value may vary.",
+                    "start_time": "0:00",
+                    "end_time": "0:03",
+                    "position": "bottom_left",
+                    "style_notes": "Readable app_screen overlay for scene 4.",
+                    "safety_notes": "Keep overlay truthful, readable, and claim-safe."
+                  }
+                ],
+                "base_clip_asset_key": "scene_4_clip"
+              },
+              "error_message": null
+            },
+            {
+              "step_id": "assembly_master",
+              "step_number": 18,
+              "stage": "assembly",
+              "title": "Assemble final master video",
+              "goal": "Cut all completed scene clips into one master ad and add final audio/subtitles.",
+              "tool_type": "final_assembly",
+              "execution_mode": "manual_or_provider",
+              "provider_capability": "final_assembly",
+              "required_inputs": [
+                {
+                  "asset_key": "scene_1_with_overlay",
+                  "asset_type": "video",
+                  "label": "Scene 1 With Overlay",
+                  "required": true,
+                  "accepted_sources": [
+                    "uploaded_by_user",
+                    "generated_by_provider"
+                  ],
+                  "instructions": "Use this completed scene clip in the final cut sequence."
+                },
+                {
+                  "asset_key": "scene_2_with_overlay",
+                  "asset_type": "video",
+                  "label": "Scene 2 With Overlay",
+                  "required": true,
+                  "accepted_sources": [
+                    "uploaded_by_user",
+                    "generated_by_provider"
+                  ],
+                  "instructions": "Use this completed scene clip in the final cut sequence."
+                },
+                {
+                  "asset_key": "scene_3_with_overlay",
+                  "asset_type": "video",
+                  "label": "Scene 3 With Overlay",
+                  "required": true,
+                  "accepted_sources": [
+                    "uploaded_by_user",
+                    "generated_by_provider"
+                  ],
+                  "instructions": "Use this completed scene clip in the final cut sequence."
+                },
+                {
+                  "asset_key": "scene_4_with_overlay",
+                  "asset_type": "video",
+                  "label": "Scene 4 With Overlay",
+                  "required": true,
+                  "accepted_sources": [
+                    "uploaded_by_user",
+                    "generated_by_provider"
+                  ],
+                  "instructions": "Use this completed scene clip in the final cut sequence."
+                }
+              ],
+              "prompt_to_copy": null,
+              "negative_prompt_to_copy": null,
+              "motion_instruction": null,
+              "consistency_instruction": null,
+              "settings": {
+                "total_duration": "22s",
+                "pacing_notes": "Start with a quick, intriguing hook (4s), transition to a relatable problem setup (4s), dedicate the longest segment to a clear, engaging app demonstration (10s), and conclude with a concise, impactful result and call to action (4s). Maintain a dynamic pace with quick cuts in the first two scenes, a slightly slower, more detailed pace for the demo, and a strong finish.",
+                "music_direction": "Begin with a light, curious, slightly mysterious track. Transition to an upbeat, positive, and satisfying tune during the app demo and CTA. Music should be royalty-free and suitable for UGC, avoiding overly commercial or generic sounds.",
+                "subtitle_style": "Clean, white sans-serif font with a subtle dark outline or background for readability. Key phrases (e.g., 'Download Now!') can be highlighted in brand gold or blue. Positioned at the bottom third of the screen, avoiding crucial visual elements.",
+                "cut_sequence": [
+                  "scene: 1, type: hard_cut",
+                  "scene: 2, type: hard_cut",
+                  "scene: 3, type: hard_cut",
+                  "scene: 4, type: fade_out"
+                ],
+                "export_ratios": [
+                  "9:16",
+                  "1:1"
+                ],
+                "required_post_production_steps": [
+                  "Overlay app UI elements and screenshots onto blank phone screens in scenes 3 and 4, ensuring brand consistency (blue, white, gold).",
+                  "Add dynamic on-screen text overlays for hooks, questions, and CTAs, matching brand colors.",
+                  "Integrate voiceover track, ensuring synchronization with visuals and on-screen text.",
+                  "Add background music and subtle sound effects (e.g., coin clink, app notification sound) to enhance engagement.",
+                  "Apply color grading to ensure a natural, warm, and consistent look across all scenes.",
+                  "Add legal disclaimers for estimated values, ensuring they are clearly visible and legible."
+                ],
+                "platform_notes": "Optimize for TikTok's vertical format (9:16). Utilize trending sounds or a custom sound that aligns with the 'discovery' theme. Keep captions concise and engaging. Encourage user interaction in the comments by asking 'What's the oldest coin you've found?'"
+              },
+              "expected_outputs": [
+                {
+                  "asset_key": "final_video_master",
+                  "asset_type": "video",
+                  "label": "Final master video",
+                  "file_name_hint": "final_video_master.mp4",
+                  "required_for_next_steps": [
+                    "export_9x16",
+                    "export_1x1"
+                  ]
+                }
+              ],
+              "status": "pending",
+              "output_assets": [],
+              "manual_instructions": [
+                "Import every completed scene clip into your editor.",
+                "Cut clips in the order defined by the edit plan.",
+                "Add music, subtitles, disclaimers, and CTA overlays if not already applied.",
+                "Upload the master video back to this step."
+              ],
+              "provider_payload": {
+                "scene_asset_keys": [
+                  "scene_1_with_overlay",
+                  "scene_2_with_overlay",
+                  "scene_3_with_overlay",
+                  "scene_4_with_overlay"
+                ],
+                "edit_plan": {
+                  "total_duration": "22s",
+                  "pacing_notes": "Start with a quick, intriguing hook (4s), transition to a relatable problem setup (4s), dedicate the longest segment to a clear, engaging app demonstration (10s), and conclude with a concise, impactful result and call to action (4s). Maintain a dynamic pace with quick cuts in the first two scenes, a slightly slower, more detailed pace for the demo, and a strong finish.",
+                  "music_direction": "Begin with a light, curious, slightly mysterious track. Transition to an upbeat, positive, and satisfying tune during the app demo and CTA. Music should be royalty-free and suitable for UGC, avoiding overly commercial or generic sounds.",
+                  "subtitle_style": "Clean, white sans-serif font with a subtle dark outline or background for readability. Key phrases (e.g., 'Download Now!') can be highlighted in brand gold or blue. Positioned at the bottom third of the screen, avoiding crucial visual elements.",
+                  "cut_sequence": [
+                    "scene: 1, type: hard_cut",
+                    "scene: 2, type: hard_cut",
+                    "scene: 3, type: hard_cut",
+                    "scene: 4, type: fade_out"
+                  ],
+                  "export_ratios": [
+                    "9:16",
+                    "1:1"
+                  ],
+                  "required_post_production_steps": [
+                    "Overlay app UI elements and screenshots onto blank phone screens in scenes 3 and 4, ensuring brand consistency (blue, white, gold).",
+                    "Add dynamic on-screen text overlays for hooks, questions, and CTAs, matching brand colors.",
+                    "Integrate voiceover track, ensuring synchronization with visuals and on-screen text.",
+                    "Add background music and subtle sound effects (e.g., coin clink, app notification sound) to enhance engagement.",
+                    "Apply color grading to ensure a natural, warm, and consistent look across all scenes.",
+                    "Add legal disclaimers for estimated values, ensuring they are clearly visible and legible."
+                  ],
+                  "platform_notes": "Optimize for TikTok's vertical format (9:16). Utilize trending sounds or a custom sound that aligns with the 'discovery' theme. Keep captions concise and engaging. Encourage user interaction in the comments by asking 'What's the oldest coin you've found?'"
+                }
+              },
+              "error_message": null
+            },
+            {
+              "step_id": "export_9x16",
+              "step_number": 19,
+              "stage": "export",
+              "title": "Export 9:16",
+              "goal": "Create final 9:16 deliverable for ad placement.",
+              "tool_type": "export",
+              "execution_mode": "manual_or_provider",
+              "provider_capability": "export",
+              "required_inputs": [
+                {
+                  "asset_key": "final_video_master",
+                  "asset_type": "video",
+                  "label": "Final master video",
+                  "required": true,
+                  "accepted_sources": [
+                    "uploaded_by_user",
+                    "generated_by_provider"
+                  ],
+                  "instructions": "Use the master video as the source for this export ratio."
+                }
+              ],
+              "prompt_to_copy": null,
+              "negative_prompt_to_copy": null,
+              "motion_instruction": null,
+              "consistency_instruction": null,
+              "settings": {
+                "aspect_ratio": "9:16"
+              },
+              "expected_outputs": [
+                {
+                  "asset_key": "final_video_9x16",
+                  "asset_type": "video",
+                  "label": "Final video 9:16",
+                  "file_name_hint": "final_video_9x16.mp4",
+                  "required_for_next_steps": []
+                }
+              ],
+              "status": "pending",
+              "output_assets": [],
+              "manual_instructions": [
+                "Resize or crop the master video for 9:16.",
+                "Check that captions, app UI overlays, and CTA remain readable.",
+                "Upload the final exported video back to this step."
+              ],
+              "provider_payload": {
+                "source_asset_key": "final_video_master",
+                "aspect_ratio": "9:16"
+              },
+              "error_message": null
+            },
+            {
+              "step_id": "export_1x1",
+              "step_number": 20,
+              "stage": "export",
+              "title": "Export 1:1",
+              "goal": "Create final 1:1 deliverable for ad placement.",
+              "tool_type": "export",
+              "execution_mode": "manual_or_provider",
+              "provider_capability": "export",
+              "required_inputs": [
+                {
+                  "asset_key": "final_video_master",
+                  "asset_type": "video",
+                  "label": "Final master video",
+                  "required": true,
+                  "accepted_sources": [
+                    "uploaded_by_user",
+                    "generated_by_provider"
+                  ],
+                  "instructions": "Use the master video as the source for this export ratio."
+                }
+              ],
+              "prompt_to_copy": null,
+              "negative_prompt_to_copy": null,
+              "motion_instruction": null,
+              "consistency_instruction": null,
+              "settings": {
+                "aspect_ratio": "1:1"
+              },
+              "expected_outputs": [
+                {
+                  "asset_key": "final_video_1x1",
+                  "asset_type": "video",
+                  "label": "Final video 1:1",
+                  "file_name_hint": "final_video_1x1.mp4",
+                  "required_for_next_steps": []
+                }
+              ],
+              "status": "pending",
+              "output_assets": [],
+              "manual_instructions": [
+                "Resize or crop the master video for 1:1.",
+                "Check that captions, app UI overlays, and CTA remain readable.",
+                "Upload the final exported video back to this step."
+              ],
+              "provider_payload": {
+                "source_asset_key": "final_video_master",
+                "aspect_ratio": "1:1"
+              },
+              "error_message": null
+            }
+          ]
+        },
         "selected_playbook": "The Discovery & Reveal",
         "angle_type": "curiosity",
         "video_status": "draft",
@@ -1286,6 +2896,7 @@
             "10. Export in '9:16' and '1:1' aspect ratios."
           ]
         },
+        "generation_pipeline": null,
         "selected_playbook": "The Discovery & Reveal",
         "angle_type": "problem_solution",
         "video_status": "draft",
@@ -1296,6 +2907,6 @@
       }
     ],
     "created_at": "2026-07-03T07:00:16.836323Z",
-    "updated_at": "2026-07-03T15:01:39.503087Z"
+    "updated_at": "2026-07-03T16:03:41.819564Z"
   }
 ]

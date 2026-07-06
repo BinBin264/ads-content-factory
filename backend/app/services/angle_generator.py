@@ -70,7 +70,8 @@ class GeminiCreativeAngleGenerator:
         brief: ProductBrief,
         intelligence: ProductIntelligenceBrief | None = None,
     ) -> list[CreativeAngle]:
-        intelligence = intelligence or self._compat_intelligence(project, brief)
+        if intelligence is None:
+            raise ValueError("Product Intelligence is required before generating creative angles.")
         return self._generate_with_llm(project, intelligence)
 
     def _generate_with_llm(self, project: Project, intelligence: ProductIntelligenceBrief) -> list[CreativeAngle]:
@@ -149,18 +150,6 @@ class GeminiCreativeAngleGenerator:
             "score": self._score_from(item.get("score"), index),
         }
 
-    def _five_hooks(self, project: Project, intelligence: ProductIntelligenceBrief) -> list[str]:
-        hooks = list(intelligence.recommended_hooks)
-        while len(hooks) < 5:
-            hooks.append(f"Here's why {project.product_name} is worth checking before you decide.")
-        return hooks[:5]
-
-    def _pad(self, values: list[str], default_value: str) -> list[str]:
-        padded = list(values)
-        while len(padded) < 4:
-            padded.append(default_value)
-        return padded
-
     def _string_from(self, item: dict[str, Any], *keys: str) -> str:
         for key in keys:
             value = item.get(key)
@@ -189,36 +178,6 @@ class GeminiCreativeAngleGenerator:
         elif 1 < score <= 10:
             score *= 10
         return max(0, min(100, score))
-
-    def _compat_intelligence(self, project: Project, brief: ProductBrief) -> ProductIntelligenceBrief:
-        return ProductIntelligenceBrief(
-            detected_product=project.product_name,
-            product_category=brief.category,
-            product_type=brief.product_type,
-            core_use_case=brief.short_description,
-            target_audience_segments=brief.target_audience,
-            primary_audience=", ".join(brief.target_audience) or project.audience or "practical buyers",
-            pain_points=[brief.main_problem],
-            emotional_triggers=brief.emotional_triggers,
-            functional_benefits=brief.functional_benefits,
-            proof_points=brief.proof_elements,
-            demo_moments=brief.proof_elements,
-            visual_assets_detected=[],
-            brand_style_notes=brief.recommended_visual_style,
-            safe_claims=brief.safe_claims,
-            claims_to_avoid=brief.claims_to_avoid,
-            recommended_ad_playbooks=[],
-            recommended_video_formats=brief.recommended_ad_formats,
-            recommended_hooks=[
-                f"I tried {project.product_name} for this exact problem.",
-                f"Here is how {project.product_name} works in 20 seconds.",
-                f"If this feels annoying, {project.product_name} can help.",
-                f"The best part about {project.product_name} is not obvious.",
-                f"I would recommend {project.product_name} if you want a simpler first step.",
-            ],
-            recommended_cta=project.cta or self._default_cta(project.goal),
-            confidence_score=0.5,
-        )
 
     def _default_cta(self, goal: str) -> str:
         if goal == "app_install":

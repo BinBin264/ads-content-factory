@@ -93,6 +93,7 @@ class GeminiProductionPromptGenerator:
         ]
         if len(data["production_scenes"]) != 4:
             raise ValueError("Gemini production package must include exactly 4 production scenes")
+        self._apply_global_overlay_timeline(data["production_scenes"])
 
         edit_plan = data.get("edit_plan")
         if not isinstance(edit_plan, dict):
@@ -132,6 +133,8 @@ class GeminiProductionPromptGenerator:
             scene.get("duration_seconds"),
             storyboard_scene.duration_seconds if storyboard_scene else 5,
         )
+        if scene["scene_number"] == 3:
+            scene["duration_seconds"] = min(scene["duration_seconds"], 6)
         scene.setdefault("creative_objective", scene.get("objective") or (storyboard_scene.objective if storyboard_scene else f"Scene {index}"))
         scene.setdefault("shot_type", scene.get("shot") or "realistic UGC shot")
         scene.setdefault("camera_angle", storyboard_scene.camera_angle if storyboard_scene else "Vertical handheld camera angle")
@@ -141,6 +144,8 @@ class GeminiProductionPromptGenerator:
         scene.setdefault("action_description", scene.get("action") or scene["visual_description"])
         scene.setdefault("keyframe_prompt", scene.get("image_prompt") or scene.get("prompt") or scene["visual_description"])
         scene.setdefault("video_prompt", scene.get("animation_prompt") or scene.get("motion_prompt") or scene["keyframe_prompt"])
+        scene["keyframe_prompt"] = self._sanitize_app_ui_generation_prompt(scene["keyframe_prompt"])
+        scene["video_prompt"] = self._sanitize_app_ui_generation_prompt(scene["video_prompt"])
         scene.setdefault("motion_instruction", scene.get("motion") or "Natural subtle UGC movement.")
         scene.setdefault("consistency_instruction", "Preserve the same character identity, outfit, setting, phone, and product props.")
         scene.setdefault("negative_prompt", DEFAULT_PRODUCTION_NEGATIVE_PROMPT)
@@ -189,12 +194,16 @@ class GeminiProductionPromptGenerator:
         }
 
     def _coerce_overlay_type(self, raw_type: str) -> str:
-        if raw_type in {"app_screen", "subtitle", "cta", "disclaimer", "logo", "price_label", "button", "highlight"}:
+        if raw_type == "app_screen":
+            return "app_screen_overlay"
+        if raw_type in {"app_screen_overlay", "text_overlay", "subtitle", "cta", "disclaimer", "logo", "price_label", "button", "highlight"}:
             return raw_type
         if "cta" in raw_type or "button" in raw_type:
             return "cta"
         if "app" in raw_type or "ui" in raw_type or "screen" in raw_type:
-            return "app_screen"
+            return "app_screen_overlay"
+        if "text" in raw_type or "headline" in raw_type or "hook" in raw_type:
+            return "text_overlay"
         if "price" in raw_type or "value" in raw_type:
             return "price_label"
         if "logo" in raw_type or "icon" in raw_type:
@@ -204,6 +213,51 @@ class GeminiProductionPromptGenerator:
         if "highlight" in raw_type:
             return "highlight"
         return "subtitle"
+
+    def _sanitize_app_ui_generation_prompt(self, value: Any) -> str:
+        text = self._string_value(value)
+        replacements = {
+            "app interface clearly visible": "blank clean phone screen reserved for app UI overlay",
+            "clearly shows the app interface": "shows a blank clean phone screen reserved for app UI overlay",
+            "phone screen clearly shows": "phone screen is blank and reserved for readable UI overlay",
+            "displaying the app interface": "with blank clean phone screen for later app UI overlay",
+            "readable app text": "no generated app text",
+        }
+        for source, replacement in replacements.items():
+            text = re.sub(re.escape(source), replacement, text, flags=re.IGNORECASE)
+        app_terms = ("app", "phone screen", "smartphone", "ui")
+        if any(term in text.lower() for term in app_terms) and "later UI overlay" not in text:
+            text = f"{text} Phone screen should be blank or clean for later UI overlay. Do not generate readable app text."
+        return text
+
+    def _apply_global_overlay_timeline(self, scenes: list[dict[str, Any]]) -> None:
+        current_start = 0
+        for scene in scenes:
+            duration = self._int_value(scene.get("duration_seconds"), 5)
+            overlays = scene.get("ui_overlay_plan")
+            if isinstance(overlays, list):
+                for overlay in overlays:
+                    if not isinstance(overlay, dict):
+                        continue
+                    overlay["start_time"] = self._format_seconds(current_start + self._parse_time_to_seconds(overlay.get("start_time")))
+                    overlay["end_time"] = self._format_seconds(current_start + self._parse_time_to_seconds(overlay.get("end_time")))
+            current_start += duration
+
+    def _parse_time_to_seconds(self, value: Any) -> int:
+        text = str(value or "0").strip()
+        if ":" in text:
+            parts = text.split(":")
+            try:
+                return int(parts[-2]) * 60 + int(float(parts[-1]))
+            except (ValueError, IndexError):
+                return 0
+        try:
+            return int(float(text.replace("s", "")))
+        except ValueError:
+            return 0
+
+    def _format_seconds(self, value: int) -> str:
+        return f"{value // 60}:{value % 60:02d}"
 
     def _coerce_generation_mode(self, value: Any) -> str:
         mode = str(value or "image_to_video").lower()
@@ -251,7 +305,13 @@ class GeminiProductionPromptGenerator:
                 raise ValueError(f"Production scene {scene.scene_number} is missing keyframe_prompt")
             if not scene.video_prompt.strip():
                 raise ValueError(f"Production scene {scene.scene_number} is missing video_prompt")
-            if "Use the same character from the generated character reference images" not in scene.video_prompt:
+            is_pov_hand_scene = scene.scene_number == 1 and any(
+                token in f"{scene.shot_type} {scene.camera_angle} {scene.visual_description}".lower()
+                for token in ("pov", "hand", "hands", "coin close-up")
+            )
+            has_identity_lock = "Use the same character from the generated character reference images" in scene.video_prompt
+            has_hand_lock = "same skin tone" in scene.video_prompt.lower() or "same hand" in scene.video_prompt.lower()
+            if not has_identity_lock and not (is_pov_hand_scene and has_hand_lock):
                 raise ValueError(f"Production scene {scene.scene_number} video_prompt is missing identity lock")
 
     def _sanitize_for_compliance(
@@ -401,8 +461,13 @@ class GeminiProductionPromptGenerator:
             f"- Every video_prompt must include this exact identity lock sentence: {character_bible.identity_lock_prompt}\n"
             "- Do not make the video model generate complex readable app UI text.\n"
             "- For phone screens, write: The phone screen should be clean and simple for later UI overlay. Do not generate unreadable app text.\n"
+            "- Add real app screenshots only in an app_screen_overlay step. Do not ask the video model to generate app text.\n"
+            "- Do not use overlay_type app_screen. Use app_screen_overlay for app UI, text_overlay for hook text, subtitle for captions, cta for CTA, disclaimer for safety copy.\n"
+            "- Overlay start_time and end_time should use global final-video timeline, not local scene time.\n"
             "- Use pain_points, demo_moments, proof_points, safe_claims, claims_to_avoid, and creative_angle.\n"
             f"- Always include this negative prompt or a stricter version: {DEFAULT_PRODUCTION_NEGATIVE_PROMPT}\n"
+            "- Scene 3 should be 5-6 seconds max. Keep the product/app demo clear and not overloaded with motion.\n"
+            "- Scene 1 may be POV/hand-only. If the face is not visible, lock same skin tone and hand style instead of full face/hair identity.\n"
             "- For Coin Scanner App, do not use fortune, guaranteed, 100% accurate, make money, professional appraisal, definitely worth, or extreme values.\n"
             "- For Coin Scanner App, use estimated reference value, reference price, similar coins may have sold for, and actual value may vary disclaimers.\n"
             "- For Coin Scanner App scene 3, use an over-the-shoulder or close-up scanning scene with coin and phone clearly visible.\n"

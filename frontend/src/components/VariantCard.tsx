@@ -1,15 +1,19 @@
-import { useState } from "react";
-import type { ReactNode } from "react";
+import { useMemo, useState } from "react";
 import { toApiUrl } from "../api/client";
-import type { CharacterReferencePrompt, EditPlan, ProductionScene, UIOverlayItem, Variant } from "../types";
-import { formatList } from "../utils/format";
+import type { PipelineAsset, PipelineStep, Variant } from "../types";
 
 interface VariantCardProps {
   variant: Variant;
   onExport: () => Promise<void>;
   onRender: () => Promise<void>;
+  onRunPipeline: () => Promise<void>;
+  onRunStep: (stepId: string) => Promise<void>;
+  onUploadStepResult: (stepId: string, file: File, assetKey?: string) => Promise<void>;
   exporting: boolean;
   rendering: boolean;
+  runningPipeline: boolean;
+  runningStep: boolean;
+  uploadingStep: boolean;
   disabled: boolean;
 }
 
@@ -27,48 +31,17 @@ function CopyButton({ value, label = "Copy" }: { value: string; label?: string }
   };
 
   return (
-    <button className="btn-secondary px-3 py-1 text-xs" type="button" onClick={copy}>
+    <button className="btn-secondary px-3 py-1 text-xs" type="button" onClick={copy} disabled={!value}>
       {copied ? "Copied" : label}
     </button>
   );
 }
 
-function EmptyPackage() {
-  return (
-    <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">
-      Generate variants again to create the video production workflow.
-    </div>
-  );
-}
+function PromptBlock({ label, value }: { label: string; value?: string | null }) {
+  if (!value) {
+    return null;
+  }
 
-function WorkflowStep({
-  number,
-  title,
-  tool,
-  children,
-}: {
-  number: number;
-  title: string;
-  tool: string;
-  children: ReactNode;
-}) {
-  return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-slate-950 text-sm font-black text-white">{number}</span>
-          <div>
-            <h4 className="text-base font-black text-slate-950">{title}</h4>
-            <p className="mt-1 text-sm leading-6 text-slate-600">{tool}</p>
-          </div>
-        </div>
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function PromptBlock({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
       <div className="mb-2 flex items-center justify-between gap-3">
@@ -80,290 +53,372 @@ function PromptBlock({ label, value }: { label: string; value: string }) {
   );
 }
 
-function buildReferenceCopy(prompt: CharacterReferencePrompt, identityLock: string, basePrompt: string): string {
-  return [
-    "IDENTITY LOCK",
-    identityLock,
-    "",
-    "BASE CHARACTER",
-    basePrompt,
-    "",
-    `Purpose: ${prompt.purpose}`,
-    `Aspect ratio: ${prompt.aspect_ratio}`,
-    "",
-    "PROMPT",
-    prompt.prompt,
-    "",
-    "NEGATIVE PROMPT",
-    prompt.negative_prompt,
-    "",
-    "NOTES",
-    prompt.notes || "None",
-  ].join("\n");
-}
-
-function buildKeyframeCopy(scene: ProductionScene): string {
-  return [
-    `Scene ${scene.scene_number} keyframe`,
-    `Use references: ${formatList(scene.required_reference_assets)}`,
-    "",
-    scene.keyframe_prompt,
-    "",
-    "Negative prompt:",
-    scene.negative_prompt,
-  ].join("\n");
-}
-
-function buildVideoCopy(scene: ProductionScene): string {
-  return [
-    `Scene ${scene.scene_number} video`,
-    `Mode: ${scene.generation_mode}`,
-    `Duration: ${scene.duration_seconds}s`,
-    `Use references: ${formatList(scene.required_reference_assets)}`,
-    "",
-    "VIDEO PROMPT",
-    scene.video_prompt,
-    "",
-    "MOTION",
-    scene.motion_instruction,
-    "",
-    "CONSISTENCY",
-    scene.consistency_instruction,
-    "",
-    "NEGATIVE PROMPT",
-    scene.negative_prompt,
-  ].join("\n");
-}
-
-function buildOverlayCopy(scene: ProductionScene): string {
-  if (!scene.ui_overlay_plan.length) {
-    return `Scene ${scene.scene_number}: no overlay planned.`;
+function statusClass(status: PipelineStep["status"]): string {
+  if (status === "completed") {
+    return "border-emerald-200 bg-emerald-50 text-emerald-800";
   }
-
-  return scene.ui_overlay_plan
-    .map((item) =>
-      [
-        `${item.overlay_type}: ${item.text}`,
-        `Time: ${item.start_time}-${item.end_time}`,
-        `Position: ${item.position}`,
-        `Style: ${item.style_notes}`,
-        `Safety: ${item.safety_notes || "None"}`,
-      ].join("\n"),
-    )
-    .join("\n\n");
+  if (status === "ready") {
+    return "border-teal-200 bg-teal-50 text-teal-800";
+  }
+  if (status === "running") {
+    return "border-amber-200 bg-amber-50 text-amber-800";
+  }
+  if (status === "failed") {
+    return "border-rose-200 bg-rose-50 text-rose-800";
+  }
+  return "border-slate-200 bg-slate-50 text-slate-500";
 }
 
-function buildEditCopy(editPlan: EditPlan): string {
-  return [
-    `Total duration: ${editPlan.total_duration}`,
-    `Pacing: ${editPlan.pacing_notes}`,
-    `Music: ${editPlan.music_direction}`,
-    `Subtitles: ${editPlan.subtitle_style}`,
-    `Export ratios: ${formatList(editPlan.export_ratios)}`,
-    "",
-    "CUT SEQUENCE",
-    editPlan.cut_sequence.join("\n"),
-    "",
-    "POST-PRODUCTION",
-    editPlan.required_post_production_steps.join("\n"),
-    "",
-    "PLATFORM NOTES",
-    editPlan.platform_notes,
-  ].join("\n");
+function assetMap(assets: PipelineAsset[], steps: PipelineStep[]): Map<string, PipelineAsset> {
+  const map = new Map<string, PipelineAsset>();
+  assets.forEach((asset) => map.set(asset.asset_key, asset));
+  steps.forEach((step) => step.output_assets.forEach((asset) => map.set(asset.asset_key, asset)));
+  return map;
 }
 
-function OverlayList({ items }: { items: UIOverlayItem[] }) {
-  if (!items.length) {
-    return <p className="text-sm text-slate-500">No overlay planned for this scene.</p>;
+function AssetLink({ asset }: { asset: PipelineAsset }) {
+  const label = `${asset.asset_key} (${asset.asset_type})`;
+  if (!asset.url) {
+    return <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700">{label}</span>;
   }
 
   return (
-    <div className="grid gap-2 md:grid-cols-2">
-      {items.map((item, index) => (
-        <div key={`${item.overlay_type}-${index}`} className="rounded-lg border border-slate-200 bg-white p-3">
-          <p className="text-sm font-bold text-slate-950">
-            {item.overlay_type}: {item.text}
-          </p>
-          <p className="mt-1 text-xs font-semibold text-slate-500">
-            {item.start_time}-{item.end_time} / {item.position}
-          </p>
-          <p className="mt-2 text-sm leading-6 text-slate-700">{item.style_notes}</p>
-          {item.safety_notes ? <p className="mt-1 text-xs font-semibold text-amber-700">{item.safety_notes}</p> : null}
-        </div>
-      ))}
+    <a
+      className="rounded-md border border-teal-200 bg-teal-50 px-2 py-1 text-xs font-bold text-teal-800 hover:bg-teal-100"
+      href={toApiUrl(asset.url)}
+      target="_blank"
+      rel="noreferrer"
+    >
+      {label}
+    </a>
+  );
+}
+
+function valueToString(value: unknown): string {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item)).join(", ");
+  }
+  if (value === null || value === undefined) {
+    return "";
+  }
+  return String(value);
+}
+
+function WorkflowList({ label, items }: { label: string; items: string[] }) {
+  if (!items.length) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+      <p className="field-label">{label}</p>
+      <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-700">
+        {items.map((item) => (
+          <li key={item} className="flex gap-2">
+            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400" />
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
 
-export default function VariantCard({ variant, onExport, onRender, exporting, rendering, disabled }: VariantCardProps) {
-  const productionPackage = variant.production_package;
+function ProviderOption({ option }: { option: Record<string, unknown> }) {
+  const status = valueToString(option.status);
+  const configured = Boolean(option.configured);
+  const recommended = Array.isArray(option.recommended_manual_tools) ? option.recommended_manual_tools.map((item) => String(item)) : [];
+
+  return (
+    <div className="rounded-md border border-slate-200 bg-white p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-bold text-slate-900">{valueToString(option.provider_name) || "manual_web_tool"}</p>
+        <span className={`rounded-md px-2 py-1 text-xs font-black ${configured ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-600"}`}>
+          {status || (configured ? "configured" : "manual")}
+        </span>
+      </div>
+      <p className="mt-1 text-xs leading-5 text-slate-500">{valueToString(option.notes)}</p>
+      {recommended.length ? <p className="mt-2 text-xs text-slate-500">Manual tools: {recommended.join(", ")}</p> : null}
+    </div>
+  );
+}
+
+function StepCard({
+  step,
+  assets,
+  disabled,
+  runningStep,
+  uploadingStep,
+  onRunStep,
+  onUploadStepResult,
+}: {
+  step: PipelineStep;
+  assets: Map<string, PipelineAsset>;
+  disabled: boolean;
+  runningStep: boolean;
+  uploadingStep: boolean;
+  onRunStep: (stepId: string) => Promise<void>;
+  onUploadStepResult: (stepId: string, file: File, assetKey?: string) => Promise<void>;
+}) {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const defaultOutputKey = step.expected_outputs[0]?.asset_key;
+  const canRun = !disabled && !runningStep && ["ready", "failed"].includes(step.status);
+  const canUpload = !disabled && !uploadingStep && Boolean(selectedFile);
+
+  const upload = async () => {
+    if (!selectedFile) {
+      return;
+    }
+    await onUploadStepResult(step.step_id, selectedFile, defaultOutputKey);
+    setSelectedFile(null);
+  };
+
+  return (
+    <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="grid h-8 w-8 place-items-center rounded-md bg-slate-950 text-xs font-black text-white">{step.step_number}</span>
+            <span className={`rounded-md border px-2 py-1 text-xs font-black uppercase tracking-wide ${statusClass(step.status)}`}>
+              {step.status}
+            </span>
+            <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-bold text-slate-600">{step.stage_label || step.stage}</span>
+            <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-bold text-slate-600">{step.tool_type}</span>
+          </div>
+          <h4 className="mt-3 text-lg font-black text-slate-950">{step.title}</h4>
+          <p className="mt-2 text-sm leading-6 text-slate-700">{step.goal}</p>
+          {step.stage_purpose ? <p className="mt-2 text-xs leading-5 text-slate-500">{step.stage_purpose}</p> : null}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button className="btn-secondary px-3 py-2 text-xs" type="button" disabled={!canRun} onClick={() => void onRunStep(step.step_id)}>
+            {runningStep ? "Running..." : "Run Step"}
+          </button>
+        </div>
+      </div>
+
+      {step.error_message ? <div className="mt-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm font-semibold text-rose-800">{step.error_message}</div> : null}
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="space-y-4">
+          <WorkflowList label="Source artifacts from previous phases" items={step.source_artifacts} />
+
+          {step.required_inputs.length ? (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <p className="field-label">Required inputs</p>
+              <div className="mt-3 grid gap-2">
+                {step.required_inputs.map((input) => {
+                  const asset = assets.get(input.asset_key);
+                  return (
+                    <div key={input.asset_key} className="rounded-md border border-slate-200 bg-white p-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-sm font-bold text-slate-900">{input.label}</p>
+                        <span className={`rounded-md px-2 py-1 text-xs font-black ${asset ? "bg-emerald-100 text-emerald-800" : input.required ? "bg-rose-100 text-rose-800" : "bg-slate-100 text-slate-600"}`}>
+                          {asset ? "available" : input.required ? "missing" : "optional"}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">{input.instructions}</p>
+                      {asset ? (
+                        <div className="mt-2">
+                          <AssetLink asset={asset} />
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+
+          <PromptBlock label="Prompt to copy" value={step.prompt_to_copy} />
+          <PromptBlock label="Negative prompt" value={step.negative_prompt_to_copy} />
+          <PromptBlock label="Motion instruction" value={step.motion_instruction} />
+          <PromptBlock label="Consistency instruction" value={step.consistency_instruction} />
+
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <p className="field-label">Manual instructions</p>
+            <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-700">
+              {step.manual_instructions.map((instruction) => (
+                <li key={instruction}>{instruction}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <aside className="space-y-4">
+          {step.provider_options.length ? (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <p className="field-label">Provider or manual path</p>
+              <div className="mt-2 space-y-2">
+                {step.provider_options.map((option, index) => (
+                  <ProviderOption key={`${step.step_id}-provider-${index}`} option={option} />
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          <WorkflowList label="Review focus" items={step.review_focus} />
+          <WorkflowList label="Success criteria" items={step.success_criteria} />
+
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <p className="field-label">Settings</p>
+            <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded-md bg-white p-3 text-xs leading-5 text-slate-700">
+              {JSON.stringify(step.settings, null, 2)}
+            </pre>
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <p className="field-label">Expected outputs</p>
+            <div className="mt-2 space-y-2">
+              {step.expected_outputs.map((output) => (
+                <div key={output.asset_key} className="rounded-md border border-slate-200 bg-white p-2">
+                  <p className="text-sm font-bold text-slate-900">{output.label}</p>
+                  <p className="mt-1 text-xs text-slate-500">{output.asset_key} / {output.file_name_hint}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <p className="field-label">Upload result</p>
+            <input
+              className="mt-2 block w-full text-sm text-slate-700"
+              type="file"
+              disabled={disabled || uploadingStep}
+              onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
+            />
+            <button className="btn-primary mt-3 w-full" type="button" disabled={!canUpload} onClick={() => void upload()}>
+              {uploadingStep ? "Uploading..." : "Upload Step Output"}
+            </button>
+            {defaultOutputKey ? <p className="mt-2 text-xs text-slate-500">Asset key: {defaultOutputKey}</p> : null}
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <p className="field-label">Output assets</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {step.output_assets.length ? step.output_assets.map((asset) => <AssetLink key={asset.asset_id} asset={asset} />) : <span className="text-sm text-slate-500">No output yet.</span>}
+            </div>
+          </div>
+        </aside>
+      </div>
+    </article>
+  );
+}
+
+export default function VariantCard({
+  variant,
+  onExport,
+  onRender,
+  onRunPipeline,
+  onRunStep,
+  onUploadStepResult,
+  exporting,
+  rendering,
+  runningPipeline,
+  runningStep,
+  uploadingStep,
+  disabled,
+}: VariantCardProps) {
+  const pipeline = variant.generation_pipeline;
+  const assets = useMemo(() => (pipeline ? assetMap(pipeline.assets, pipeline.steps) : new Map<string, PipelineAsset>()), [pipeline]);
+  const sourceArtifacts = pipeline?.source_artifacts ?? [];
+  const providerContracts = pipeline?.provider_contracts ?? [];
 
   return (
     <article className="card-accent overflow-hidden">
       <div className="border-b border-slate-200 bg-slate-950 p-5 text-white">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-4xl">
-            <p className="text-xs font-black uppercase tracking-wide text-teal-300">Video production workflow</p>
+            <p className="text-xs font-black uppercase tracking-wide text-teal-300">Executable generation pipeline</p>
             <h3 className="mt-2 text-xl font-black">{variant.name}</h3>
             <p className="mt-2 text-sm leading-6 text-slate-300">{variant.hook}</p>
           </div>
           <span className="rounded-md border border-white/15 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-white">
-            {variant.video_status}
+            {pipeline?.status ?? variant.video_status}
           </span>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button className="btn-primary" type="button" disabled={disabled || runningPipeline || !pipeline} onClick={() => void onRunPipeline()}>
+            {runningPipeline ? "Running..." : "Run Full Pipeline"}
+          </button>
+          <button className="btn-secondary" type="button" disabled={disabled || rendering || !pipeline} onClick={() => void onRender()}>
+            {rendering ? "Rendering..." : "Render Video"}
+          </button>
+          <button className="btn-secondary" type="button" disabled={disabled || exporting || !pipeline} onClick={() => void onExport()}>
+            {exporting ? "Exporting..." : "Export Production Package"}
+          </button>
+          {variant.export_package_url ? (
+            <a className="btn-secondary" href={toApiUrl(variant.export_package_url)} target="_blank" rel="noreferrer">
+              Download Package
+            </a>
+          ) : null}
         </div>
       </div>
 
       <div className="space-y-5 p-5">
-        {!productionPackage ? <EmptyPackage /> : null}
-
-        {productionPackage ? (
+        {!pipeline ? (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">
+            Regenerate Video Workflow to create executable pipeline steps.
+          </div>
+        ) : (
           <>
-            <WorkflowStep number={1} title="Create character reference images" tool="Use an image generation model first. These images lock the creator identity before video generation.">
-              <div className="mb-4 rounded-lg border border-teal-200 bg-teal-50 p-4">
-                <p className="field-label text-teal-700">Character lock</p>
-                <p className="mt-2 text-sm leading-6 text-slate-800">{productionPackage.character_bible.identity_lock_prompt}</p>
-                <p className="mt-2 text-xs font-semibold text-slate-500">
-                  One actor only. Each reference changes pose or camera angle, not face, outfit, age, body type, or setting.
-                </p>
+            <div className="grid gap-3 md:grid-cols-4">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <p className="field-label">Steps</p>
+                <p className="mt-1 text-2xl font-black text-slate-950">{pipeline.steps.length}</p>
               </div>
-              <div className="grid gap-4 xl:grid-cols-2">
-                {productionPackage.character_reference_prompts.map((prompt) => (
-                  <div key={prompt.reference_id} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                    <div className="mb-3 flex items-start justify-between gap-3">
-                      <div>
-                        <p className="field-label">{prompt.reference_id}</p>
-                        <h5 className="text-base font-black text-slate-950">{prompt.purpose}</h5>
-                        <p className="mt-1 text-xs font-semibold text-teal-700">{prompt.aspect_ratio}</p>
-                      </div>
-                      <CopyButton
-                        value={buildReferenceCopy(
-                          prompt,
-                          productionPackage.character_bible.identity_lock_prompt,
-                          productionPackage.character_bible.base_prompt,
-                        )}
-                      />
-                    </div>
-                    <p className="text-sm leading-6 text-slate-700">{prompt.prompt}</p>
-                    <p className="mt-3 text-xs font-black uppercase tracking-wide text-rose-700">Negative</p>
-                    <p className="mt-1 text-sm leading-6 text-slate-600">{prompt.negative_prompt}</p>
-                  </div>
-                ))}
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <p className="field-label">Assets</p>
+                <p className="mt-1 text-2xl font-black text-slate-950">{assets.size}</p>
               </div>
-            </WorkflowStep>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <p className="field-label">Completed</p>
+                <p className="mt-1 text-2xl font-black text-emerald-700">{pipeline.steps.filter((step) => step.status === "completed").length}</p>
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <p className="field-label">Ready</p>
+                <p className="mt-1 text-2xl font-black text-teal-700">{pipeline.steps.filter((step) => step.status === "ready").length}</p>
+              </div>
+            </div>
 
-            <WorkflowStep number={2} title="Generate scene keyframes" tool="Use image generation. Upload the matching character reference and product/app assets, then paste one keyframe prompt per scene.">
-              <div className="grid gap-4">
-                {productionPackage.production_scenes.map((scene) => (
-                  <div key={`keyframe-${scene.scene_number}`} className="rounded-lg border border-slate-200 bg-white p-4">
-                    <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <p className="field-label">Scene {scene.scene_number}</p>
-                        <h5 className="text-base font-black text-slate-950">{scene.creative_objective}</h5>
-                        <p className="mt-1 text-sm text-slate-500">
-                          References: {formatList(scene.required_reference_assets)}
-                        </p>
-                      </div>
-                      <CopyButton value={buildKeyframeCopy(scene)} />
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p className="field-label">Workflow contract</p>
+                <h4 className="mt-2 text-lg font-black text-slate-950">{pipeline.pipeline_name} v{pipeline.pipeline_version}</h4>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{pipeline.objective}</p>
+                <div className="mt-4 grid gap-2 md:grid-cols-2">
+                  {sourceArtifacts.map((artifact, index) => (
+                    <div key={`${valueToString(artifact.artifact_key)}-${index}`} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                      <p className="text-sm font-bold text-slate-900">{valueToString(artifact.label)}</p>
+                      <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-400">{valueToString(artifact.source_phase)}</p>
+                      <p className="mt-2 text-xs leading-5 text-slate-500">{valueToString(artifact.description)}</p>
                     </div>
-                    <PromptBlock label="Keyframe prompt" value={scene.keyframe_prompt} />
-                  </div>
-                ))}
-              </div>
-            </WorkflowStep>
-
-            <WorkflowStep number={3} title="Animate each scene" tool="Use an image-to-video or reference-to-video model. Feed the keyframe image, references, video prompt, motion, and consistency lock.">
-              <div className="grid gap-4">
-                {productionPackage.production_scenes.map((scene) => (
-                  <div key={`video-${scene.scene_number}`} className="rounded-lg border border-slate-200 bg-white p-4">
-                    <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <p className="field-label">Scene {scene.scene_number}</p>
-                        <h5 className="text-base font-black text-slate-950">
-                          {scene.duration_seconds}s / {scene.generation_mode} / {scene.shot_type}
-                        </h5>
-                      </div>
-                      <CopyButton value={buildVideoCopy(scene)} />
-                    </div>
-                    <div className="grid gap-3 lg:grid-cols-2">
-                      <PromptBlock label="Video prompt" value={scene.video_prompt} />
-                      <PromptBlock label="Motion + consistency" value={`${scene.motion_instruction}\n\n${scene.consistency_instruction}`} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </WorkflowStep>
-
-            <WorkflowStep number={4} title="Add overlays and app UI" tool="Do this in the editor after video generation. Keep UI text readable instead of asking the video model to invent app screens.">
-              <div className="grid gap-4">
-                {productionPackage.production_scenes.map((scene) => (
-                  <div key={`overlay-${scene.scene_number}`} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                    <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <p className="field-label">Scene {scene.scene_number}</p>
-                        <h5 className="text-base font-black text-slate-950">{scene.on_screen_text}</h5>
-                      </div>
-                      <CopyButton value={buildOverlayCopy(scene)} />
-                    </div>
-                    <OverlayList items={scene.ui_overlay_plan} />
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4">
-                <p className="field-label">App UI overlay notes</p>
-                <p className="mt-2 text-sm leading-6 text-slate-700">{productionPackage.app_ui_overlay_notes}</p>
-              </div>
-            </WorkflowStep>
-
-            <WorkflowStep number={5} title="Assemble final ad" tool="Use CapCut, Premiere, Runway editor, or your internal editor. Cut scenes in order, add subtitles, music, disclaimers, and export ratios.">
-              <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-                <PromptBlock label="Edit plan" value={buildEditCopy(productionPackage.edit_plan)} />
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <p className="field-label">Production checklist</p>
-                  <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-700">
-                    {productionPackage.asset_checklist.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                  <p className="mt-4 field-label">Compliance</p>
-                  <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-700">
-                    {productionPackage.compliance_notes.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
+                  ))}
                 </div>
               </div>
-            </WorkflowStep>
-
-            <WorkflowStep number={6} title="Export package or call real video provider" tool="Export creates prompt files. Render Video only works after VIDEO_PROVIDER_NAME and VIDEO_PROVIDER_API_KEY are configured.">
-              <div className="flex flex-wrap gap-3">
-                <button className="btn-primary" type="button" disabled={disabled || exporting} onClick={() => void onExport()}>
-                  {exporting ? "Exporting..." : "Export Production Package"}
-                </button>
-                <button className="btn-secondary" type="button" disabled={disabled || rendering} onClick={() => void onRender()}>
-                  {rendering ? "Rendering..." : "Render Video"}
-                </button>
-              </div>
-              {variant.export_package_url ? (
-                <a
-                  className="mt-4 block rounded-lg border border-teal-200 bg-teal-50 p-4 text-sm font-bold text-teal-800"
-                  href={toApiUrl(variant.export_package_url)}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Download production_package.zip
-                </a>
-              ) : null}
-              <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <p className="field-label">Render sequence</p>
-                <ol className="mt-3 space-y-2 text-sm leading-6 text-slate-700">
-                  {productionPackage.render_sequence.map((item) => (
-                    <li key={item}>{item}</li>
+              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p className="field-label">Provider registry</p>
+                <div className="mt-3 space-y-2">
+                  {providerContracts.map((contract, index) => (
+                    <ProviderOption key={`${valueToString(contract.tool_type)}-${index}`} option={contract} />
                   ))}
-                </ol>
+                </div>
               </div>
-            </WorkflowStep>
+            </div>
+
+            {pipeline.steps.map((step) => (
+              <StepCard
+                key={step.step_id}
+                step={step}
+                assets={assets}
+                disabled={disabled}
+                runningStep={runningStep}
+                uploadingStep={uploadingStep}
+                onRunStep={onRunStep}
+                onUploadStepResult={onUploadStepResult}
+              />
+            ))}
           </>
-        ) : null}
+        )}
       </div>
     </article>
   );

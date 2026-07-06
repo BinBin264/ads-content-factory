@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import type { AnalyzeProjectResponse, CreateProjectValues, CreativeAngle, Project, Variant } from "../types";
+import type { AnalyzeProjectResponse, CreateProjectValues, CreativeAngle, Project, Variant, VariantGenerationPipeline } from "../types";
 
 function appendIfPresent(formData: FormData, key: string, value: string): void {
   const trimmed = value.trim();
@@ -72,6 +72,43 @@ export async function renderProject(id: string): Promise<Project> {
 
 export async function exportProductionPackage(id: string): Promise<Project> {
   const response = await apiClient.post<Project>(`/api/projects/${id}/export-production-package`);
+  return response.data;
+}
+
+export async function getVariantPipeline(projectId: string, variantId: string): Promise<VariantGenerationPipeline> {
+  const response = await apiClient.get<VariantGenerationPipeline>(`/api/projects/${projectId}/variants/${variantId}/pipeline`);
+  return response.data;
+}
+
+export async function uploadPipelineStepResult(
+  projectId: string,
+  variantId: string,
+  stepId: string,
+  file: File,
+  assetKey?: string,
+  notes?: string,
+): Promise<Project> {
+  const formData = new FormData();
+  formData.append("file", file);
+  if (assetKey?.trim()) {
+    formData.append("asset_key", assetKey.trim());
+  }
+  if (notes?.trim()) {
+    formData.append("notes", notes.trim());
+  }
+  const response = await apiClient.post<Project>(`/api/projects/${projectId}/variants/${variantId}/pipeline/steps/${stepId}/upload-result`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data;
+}
+
+export async function runPipelineStep(projectId: string, variantId: string, stepId: string): Promise<Project> {
+  const response = await apiClient.post<Project>(`/api/projects/${projectId}/variants/${variantId}/pipeline/steps/${stepId}/run`);
+  return response.data;
+}
+
+export async function runVariantPipeline(projectId: string, variantId: string): Promise<Project> {
+  const response = await apiClient.post<Project>(`/api/projects/${projectId}/variants/${variantId}/pipeline/run`);
   return response.data;
 }
 

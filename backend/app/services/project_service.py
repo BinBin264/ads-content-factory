@@ -5,12 +5,14 @@ from pathlib import Path
 from fastapi import UploadFile
 
 from app.config import OUTPUTS_DIR
-from app.models.schemas import AnalyzeProjectResponse, CreativeAngle, GenerateVariantsRequest, ProductBrief, Project, Variant, VisionAnalysis
+from app.models.schemas import AnalyzeProjectResponse, CreativeAngle, GenerateVariantsRequest, ProductBrief, Project, Variant, VariantGenerationPipeline, VisionAnalysis
 from app.services.angle_generator import CreativeAngleGenerator, GeminiCreativeAngleGenerator
+from app.services.pipeline_asset_service import PipelineAssetService
+from app.services.pipeline_builder import build_generation_pipeline, enrich_generation_pipeline
+from app.services.pipeline_runner import PipelineRunner
 from app.services.product_analyzer import ProductAnalyzer, ProductIntelligenceAnalyzer
 from app.services.script_generator import GeminiVariantScriptGenerator, VariantScriptGenerator
 from app.services.storage_service import JsonProjectStorage, LocalFileStorage
-from app.services.video_provider import ExternalVideoProvider, VideoProvider
 
 
 class ProjectService:
@@ -21,14 +23,16 @@ class ProjectService:
         analyzer: ProductAnalyzer | None = None,
         angle_generator: CreativeAngleGenerator | None = None,
         script_generator: VariantScriptGenerator | None = None,
-        video_provider: VideoProvider | None = None,
+        pipeline_asset_service: PipelineAssetService | None = None,
+        pipeline_runner: PipelineRunner | None = None,
     ) -> None:
         self.storage = storage or JsonProjectStorage()
         self.file_storage = file_storage or LocalFileStorage()
         self.analyzer = analyzer or ProductIntelligenceAnalyzer()
         self.angle_generator = angle_generator or GeminiCreativeAngleGenerator()
         self.script_generator = script_generator or GeminiVariantScriptGenerator()
-        self.video_provider = video_provider or ExternalVideoProvider()
+        self.pipeline_asset_service = pipeline_asset_service or PipelineAssetService()
+        self.pipeline_runner = pipeline_runner or PipelineRunner(self.pipeline_asset_service)
 
     async def create_project(
         self,
@@ -66,7 +70,9 @@ class ProjectService:
         return sorted(self.storage.list_projects(), key=lambda item: item.created_at, reverse=True)
 
     def get_project(self, project_id: str) -> Project:
-        return self.storage.get_project(project_id)
+        project = self.storage.get_project(project_id)
+        self._hydrate_generation_pipelines(project)
+        return project
 
     def analyze_project(self, project_id: str) -> AnalyzeProjectResponse:
         project = self.storage.get_project(project_id)
@@ -110,7 +116,55 @@ class ProjectService:
         if not project.variants:
             raise ValueError("Generate variants before rendering video")
 
-        project.variants = self.video_provider.render(project, project.variants)
+        try:
+            self.pipeline_runner.run_all_variants(project)
+        except Exception:
+            self.storage.save_project(project)
+            raise
+        return self.storage.save_project(project)
+
+    def get_generation_pipeline(self, project_id: str, variant_id: str) -> VariantGenerationPipeline:
+        project = self.storage.get_project(project_id)
+        pipeline = self.pipeline_asset_service.ensure_pipeline(project, variant_id)
+        self.storage.save_project(project)
+        return pipeline
+
+    async def upload_pipeline_step_result(
+        self,
+        project_id: str,
+        variant_id: str,
+        step_id: str,
+        file: UploadFile,
+        asset_key: str | None,
+        notes: str | None,
+    ) -> Project:
+        project = self.storage.get_project(project_id)
+        await self.pipeline_asset_service.upload_step_result(
+            project=project,
+            variant_id=variant_id,
+            step_id=step_id,
+            file=file,
+            asset_key=asset_key,
+            notes=notes,
+        )
+        return self.storage.save_project(project)
+
+    def run_pipeline_step(self, project_id: str, variant_id: str, step_id: str) -> Project:
+        project = self.storage.get_project(project_id)
+        try:
+            self.pipeline_runner.run_step(project, variant_id, step_id)
+        except Exception:
+            self.storage.save_project(project)
+            raise
+        return self.storage.save_project(project)
+
+    def run_variant_pipeline(self, project_id: str, variant_id: str) -> Project:
+        project = self.storage.get_project(project_id)
+        try:
+            self.pipeline_runner.run_pipeline(project, variant_id)
+        except Exception:
+            self.storage.save_project(project)
+            raise
         return self.storage.save_project(project)
 
     def export_production_package(self, project_id: str) -> Project:
@@ -121,6 +175,10 @@ class ProjectService:
         for variant in project.variants:
             if not variant.production_package:
                 raise ValueError("Variant is missing production_package. Generate variants again.")
+            if variant.generation_pipeline is None:
+                variant.generation_pipeline = build_generation_pipeline(project, variant)
+            else:
+                enrich_generation_pipeline(variant.generation_pipeline)
             variant_dir = OUTPUTS_DIR / project.id / variant.id
             variant_dir.mkdir(parents=True, exist_ok=True)
             self._write_variant_package_files(variant_dir, variant)
@@ -142,6 +200,11 @@ class ProjectService:
                 or VisionAnalysis(detected_product_type=project.product_intelligence.product_type),
             )
         return self.analyzer.analyze(project)
+
+    def _hydrate_generation_pipelines(self, project: Project) -> None:
+        for variant in project.variants:
+            if variant.generation_pipeline is not None:
+                enrich_generation_pipeline(variant.generation_pipeline)
 
     def _select_angles(
         self,
@@ -197,6 +260,43 @@ class ProjectService:
             ),
         )
         self._write_json(variant_dir / "production_scenes.json", [scene.model_dump(mode="json") for scene in package.production_scenes])
+        if variant.generation_pipeline:
+            self._write_json(variant_dir / "generation_pipeline.json", variant.generation_pipeline.model_dump(mode="json"))
+            self._write_json(variant_dir / "pipeline_manifest.json", {
+                "pipeline_name": variant.generation_pipeline.pipeline_name,
+                "pipeline_version": variant.generation_pipeline.pipeline_version,
+                "objective": variant.generation_pipeline.objective,
+                "source_artifacts": variant.generation_pipeline.source_artifacts,
+                "stage_contracts": variant.generation_pipeline.stage_contracts,
+                "provider_contracts": variant.generation_pipeline.provider_contracts,
+            })
+            self._write_json(variant_dir / "asset_registry.json", [asset.model_dump(mode="json") for asset in variant.generation_pipeline.assets])
+            self._write_text(
+                variant_dir / "pipeline_prompts.txt",
+                "\n\n".join(
+                    [
+                        f"Step {step.step_number}: {step.title}\n"
+                        f"Stage: {step.stage}\nTool: {step.tool_type}\n"
+                        f"Prompt:\n{step.prompt_to_copy or ''}\n"
+                        f"Negative:\n{step.negative_prompt_to_copy or ''}\n"
+                        f"Motion:\n{step.motion_instruction or ''}\n"
+                        f"Consistency:\n{step.consistency_instruction or ''}"
+                        for step in variant.generation_pipeline.steps
+                    ]
+                ),
+            )
+            self._write_text(
+                variant_dir / "manual_generation_instructions.txt",
+                "\n\n".join(
+                    [
+                        f"Step {step.step_number}: {step.title}\n"
+                        + "\n".join([f"- {instruction}" for instruction in step.manual_instructions])
+                        + "\nExpected outputs:\n"
+                        + "\n".join([f"- {output.asset_key}: {output.file_name_hint}" for output in step.expected_outputs])
+                        for step in variant.generation_pipeline.steps
+                    ]
+                ),
+            )
         self._write_text(
             variant_dir / "keyframe_prompts.txt",
             "\n\n".join([f"Scene {scene.scene_number}\n{scene.keyframe_prompt}" for scene in package.production_scenes]),
