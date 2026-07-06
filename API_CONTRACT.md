@@ -41,7 +41,21 @@ The backend also accepts comma, semicolon, or newline-separated values for compa
 
 ## Creative Plan Shape
 
-`POST /api/projects/{project_id}/analyze` returns:
+Primary planning endpoint:
+
+```text
+POST /api/projects/{project_id}/creative-plan
+```
+
+Response: `CreativePlan`
+
+Legacy compatibility endpoint:
+
+```text
+POST /api/projects/{project_id}/analyze
+```
+
+Response:
 
 ```json
 {
@@ -52,7 +66,7 @@ The backend also accepts comma, semicolon, or newline-separated values for compa
 }
 ```
 
-`creative_plan` is the primary production planning artifact:
+`creative_plan` is the primary production planning artifact. The current frontend uses `/creative-plan`; `/analyze` remains only for older integrations that still expect `product_intelligence`, `product_brief`, and `vision_analysis` in the same response.
 
 ```json
 {
@@ -82,7 +96,7 @@ The backend also accepts comma, semicolon, or newline-separated values for compa
 }
 ```
 
-`product_intelligence`, `product_brief`, and `creative_angles` are kept as compatibility fields. They are derived from `creative_plan` and should not be treated as separate planning phases.
+`product_intelligence`, `product_brief`, and `creative_angles` are kept as compatibility fields. They are derived from `creative_plan` and should not be treated as separate planning phases. `POST /api/projects/{project_id}/angles` is deprecated and should not be used by the main UI.
 
 `product_brief` compatibility shape:
 
@@ -107,7 +121,7 @@ The backend also accepts comma, semicolon, or newline-separated values for compa
 
 ## Variant Shape
 
-`POST /api/projects/{project_id}/generate-variants` returns `Variant[]`. Legacy fields are kept for compatibility and each new variant includes `production_package` and `generation_pipeline`.
+`POST /api/projects/{project_id}/generate-variants` returns `Variant[]`. The core path uses `project.creative_plan.variant_directions` directly and generates exactly two variants: Storytelling / Problem-led and Product Demo / Benefit-led. `angle_ids` is accepted for request compatibility but is ignored by the new main flow. Legacy fields are kept for compatibility and each new variant includes `production_package` and `generation_pipeline`.
 
 ```json
 {

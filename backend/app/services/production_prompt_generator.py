@@ -7,12 +7,14 @@ from app.models.schemas import (
     CharacterPlan,
     CharacterReferencePrompt,
     CreativeAngle,
+    CreativePlan,
     ProductIntelligenceBrief,
     ProductionScene,
     Project,
     StoryboardScene,
     VideoProductionPackage,
     Variant,
+    VariantDirection,
 )
 from app.services.intelligence_context import compact_intelligence_context
 from app.services.llm_provider import LLMProvider, build_llm_provider
@@ -66,6 +68,49 @@ class GeminiProductionPromptGenerator:
         package_data = {
             "variant_id": variant.id,
             "creative_angle_id": creative_angle.id,
+            "character_plan": character_plan.model_dump(mode="json"),
+            "character_bible": character_bible.model_dump(mode="json"),
+            "character_reference_prompts": [item.model_dump(mode="json") for item in character_reference_prompts],
+            "production_scenes": data.get("production_scenes"),
+            "edit_plan": data.get("edit_plan"),
+            "app_ui_overlay_notes": data.get("app_ui_overlay_notes"),
+            "asset_checklist": data.get("asset_checklist"),
+            "compliance_notes": data.get("compliance_notes"),
+            "render_sequence": data.get("render_sequence"),
+        }
+        package = VideoProductionPackage.model_validate(package_data)
+        expected_scene_count = len(variant.storyboard)
+        if len(package.production_scenes) != expected_scene_count:
+            raise ValueError(f"Gemini production package must include exactly {expected_scene_count} production scenes")
+        self._validate_production_scenes(package.production_scenes)
+        return package
+
+    def generate_from_creative_plan(
+        self,
+        *,
+        project: Project,
+        creative_plan: CreativePlan,
+        variant_direction: VariantDirection,
+        variant: Variant,
+        character_plan: CharacterPlan,
+        character_bible: CharacterBible,
+        character_reference_prompts: list[CharacterReferencePrompt],
+    ) -> VideoProductionPackage:
+        prompt = self._build_creative_plan_prompt(
+            project,
+            creative_plan,
+            variant_direction,
+            variant,
+            character_bible,
+            character_reference_prompts,
+        )
+        data = self.llm_provider.generate_json(prompt, temperature=0.4)
+        data = self._coerce_response(data, variant)
+        data = self._sanitize_for_compliance_from_plan(data, project, creative_plan)
+
+        package_data = {
+            "variant_id": variant.id,
+            "creative_angle_id": variant_direction.id,
             "character_plan": character_plan.model_dump(mode="json"),
             "character_bible": character_bible.model_dump(mode="json"),
             "character_reference_prompts": [item.model_dump(mode="json") for item in character_reference_prompts],
@@ -384,6 +429,142 @@ class GeminiProductionPromptGenerator:
             ]
         ).lower()
         return "coin" in haystack and ("scan" in haystack or "value" in haystack)
+
+    def _sanitize_for_compliance_from_plan(
+        self,
+        data: dict[str, Any],
+        project: Project,
+        creative_plan: CreativePlan,
+    ) -> dict[str, Any]:
+        if not self._is_coin_scanner_from_plan(project, creative_plan):
+            return data
+
+        sanitized = self._replace_banned_text(data)
+        sanitized.setdefault("compliance_notes", [])
+        if isinstance(sanitized["compliance_notes"], list):
+            sanitized["compliance_notes"].append(
+                "Coin value language sanitized to estimated reference value only. Actual value may vary by condition, rarity, and market demand."
+            )
+        self._ensure_coin_disclaimer(sanitized)
+        return sanitized
+
+    def _is_coin_scanner_from_plan(self, project: Project, creative_plan: CreativePlan) -> bool:
+        haystack = " ".join(
+            [
+                project.product_name,
+                project.product_category or "",
+                project.product_description or "",
+                creative_plan.product_truth,
+                creative_plan.main_message,
+            ]
+        ).lower()
+        return "coin" in haystack and ("scan" in haystack or "value" in haystack)
+
+    def _build_creative_plan_prompt(
+        self,
+        project: Project,
+        creative_plan: CreativePlan,
+        variant_direction: VariantDirection,
+        variant: Variant,
+        character_bible: CharacterBible,
+        character_reference_prompts: list[CharacterReferencePrompt],
+    ) -> str:
+        brand = {
+            "product_name": project.product_name,
+            "claims_to_avoid": project.claims_to_avoid,
+            "cta": project.cta,
+            "uploaded_files": [item.file_name for item in project.uploaded_files],
+        }
+        creative_context = {
+            "creative_plan": creative_plan.model_dump(mode="json"),
+            "variant_direction": variant_direction.model_dump(mode="json"),
+            "variant": {
+                "id": variant.id,
+                "name": variant.name,
+                "hypothesis": variant.hypothesis,
+                "target_metric": variant.target_metric,
+                "hook": variant.hook,
+                "script_summary": variant.script_summary,
+                "script": variant.script,
+                "timeline": [scene.model_dump(mode="json") for scene in variant.timeline],
+                "storyboard": [scene.model_dump(mode="json") for scene in variant.storyboard],
+                "voiceover": variant.voiceover,
+                "subtitles": variant.subtitles,
+            },
+        }
+        return (
+            "You are an AI video production director and prompt engineer for short-form UGC ads.\n\n"
+            "Create a production-ready video generation package from the Creative Plan and this exact Video Variant. "
+            "Do not create a new strategy layer. Use the variant timeline/storyboard as the source of truth.\n\n"
+            f"Creative context:\n{json.dumps(creative_context, ensure_ascii=False, indent=2)}\n\n"
+            f"Character Bible:\n{json.dumps(character_bible.model_dump(mode='json'), ensure_ascii=False, indent=2)}\n\n"
+            f"Character Reference Prompts:\n{json.dumps([item.model_dump(mode='json') for item in character_reference_prompts], ensure_ascii=False, indent=2)}\n\n"
+            f"Platform:\n{project.platform}\n\n"
+            f"Tone:\n{project.tone}\n\n"
+            f"Brand:\n{json.dumps(brand, ensure_ascii=False, indent=2)}\n\n"
+            "Return JSON only:\n"
+            "{\n"
+            '  "production_scenes": [\n'
+            "    {\n"
+            '      "scene_number": 1,\n'
+            '      "duration_seconds": 4,\n'
+            '      "creative_objective": "",\n'
+            '      "shot_type": "",\n'
+            '      "camera_angle": "",\n'
+            '      "generation_mode": "image_to_video",\n'
+            '      "required_reference_assets": [],\n'
+            '      "visual_description": "",\n'
+            '      "action_description": "",\n'
+            '      "keyframe_prompt": "",\n'
+            '      "video_prompt": "",\n'
+            '      "motion_instruction": "",\n'
+            '      "consistency_instruction": "",\n'
+            '      "negative_prompt": "",\n'
+            '      "ui_overlay_plan": [],\n'
+            '      "voiceover_line": "",\n'
+            '      "on_screen_text": "",\n'
+            '      "transition": "",\n'
+            '      "safety_notes": ""\n'
+            "    }\n"
+            "  ],\n"
+            '  "edit_plan": {\n'
+            '    "total_duration": "",\n'
+            '    "pacing_notes": "",\n'
+            '    "music_direction": "",\n'
+            '    "subtitle_style": "",\n'
+            '    "cut_sequence": [],\n'
+            '    "export_ratios": ["9:16", "1:1"],\n'
+            '    "required_post_production_steps": [],\n'
+            '    "platform_notes": ""\n'
+            "  },\n"
+            '  "app_ui_overlay_notes": "",\n'
+            '  "asset_checklist": [],\n'
+            '  "compliance_notes": [],\n'
+            '  "render_sequence": []\n'
+            "}\n\n"
+            "Rules:\n"
+            f"- Create exactly {len(variant.storyboard)} production scenes, matching the storyboard/timeline scene count.\n"
+            "- For 4-scene variants: Scene 1 Hook, Scene 2 Problem/Context, Scene 3 Product/Demo, Scene 4 CTA.\n"
+            "- For 5-scene variants: Scene 1 Hook, Scene 2 Problem/Context, Scene 3 Product/Demo, Scene 4 Proof/Benefit/Result, Scene 5 CTA.\n"
+            "- Each scene must include a keyframe_prompt and video_prompt.\n"
+            "- keyframe_prompt is for image generation. video_prompt is for image-to-video/reference-to-video.\n"
+            "- Do not write generic prompts like 'user uses the app'.\n"
+            "- Describe the same character, setting, props, action, camera angle, lighting, emotion, composition, and UI overlay plan.\n"
+            f"- Every video_prompt must include this exact identity lock sentence: {character_bible.identity_lock_prompt}\n"
+            "- Do not make the video model generate complex readable app UI text.\n"
+            "- For phone screens, write: The phone screen should be clean and simple for later UI overlay. Do not generate unreadable app text.\n"
+            "- Add real app screenshots only in an app_screen_overlay step. Do not ask the video model to generate app text.\n"
+            "- Do not use overlay_type app_screen. Use app_screen_overlay for app UI, text_overlay for hook text, subtitle for captions, cta for CTA, disclaimer for safety copy.\n"
+            "- Overlay start_time and end_time should use global final-video timeline, not local scene time.\n"
+            "- Use product_truth, audience_pain, main_message, safe_claims, forbidden_claims, CTA, and the selected variant_direction.\n"
+            f"- Always include this negative prompt or a stricter version: {DEFAULT_PRODUCTION_NEGATIVE_PROMPT}\n"
+            "- Scene 3 should be 5-6 seconds max. Keep the product/app demo clear and not overloaded with motion.\n"
+            "- Scene 1 may be POV/hand-only. If the face is not visible, lock same skin tone and hand style instead of full face/hair identity.\n"
+            "- For Coin Scanner App, do not use fortune, guaranteed, 100% accurate, make money, professional appraisal, definitely worth, or extreme values.\n"
+            "- For Coin Scanner App, use estimated reference value, reference price, similar coins may have sold for, and actual value may vary disclaimers.\n"
+            "- For Coin Scanner App scene 3, use an over-the-shoulder or close-up scanning scene with coin and phone clearly visible.\n"
+            "- For Coin Scanner App final scene, include UI overlays for Estimated Reference Value, Reference price only, Download Now, and Estimated reference value only. Actual value may vary.\n"
+        )
 
     def _build_prompt(
         self,

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, File, Form, UploadFile
 
-from app.models.schemas import AnalyzeProjectResponse, CreativeAngle, GenerateVariantsRequest, Project, Variant, VariantGenerationPipeline
+from app.models.schemas import AnalyzeProjectResponse, CreativeAngle, CreativePlan, GenerateVariantsRequest, Project, Variant, VariantGenerationPipeline
 from app.routes.projects import project_service
 
 
@@ -12,7 +12,12 @@ def analyze_project(project_id: str) -> AnalyzeProjectResponse:
     return project_service.analyze_project(project_id)
 
 
-@router.post("/{project_id}/angles", response_model=list[CreativeAngle])
+@router.post("/{project_id}/creative-plan", response_model=CreativePlan)
+def generate_creative_plan(project_id: str) -> CreativePlan:
+    return project_service.generate_creative_plan(project_id)
+
+
+@router.post("/{project_id}/angles", response_model=list[CreativeAngle], deprecated=True)
 def generate_angles(project_id: str) -> list[CreativeAngle]:
     return project_service.generate_angles(project_id)
 

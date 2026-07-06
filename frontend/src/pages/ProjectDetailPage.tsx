@@ -4,9 +4,9 @@ import CreativePlanCard from "../components/CreativePlanCard";
 import ProgressSteps from "../components/ProgressSteps";
 import VariantCard from "../components/VariantCard";
 import {
-  analyzeProject,
   deleteProject,
   exportProductionPackage,
+  generateCreativePlan,
   generateVariants,
   getProject,
   renderProject,
@@ -309,7 +309,7 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
           <button
             className="btn-primary"
             disabled={!canAct}
-            onClick={() => void runAction("analyze", () => analyzeProject(id as string))}
+            onClick={() => void runAction("analyze", () => generateCreativePlan(id as string))}
             type="button"
           >
             {loadingAction === "analyze" ? "Generating..." : hasCreativePlan ? "Regenerate Creative Plan" : "Generate Creative Plan"}

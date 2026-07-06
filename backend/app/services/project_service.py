@@ -7,6 +7,7 @@ from fastapi import UploadFile
 from app.config import OUTPUTS_DIR
 from app.models.schemas import AnalyzeProjectResponse, CreativeAngle, CreativePlan, GenerateVariantsRequest, ProductBrief, Project, Variant, VariantDirection, VariantGenerationPipeline, VisionAnalysis
 from app.services.angle_generator import CreativeAngleGenerator, GeminiCreativeAngleGenerator
+from app.services.creative_plan_generator import CreativePlanGenerator, GeminiCreativePlanGenerator
 from app.services.pipeline_asset_service import PipelineAssetService
 from app.services.pipeline_builder import build_generation_pipeline, enrich_generation_pipeline
 from app.services.pipeline_runner import PipelineRunner
@@ -21,6 +22,7 @@ class ProjectService:
         storage: JsonProjectStorage | None = None,
         file_storage: LocalFileStorage | None = None,
         analyzer: ProductAnalyzer | None = None,
+        creative_plan_generator: CreativePlanGenerator | None = None,
         angle_generator: CreativeAngleGenerator | None = None,
         script_generator: VariantScriptGenerator | None = None,
         pipeline_asset_service: PipelineAssetService | None = None,
@@ -29,6 +31,7 @@ class ProjectService:
         self.storage = storage or JsonProjectStorage()
         self.file_storage = file_storage or LocalFileStorage()
         self.analyzer = analyzer or ProductIntelligenceAnalyzer()
+        self.creative_plan_generator = creative_plan_generator or GeminiCreativePlanGenerator()
         self.angle_generator = angle_generator or GeminiCreativeAngleGenerator()
         self.script_generator = script_generator or GeminiVariantScriptGenerator()
         self.pipeline_asset_service = pipeline_asset_service or PipelineAssetService()
@@ -82,15 +85,20 @@ class ProjectService:
         project.product_intelligence = analysis.product_intelligence
         project.product_brief = analysis.product_brief
         project.creative_plan = analysis.creative_plan
-        if analysis.creative_plan:
-            project.creative_angles = self.angle_generator.generate(
-                project,
-                analysis.product_brief,
-                analysis.product_intelligence,
-                analysis.creative_plan,
-            )
         self.storage.save_project(project)
         return analysis
+
+    def generate_creative_plan(self, project_id: str) -> CreativePlan:
+        project = self.storage.get_project(project_id)
+        analysis = self.creative_plan_generator.analyze(project)
+        if analysis.creative_plan is None:
+            raise ValueError("Creative Plan generation did not return a creative_plan.")
+        project.vision_analysis = analysis.vision_analysis
+        project.product_brief = analysis.product_brief
+        project.product_intelligence = analysis.product_intelligence
+        project.creative_plan = analysis.creative_plan
+        self.storage.save_project(project)
+        return analysis.creative_plan
 
     def generate_angles(self, project_id: str) -> list[CreativeAngle]:
         project = self.storage.get_project(project_id)
@@ -110,21 +118,10 @@ class ProjectService:
 
     def generate_variants(self, project_id: str, request: GenerateVariantsRequest) -> list[Variant]:
         project = self.storage.get_project(project_id)
-        analysis = self._ensure_analysis(project)
-        brief = analysis.product_brief
-        intelligence = analysis.product_intelligence
-        creative_plan = analysis.creative_plan
-        if creative_plan is None:
-            raise ValueError("Generate Creative Plan before generating video variants.")
-        angles = self.angle_generator.generate(project, brief, intelligence, creative_plan)
-        selected_angles = self._select_angles(angles, request.angle_ids, 2)
-
-        project.product_brief = brief
-        project.product_intelligence = intelligence
-        project.vision_analysis = analysis.vision_analysis
+        _ = request
+        creative_plan = project.creative_plan or self.creative_plan_generator.generate(project)
         project.creative_plan = creative_plan
-        project.creative_angles = angles
-        project.variants = self.script_generator.generate(project, brief, selected_angles, intelligence, creative_plan)
+        project.variants = self.script_generator.generate_from_creative_plan(project, creative_plan)
         self.storage.save_project(project)
         return project.variants
 
@@ -265,27 +262,6 @@ class ProjectService:
             visual_style=intelligence.brand_style_notes,
             variant_directions=directions[:2],
         )
-
-    def _select_angles(
-        self,
-        angles: list[CreativeAngle],
-        angle_ids: list[str] | None,
-        variant_count: int,
-    ) -> list[CreativeAngle]:
-        if angle_ids:
-            by_id = {angle.id: angle for angle in angles}
-            selected = [by_id[angle_id] for angle_id in angle_ids if angle_id in by_id]
-            if not selected:
-                raise ValueError("None of the requested angle_ids exist on this project")
-            selected_ids = {angle.id for angle in selected}
-            remaining = [
-                angle
-                for angle in sorted(angles, key=lambda angle: angle.score, reverse=True)
-                if angle.id not in selected_ids
-            ]
-            return (selected + remaining)[:variant_count]
-
-        return sorted(angles, key=lambda angle: angle.score, reverse=True)[:variant_count]
 
     def _clean_optional(self, value: str | None) -> str | None:
         if value is None:

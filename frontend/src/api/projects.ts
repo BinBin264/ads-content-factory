@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import type { AnalyzeProjectResponse, CreateProjectValues, CreativeAngle, Project, Variant, VariantGenerationPipeline } from "../types";
+import type { AnalyzeProjectResponse, CreateProjectValues, CreativeAngle, CreativePlan, Project, Variant, VariantGenerationPipeline } from "../types";
 
 function appendIfPresent(formData: FormData, key: string, value: string): void {
   const trimmed = value.trim();
@@ -51,6 +51,11 @@ export async function getProject(id: string): Promise<Project> {
 
 export async function analyzeProject(id: string): Promise<AnalyzeProjectResponse> {
   const response = await apiClient.post<AnalyzeProjectResponse>(`/api/projects/${id}/analyze`);
+  return response.data;
+}
+
+export async function generateCreativePlan(id: string): Promise<CreativePlan> {
+  const response = await apiClient.post<CreativePlan>(`/api/projects/${id}/creative-plan`);
   return response.data;
 }
 

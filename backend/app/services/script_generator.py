@@ -9,6 +9,7 @@ from app.models.schemas import (
     Project,
     StoryboardScene,
     Variant,
+    VariantDirection,
 )
 from app.services.character_planner import GeminiCharacterPlanner
 from app.services.character_reference_generator import GeminiCharacterReferenceGenerator
@@ -25,6 +26,9 @@ BASE_NEGATIVE_PROMPT = (
 
 
 class VariantScriptGenerator(Protocol):
+    def generate_from_creative_plan(self, project: Project, creative_plan: CreativePlan) -> list[Variant]:
+        ...
+
     def generate(
         self,
         project: Project,
@@ -141,6 +145,14 @@ class GeminiVariantScriptGenerator:
         self.character_reference_generator = GeminiCharacterReferenceGenerator(self.llm_provider)
         self.production_prompt_generator = GeminiProductionPromptGenerator(self.llm_provider)
 
+    def generate_from_creative_plan(self, project: Project, creative_plan: CreativePlan) -> list[Variant]:
+        if len(creative_plan.variant_directions) != 2:
+            raise ValueError("Creative Plan must include exactly 2 variant_directions before generating variants.")
+        return [
+            self._build_variant_from_direction(project, creative_plan, direction, index)
+            for index, direction in enumerate(creative_plan.variant_directions[:2], start=1)
+        ]
+
     def generate(
         self,
         project: Project,
@@ -154,6 +166,81 @@ class GeminiVariantScriptGenerator:
             self._build_variant_with_llm(project, intelligence, angle, index, creative_plan)
             for index, angle in enumerate(angles, start=1)
         ]
+
+    def _build_variant_from_direction(
+        self,
+        project: Project,
+        creative_plan: CreativePlan,
+        direction: VariantDirection,
+        index: int,
+    ) -> Variant:
+        scene_count = self._scene_count(project.duration)
+        scene_formula = (
+            "Scene 1: Hook. Scene 2: Problem / Context. Scene 3: Product / Demo. "
+            "Scene 4: Proof / Benefit / Result. Scene 5: CTA."
+            if scene_count == 5
+            else "Scene 1: Hook. Scene 2: Problem / Context. Scene 3: Product / Demo. Scene 4: CTA."
+        )
+        prompt = (
+            "You are the Script + Storyboard Agent for a short-form video ad factory. "
+            "Create one publish-ready UGC video ad variant from the selected Creative Plan direction. "
+            "Return JSON only in this exact shape: {\"variant\": {...}}. "
+            "The variant object must include these exact keys: name, hypothesis, target_metric, duration, format, "
+            "hook, script_summary, script, timeline, storyboard, voiceover, title, caption, cover_prompt. "
+            f"Create exactly {scene_count} scenes. {scene_formula} "
+            "Every timeline item must include scene, time, objective, visual, voiceover, on_screen_text, camera, "
+            "transition, video_prompt, negative_prompt. Every storyboard item must include scene_number, "
+            "duration_seconds, objective, visual_description, camera_angle, on_screen_text, voiceover_line, "
+            "transition, generation_prompt, negative_prompt. "
+            "Use the Creative Plan as the only strategic source. Do not invent another analysis layer. "
+            "Do not repeat pain point, hook, CTA, or demo moment in multiple competing fields. "
+            "Negative prompts must include: different product, wrong brand, unreadable text, distorted hands, "
+            "extra fingers, deformed face, blurry product, low quality, random logo, fake UI text. "
+            "For app products, generation_prompt must say: phone screen should be clean and simple for later UI overlay, "
+            "do not generate unreadable app text. Avoid unsafe or exaggerated claims.\n\n"
+            f"Project:\n{json.dumps(compact_project_context(project), ensure_ascii=False, indent=2)}\n\n"
+            f"Creative Plan:\n{json.dumps(creative_plan.model_dump(mode='json'), ensure_ascii=False, indent=2)}\n\n"
+            f"Selected variant direction:\n{json.dumps(direction.model_dump(mode='json'), ensure_ascii=False, indent=2)}\n\n"
+            f"Variant index: {index}"
+        )
+        data = self.llm_provider.generate_json(prompt, temperature=0.55, response_schema=self.RESPONSE_SCHEMA)
+        raw_variant = data.get("variant")
+        if not isinstance(raw_variant, dict):
+            raise ValueError("Gemini script response must include a variant object")
+        raw_variant = self._coerce_variant_from_direction(raw_variant, project, creative_plan, direction, index, scene_count)
+        variant = Variant.model_validate(raw_variant)
+        if len(variant.storyboard) != scene_count:
+            raise ValueError(f"Gemini variant must include exactly {scene_count} storyboard scenes")
+        if not variant.scene_prompts:
+            variant.scene_prompts = [scene.generation_prompt for scene in variant.storyboard]
+        if not variant.subtitles:
+            variant.subtitles = [scene.voiceover_line for scene in variant.storyboard]
+        if not variant.voiceover:
+            variant.voiceover = " ".join(variant.subtitles)
+        character_plan, character_bible = self.character_planner.plan_from_creative_plan(
+            project=project,
+            creative_plan=creative_plan,
+            variant_direction=direction,
+            variant=variant,
+        )
+        character_reference_prompts = self.character_reference_generator.generate_from_creative_plan(
+            character_bible=character_bible,
+            project=project,
+            creative_plan=creative_plan,
+            variant_direction=direction,
+            variant=variant,
+        )
+        variant.production_package = self.production_prompt_generator.generate_from_creative_plan(
+            project=project,
+            creative_plan=creative_plan,
+            variant_direction=direction,
+            variant=variant,
+            character_plan=character_plan,
+            character_bible=character_bible,
+            character_reference_prompts=character_reference_prompts,
+        )
+        variant.generation_pipeline = build_generation_pipeline(project, variant)
+        return variant
 
     def _build_variant_with_llm(
         self,
@@ -291,6 +378,66 @@ class GeminiVariantScriptGenerator:
             "angle_type": angle.angle_type,
         }
 
+    def _coerce_variant_from_direction(
+        self,
+        raw_variant: dict[str, Any],
+        project: Project,
+        creative_plan: CreativePlan,
+        direction: VariantDirection,
+        index: int,
+        scene_count: int,
+    ) -> dict[str, Any]:
+        storyboard = raw_variant.get("storyboard") or raw_variant.get("timeline") or raw_variant.get("scenes") or raw_variant.get("storyboard_scenes")
+        if not isinstance(storyboard, list):
+            storyboard = []
+        scenes = [
+            self._coerce_scene_from_direction(scene, scene_index, project, creative_plan, direction, scene_count)
+            for scene_index, scene in enumerate(storyboard[:scene_count], start=1)
+        ]
+        if len(scenes) != scene_count:
+            raise ValueError(f"Gemini variant must include exactly {scene_count} storyboard scenes")
+
+        subtitles = raw_variant.get("subtitles")
+        if not isinstance(subtitles, list) or not subtitles:
+            subtitles = [scene["voiceover_line"] for scene in scenes]
+
+        voiceover = self._string_from(raw_variant, "voiceover", "voice_over", "voiceover_full", "vo")
+        if not voiceover:
+            voiceover = " ".join(subtitles)
+
+        script = self._string_from(raw_variant, "script", "full_script", "video_script")
+        if not script:
+            script = "\n".join(
+                f"Scene {scene['scene_number']} ({scene['duration_seconds']}s): {scene['voiceover_line']}"
+                for scene in scenes
+            )
+
+        angle_type = "storytelling" if index == 1 else "product_demo"
+        return {
+            "angle_id": direction.id,
+            "name": self._string_from(raw_variant, "name", "variant_name", "title") or f"Variant {index}: {direction.name}",
+            "hypothesis": self._string_from(raw_variant, "hypothesis") or direction.hypothesis,
+            "target_metric": self._string_from(raw_variant, "target_metric", "best_for_metric") or direction.best_for_metric,
+            "duration": self._string_from(raw_variant, "duration") or project.duration,
+            "format": self._string_from(raw_variant, "format", "aspect_ratio") or "9:16",
+            "hook": self._string_from(raw_variant, "hook", "opening_hook") or direction.creative_angle,
+            "script_summary": self._string_from(raw_variant, "script_summary", "summary")
+            or f"{direction.name}: {direction.hypothesis}",
+            "timeline": self._timeline_from_scenes(raw_variant.get("timeline"), scenes),
+            "script": script,
+            "storyboard": scenes,
+            "scene_prompts": [scene["generation_prompt"] for scene in scenes],
+            "voiceover": voiceover,
+            "subtitles": [str(item).strip() for item in subtitles if str(item).strip()],
+            "title": self._string_from(raw_variant, "title", "ad_title") or f"{project.product_name}: {direction.name}",
+            "caption": self._string_from(raw_variant, "caption", "social_caption", "post_caption")
+            or f"{direction.creative_angle} {creative_plan.cta}.",
+            "cover_prompt": self._string_from(raw_variant, "cover_prompt", "thumbnail_prompt", "cover_image_prompt")
+            or f"UGC cover frame for {project.product_name}, same actor, clear product moment, bold readable hook text.",
+            "selected_playbook": None,
+            "angle_type": angle_type,
+        }
+
     def _coerce_scene(
         self,
         raw_scene: Any,
@@ -314,6 +461,57 @@ class GeminiVariantScriptGenerator:
             generation_prompt = (
                 f"Vertical UGC ad scene for {project.product_name}. {visual} Camera: {camera}. "
                 f"Style: {intelligence.brand_style_notes}"
+            )
+
+        return {
+            "scene_number": self._int_from(raw_scene.get("scene_number") or raw_scene.get("scene"), index),
+            "duration_seconds": self._int_from(raw_scene.get("duration_seconds") or raw_scene.get("duration"), 5),
+            "objective": objective,
+            "visual_description": visual,
+            "camera_angle": camera,
+            "on_screen_text": on_screen_text,
+            "voiceover_line": voiceover_line,
+            "transition": self._string_from(raw_scene, "transition") or "Cut.",
+            "generation_prompt": generation_prompt,
+            "negative_prompt": self._string_from(raw_scene, "negative_prompt") or BASE_NEGATIVE_PROMPT,
+        }
+
+    def _coerce_scene_from_direction(
+        self,
+        raw_scene: Any,
+        index: int,
+        project: Project,
+        creative_plan: CreativePlan,
+        direction: VariantDirection,
+        scene_count: int,
+    ) -> dict[str, Any]:
+        if not isinstance(raw_scene, dict):
+            raise ValueError(f"Gemini storyboard scene {index} must be an object")
+
+        objective = self._string_from(raw_scene, "objective", "goal", "scene_objective") or self._default_scene_objective(index)
+        visual = self._string_from(raw_scene, "visual_description", "visual", "shot_description")
+        if not visual:
+            if index == 1:
+                visual = direction.creative_angle
+            elif index == scene_count:
+                visual = f"Creator closes with CTA: {creative_plan.cta}."
+            else:
+                visual = creative_plan.main_message
+        camera = self._string_from(raw_scene, "camera_angle", "camera", "shot") or "Handheld UGC vertical shot."
+        on_screen_text = self._string_from(raw_scene, "on_screen_text", "text_overlay", "overlay_text")
+        if not on_screen_text:
+            on_screen_text = direction.creative_angle if index == 1 else creative_plan.cta if index == scene_count else objective
+        voiceover_line = self._string_from(raw_scene, "voiceover_line", "voiceover", "vo_line") or on_screen_text
+        generation_prompt = self._string_from(raw_scene, "generation_prompt", "prompt", "video_prompt")
+        if not generation_prompt:
+            generation_prompt = (
+                f"Vertical UGC ad scene for {project.product_name}. {visual} Camera: {camera}. "
+                f"Visual style: {creative_plan.visual_style}"
+            )
+        if self._looks_like_app_project(project):
+            generation_prompt = (
+                f"{generation_prompt} Phone screen should be clean and simple for later UI overlay, "
+                "do not generate unreadable app text."
             )
 
         return {
@@ -637,6 +835,10 @@ class GeminiVariantScriptGenerator:
             recommended_cta=project.cta or "Learn more",
             confidence_score=0.5,
         )
+
+    def _looks_like_app_project(self, project: Project) -> bool:
+        raw = f"{project.product_category or ''} {project.product_description or ''}".lower()
+        return "app" in raw or "mobile" in raw or "software" in raw
 
     def _slug(self, value: str | None) -> str:
         return (value or "social").lower().replace(" ", "")

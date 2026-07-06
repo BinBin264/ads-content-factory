@@ -1,6 +1,6 @@
 import json
 
-from app.models.schemas import CharacterBible, CharacterPlan, CreativeAngle, ProductIntelligenceBrief, Variant
+from app.models.schemas import CharacterBible, CharacterPlan, CreativeAngle, CreativePlan, ProductIntelligenceBrief, Project, Variant, VariantDirection
 from app.services.intelligence_context import compact_intelligence_context
 from app.services.llm_provider import LLMProvider, build_llm_provider
 
@@ -25,6 +25,24 @@ class GeminiCharacterPlanner:
         tone: str,
     ) -> tuple[CharacterPlan, CharacterBible]:
         prompt = self._build_prompt(product_intelligence, creative_angle, variant, platform, tone)
+        data = self.llm_provider.generate_json(prompt, temperature=0.35)
+        raw_plan = data.get("character_plan")
+        if not isinstance(raw_plan, dict):
+            raise ValueError("Gemini character planner response must include character_plan")
+
+        character_plan = CharacterPlan.model_validate(raw_plan)
+        character_bible = self._build_character_bible(character_plan)
+        return character_plan, character_bible
+
+    def plan_from_creative_plan(
+        self,
+        *,
+        project: Project,
+        creative_plan: CreativePlan,
+        variant_direction: VariantDirection,
+        variant: Variant,
+    ) -> tuple[CharacterPlan, CharacterBible]:
+        prompt = self._build_creative_plan_prompt(project, creative_plan, variant_direction, variant)
         data = self.llm_provider.generate_json(prompt, temperature=0.35)
         raw_plan = data.get("character_plan")
         if not isinstance(raw_plan, dict):
@@ -119,4 +137,69 @@ class GeminiCharacterPlanner:
             "- Include outfit, setting, props, and consistency locks.\n"
             "- The character must be designed for future reference image generation.\n"
             "- For Coin Scanner App family discovery/nostalgia angles, prefer age_range 35-45, warm kitchen dining table, neutral beige casual shirt, old coin, smartphone, wooden coin box.\n"
+        )
+
+    def _build_creative_plan_prompt(
+        self,
+        project: Project,
+        creative_plan: CreativePlan,
+        variant_direction: VariantDirection,
+        variant: Variant,
+    ) -> str:
+        context = {
+            "project": {
+                "product_name": project.product_name,
+                "product_category": project.product_category,
+                "product_description": project.product_description,
+                "audience": project.audience,
+                "platform": project.platform,
+                "duration": project.duration,
+                "tone": project.tone,
+                "uploaded_files": [item.file_name for item in project.uploaded_files],
+            },
+            "creative_plan": creative_plan.model_dump(mode="json"),
+            "variant_direction": variant_direction.model_dump(mode="json"),
+            "variant": {
+                "name": variant.name,
+                "hook": variant.hook,
+                "script_summary": variant.script_summary,
+                "script": variant.script,
+                "timeline": [scene.model_dump(mode="json") for scene in variant.timeline],
+            },
+        }
+        return (
+            "You are a casting director for AI-generated UGC video ads.\n\n"
+            "Create ONE reusable main character for this variant. The character will be reused in every scene and in character reference images.\n\n"
+            f"Input:\n{json.dumps(context, ensure_ascii=False, indent=2)}\n\n"
+            "Return JSON only:\n"
+            "{\n"
+            '  "character_plan": {\n'
+            '    "recommended_character_type": "",\n'
+            '    "reason": "",\n'
+            '    "gender": "",\n'
+            '    "age_range": "",\n'
+            '    "ethnicity_or_look": "",\n'
+            '    "face_details": "",\n'
+            '    "hair": "",\n'
+            '    "facial_hair": "",\n'
+            '    "body_type": "",\n'
+            '    "outfit": "",\n'
+            '    "setting": "",\n'
+            '    "props": [],\n'
+            '    "personality": [],\n'
+            '    "speaking_style": "",\n'
+            '    "visual_style": "",\n'
+            '    "role_in_ad": "",\n'
+            '    "consistency_locks": [],\n'
+            '    "negative_identity_changes": []\n'
+            "  }\n"
+            "}\n\n"
+            "Rules:\n"
+            "- Do not create multiple people unless the script absolutely requires background extras.\n"
+            "- Choose one actor that fits the product truth, audience pain, variant direction, script, platform, and tone.\n"
+            "- Keep outfit, setting, props, and identity simple enough for consistent AI generation.\n"
+            "- Include strong identity locks: face, hair, age, skin tone, outfit, body type, setting, and key props.\n"
+            "- For app ads, use one relatable UGC creator with a smartphone.\n"
+            "- For family discovery or old objects, prefer a mature, trustworthy, warm character.\n"
+            "- For Coin Scanner App, prefer age_range 35-45, warm kitchen dining table, neutral casual shirt, old coin, smartphone, wooden coin box.\n"
         )
