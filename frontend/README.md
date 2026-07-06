@@ -39,11 +39,16 @@ http://127.0.0.1:5173
 
 ## User flow
 
-1. Create a project with product details and optional uploads.
-2. Generate Creative Plan.
-3. Generate 2 Video Variants.
-4. Review Production Package.
-5. Export / Render Video through the configured backend video provider.
+1. Create a project with product details, brand inputs, and optional uploads.
+2. Generate Creative Plan to normalize the brief into one compact production strategy.
+3. Review the two default Variant Directions:
+   - Variant A: Storytelling / Problem-led / Emotional
+   - Variant B: Product Demo / Benefit-led / Direct Response
+4. Generate 2 Video Variants directly from the Creative Plan.
+5. Review Variant A / Variant B scripts, timelines, storyboards, voiceover text, subtitle text, cover prompts, captions, and video prompts.
+6. Review the Production Package / Generation Pipeline.
+7. Export the Production Package or configure providers and Render Video.
+8. Use Project JSON Debug to inspect the raw backend response.
 
 Legacy angle generation is available only for backward compatibility and is not part of the main flow.
 

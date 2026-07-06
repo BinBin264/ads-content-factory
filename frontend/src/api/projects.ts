@@ -49,6 +49,7 @@ export async function getProject(id: string): Promise<Project> {
   return response.data;
 }
 
+// Legacy compatibility only. Not used by the main Creative Plan frontend flow.
 export async function analyzeProject(id: string): Promise<AnalyzeProjectResponse> {
   const response = await apiClient.post<AnalyzeProjectResponse>(`/api/projects/${id}/analyze`);
   return response.data;
@@ -59,11 +60,13 @@ export async function generateCreativePlan(id: string): Promise<CreativePlan> {
   return response.data;
 }
 
+// Deprecated legacy endpoint. The main UI should use generateCreativePlan() instead.
 export async function generateAngles(id: string): Promise<CreativeAngle[]> {
   const response = await apiClient.post<CreativeAngle[]>(`/api/projects/${id}/angles`);
   return response.data;
 }
 
+// angleIds is accepted only for legacy compatibility. The new backend flow uses project.creative_plan.variant_directions.
 export async function generateVariants(id: string, angleIds?: string[]): Promise<Variant[]> {
   const body = angleIds && angleIds.length > 0 ? { angle_ids: angleIds, variant_count: 2 } : { variant_count: 2 };
   const response = await apiClient.post<Variant[]>(`/api/projects/${id}/generate-variants`, body);

@@ -18,7 +18,7 @@ import { getApiErrorMessage, toApiUrl } from "../api/client";
 import type { Project } from "../types";
 import { compactId, formatDate, formatList } from "../utils/format";
 
-type ActionName = "load" | "analyze" | "variants" | "export" | "render" | "runPipeline" | "runStep" | "uploadStep" | "delete";
+type ActionName = "load" | "creativePlan" | "variants" | "export" | "render" | "runPipeline" | "runStep" | "uploadStep" | "delete";
 type ProjectPhase = "brief" | "creative-plan" | "variants" | "production";
 
 interface ProjectDetailPageProps {
@@ -311,10 +311,10 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
           <button
             className="btn-primary"
             disabled={!canAct}
-            onClick={() => void runAction("analyze", () => generateCreativePlan(id as string))}
+            onClick={() => void runAction("creativePlan", () => generateCreativePlan(id as string))}
             type="button"
           >
-            {loadingAction === "analyze" ? "Generating..." : hasCreativePlan ? "Regenerate Creative Plan" : "Generate Creative Plan"}
+            {loadingAction === "creativePlan" ? "Generating..." : hasCreativePlan ? "Regenerate Creative Plan" : "Generate Creative Plan"}
           </button>
         </div>
         <CreativePlanCard creativePlan={project?.creative_plan} />
