@@ -64,7 +64,7 @@ class GeminiLLMProvider:
         response_schema: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         if not self.is_configured:
-            raise LLMProviderError("GEMINI_API_KEYS is required for Product Intelligence and content generation.")
+            raise LLMProviderError("GEMINI_API_KEYS is required for Creative Plan and content generation.")
 
         return self.generate_json_parts(
             [{"text": prompt}],
@@ -80,7 +80,7 @@ class GeminiLLMProvider:
         response_schema: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         if not self.is_configured:
-            raise LLMProviderError("GEMINI_API_KEYS is required for Product Intelligence and content generation.")
+            raise LLMProviderError("GEMINI_API_KEYS is required for Creative Plan and content generation.")
 
         last_error: LLMProviderError | None = None
         for _ in range(len(self.api_keys)):

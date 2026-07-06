@@ -5,7 +5,7 @@ from pathlib import Path
 from fastapi import UploadFile
 
 from app.config import OUTPUTS_DIR
-from app.models.schemas import AnalyzeProjectResponse, CreativeAngle, GenerateVariantsRequest, ProductBrief, Project, Variant, VariantGenerationPipeline, VisionAnalysis
+from app.models.schemas import AnalyzeProjectResponse, CreativeAngle, CreativePlan, GenerateVariantsRequest, ProductBrief, Project, Variant, VariantDirection, VariantGenerationPipeline, VisionAnalysis
 from app.services.angle_generator import CreativeAngleGenerator, GeminiCreativeAngleGenerator
 from app.services.pipeline_asset_service import PipelineAssetService
 from app.services.pipeline_builder import build_generation_pipeline, enrich_generation_pipeline
@@ -71,6 +71,7 @@ class ProjectService:
 
     def get_project(self, project_id: str) -> Project:
         project = self.storage.get_project(project_id)
+        self._hydrate_creative_plan_from_legacy(project)
         self._hydrate_generation_pipelines(project)
         return project
 
@@ -80,6 +81,14 @@ class ProjectService:
         project.vision_analysis = analysis.vision_analysis
         project.product_intelligence = analysis.product_intelligence
         project.product_brief = analysis.product_brief
+        project.creative_plan = analysis.creative_plan
+        if analysis.creative_plan:
+            project.creative_angles = self.angle_generator.generate(
+                project,
+                analysis.product_brief,
+                analysis.product_intelligence,
+                analysis.creative_plan,
+            )
         self.storage.save_project(project)
         return analysis
 
@@ -88,10 +97,14 @@ class ProjectService:
         analysis = self._ensure_analysis(project)
         brief = analysis.product_brief
         intelligence = analysis.product_intelligence
+        creative_plan = analysis.creative_plan
+        if creative_plan is None:
+            raise ValueError("Generate Creative Plan before generating variant directions.")
         project.product_brief = brief
         project.product_intelligence = intelligence
         project.vision_analysis = analysis.vision_analysis
-        project.creative_angles = self.angle_generator.generate(project, brief, intelligence)
+        project.creative_plan = creative_plan
+        project.creative_angles = self.angle_generator.generate(project, brief, intelligence, creative_plan)
         self.storage.save_project(project)
         return project.creative_angles
 
@@ -100,14 +113,18 @@ class ProjectService:
         analysis = self._ensure_analysis(project)
         brief = analysis.product_brief
         intelligence = analysis.product_intelligence
-        angles = project.creative_angles or self.angle_generator.generate(project, brief, intelligence)
-        selected_angles = self._select_angles(angles, request.angle_ids, request.variant_count)
+        creative_plan = analysis.creative_plan
+        if creative_plan is None:
+            raise ValueError("Generate Creative Plan before generating video variants.")
+        angles = self.angle_generator.generate(project, brief, intelligence, creative_plan)
+        selected_angles = self._select_angles(angles, request.angle_ids, 2)
 
         project.product_brief = brief
         project.product_intelligence = intelligence
         project.vision_analysis = analysis.vision_analysis
+        project.creative_plan = creative_plan
         project.creative_angles = angles
-        project.variants = self.script_generator.generate(project, brief, selected_angles, intelligence)
+        project.variants = self.script_generator.generate(project, brief, selected_angles, intelligence, creative_plan)
         self.storage.save_project(project)
         return project.variants
 
@@ -186,18 +203,20 @@ class ProjectService:
             variant.video_status = "package_exported"
             variant.export_package_url = self._output_url(zip_path)
 
+        self._write_project_output_files(project)
         return self.storage.save_project(project)
 
     def delete_project(self, project_id: str) -> None:
         self.storage.delete_project(project_id)
 
     def _ensure_analysis(self, project: Project) -> AnalyzeProjectResponse:
-        if project.product_brief and project.product_intelligence:
+        if project.product_brief and project.product_intelligence and project.creative_plan:
             return AnalyzeProjectResponse(
                 product_intelligence=project.product_intelligence,
                 product_brief=project.product_brief,
                 vision_analysis=project.vision_analysis
                 or VisionAnalysis(detected_product_type=project.product_intelligence.product_type),
+                creative_plan=project.creative_plan,
             )
         return self.analyzer.analyze(project)
 
@@ -205,6 +224,47 @@ class ProjectService:
         for variant in project.variants:
             if variant.generation_pipeline is not None:
                 enrich_generation_pipeline(variant.generation_pipeline)
+
+    def _hydrate_creative_plan_from_legacy(self, project: Project) -> None:
+        if project.creative_plan or not project.product_intelligence:
+            return
+        intelligence = project.product_intelligence
+        legacy_angles = project.creative_angles[:2]
+        directions: list[VariantDirection] = []
+        for index, angle in enumerate(legacy_angles):
+            directions.append(
+                VariantDirection(
+                    name=angle.name or ("Storytelling / Problem-led" if index == 0 else "Product Demo / Benefit-led"),
+                    hypothesis=angle.reason_why_it_can_work,
+                    creative_angle=angle.hook or angle.proof_demo_moment,
+                    best_for_metric=angle.best_for_metric or ("hook_rate" if index == 0 else "conversion_rate"),
+                )
+            )
+        if len(directions) < 2:
+            directions = [
+                VariantDirection(
+                    name="Storytelling / Problem-led",
+                    hypothesis="A relatable problem-led story can improve hook retention.",
+                    creative_angle=(intelligence.recommended_hooks[0] if intelligence.recommended_hooks else intelligence.core_use_case),
+                    best_for_metric="hook_rate",
+                ),
+                VariantDirection(
+                    name="Product Demo / Benefit-led",
+                    hypothesis="A direct product demo can improve conversion intent.",
+                    creative_angle=(intelligence.demo_moments[0] if intelligence.demo_moments else intelligence.core_use_case),
+                    best_for_metric="conversion_rate",
+                ),
+            ]
+        project.creative_plan = CreativePlan(
+            product_truth=intelligence.core_use_case,
+            audience_pain=intelligence.pain_points[0] if intelligence.pain_points else "Audience needs a clear reason to act.",
+            main_message=intelligence.functional_benefits[0] if intelligence.functional_benefits else intelligence.core_use_case,
+            safe_claims=intelligence.safe_claims,
+            forbidden_claims=intelligence.claims_to_avoid or project.claims_to_avoid,
+            cta=intelligence.recommended_cta or project.cta or "Learn more",
+            visual_style=intelligence.brand_style_notes,
+            variant_directions=directions[:2],
+        )
 
     def _select_angles(
         self,
@@ -326,7 +386,42 @@ class ProjectService:
         )
         self._write_text(variant_dir / "script.txt", variant.script)
         self._write_json(variant_dir / "storyboard.json", [scene.model_dump(mode="json") for scene in variant.storyboard])
+        self._write_json(variant_dir / "timeline.json", [scene.model_dump(mode="json") for scene in variant.timeline])
+        self._write_text(variant_dir / "voiceover.txt", variant.voiceover)
+        self._write_text(variant_dir / "subtitles.srt", self._subtitle_srt(variant))
         self._write_text(variant_dir / "caption.txt", f"{variant.title}\n\n{variant.caption}\n\nCover prompt:\n{variant.cover_prompt}")
+
+    def _write_project_output_files(self, project: Project) -> None:
+        output_dir = OUTPUTS_DIR / project.id / "project_output"
+        output_dir.mkdir(parents=True, exist_ok=True)
+        if project.creative_plan:
+            self._write_json(output_dir / "creative_plan.json", project.creative_plan.model_dump(mode="json"))
+
+        for index, variant in enumerate(project.variants[:2]):
+            suffix = "A" if index == 0 else "B"
+            variant_slug = f"variant_{suffix}"
+            self._write_json(output_dir / f"{variant_slug}.json", variant.model_dump(mode="json"))
+            variant_dir = output_dir / variant_slug
+            variant_dir.mkdir(parents=True, exist_ok=True)
+            self._write_text(variant_dir / "script.txt", variant.script)
+            self._write_json(variant_dir / "storyboard.json", [scene.model_dump(mode="json") for scene in variant.storyboard])
+            self._write_text(
+                variant_dir / "video_prompts.txt",
+                "\n\n".join([f"Scene {scene.scene_number}\n{scene.generation_prompt}" for scene in variant.storyboard]),
+            )
+            if variant.production_package:
+                self._write_text(
+                    variant_dir / "keyframe_prompts.txt",
+                    "\n\n".join([f"Scene {scene.scene_number}\n{scene.keyframe_prompt}" for scene in variant.production_package.production_scenes]),
+                )
+                self._write_text(variant_dir / "edit_plan.txt", json.dumps(variant.production_package.edit_plan.model_dump(mode="json"), ensure_ascii=False, indent=2))
+            else:
+                self._write_text(variant_dir / "keyframe_prompts.txt", "")
+                self._write_text(variant_dir / "edit_plan.txt", "")
+            self._write_text(variant_dir / "voiceover.txt", variant.voiceover)
+            self._write_text(variant_dir / "subtitles.srt", self._subtitle_srt(variant))
+            self._write_text(variant_dir / "cover_prompt.txt", variant.cover_prompt)
+            self._write_text(variant_dir / "caption.txt", variant.caption)
 
     def _zip_variant_package(self, variant_dir: Path) -> Path:
         zip_path = variant_dir / "production_package.zip"
@@ -346,3 +441,26 @@ class ProjectService:
     def _output_url(self, path: Path) -> str:
         relative = path.relative_to(OUTPUTS_DIR).as_posix()
         return f"/outputs/{relative}"
+
+    def _subtitle_srt(self, variant: Variant) -> str:
+        lines: list[str] = []
+        cursor = 0
+        for index, scene in enumerate(variant.storyboard, start=1):
+            start = cursor
+            end = cursor + scene.duration_seconds
+            cursor = end
+            lines.extend(
+                [
+                    str(index),
+                    f"{self._srt_time(start)} --> {self._srt_time(end)}",
+                    scene.voiceover_line,
+                    "",
+                ]
+            )
+        return "\n".join(lines).strip() + "\n"
+
+    def _srt_time(self, seconds: int) -> str:
+        hours = seconds // 3600
+        minutes = (seconds % 3600) // 60
+        secs = seconds % 60
+        return f"{hours:02d}:{minutes:02d}:{secs:02d},000"

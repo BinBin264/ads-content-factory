@@ -101,6 +101,25 @@ class ProductBrief(BaseModel):
         return normalize_string_list(value)
 
 
+class VariantDirection(BaseModel):
+    id: str = Field(default_factory=lambda: new_id("direction"))
+    name: str
+    hypothesis: str
+    creative_angle: str
+    best_for_metric: str
+
+
+class CreativePlan(BaseModel):
+    product_truth: str
+    audience_pain: str
+    main_message: str
+    safe_claims: list[str] = Field(default_factory=list)
+    forbidden_claims: list[str] = Field(default_factory=list)
+    cta: str
+    visual_style: str
+    variant_directions: list[VariantDirection] = Field(default_factory=list)
+
+
 class CreativeAngle(BaseModel):
     id: str = Field(default_factory=lambda: new_id("angle"))
     name: str
@@ -114,6 +133,8 @@ class CreativeAngle(BaseModel):
     cta: str
     reason_why_it_can_work: str
     score: float = Field(ge=0, le=100)
+    hypothesis: str | None = None
+    best_for_metric: str | None = None
 
 
 class StoryboardScene(BaseModel):
@@ -126,6 +147,19 @@ class StoryboardScene(BaseModel):
     voiceover_line: str
     transition: str
     generation_prompt: str
+    negative_prompt: str
+
+
+class VariantTimelineScene(BaseModel):
+    scene: int
+    time: str
+    objective: str
+    visual: str
+    voiceover: str
+    on_screen_text: str
+    camera: str
+    transition: str
+    video_prompt: str
     negative_prompt: str
 
 
@@ -363,9 +397,13 @@ class Variant(BaseModel):
     id: str = Field(default_factory=lambda: new_id("variant"))
     angle_id: str
     name: str
+    hypothesis: str | None = None
+    target_metric: str | None = None
     duration: str
     format: str
     hook: str
+    script_summary: str | None = None
+    timeline: list[VariantTimelineScene] = Field(default_factory=list)
     script: str
     storyboard: list[StoryboardScene] = Field(default_factory=list)
     scene_prompts: list[str] = Field(default_factory=list)
@@ -405,6 +443,7 @@ class Project(BaseModel):
     vision_analysis: VisionAnalysis | None = None
     product_brief: ProductBrief | None = None
     product_intelligence: ProductIntelligenceBrief | None = None
+    creative_plan: CreativePlan | None = None
     creative_angles: list[CreativeAngle] = Field(default_factory=list)
     variants: list[Variant] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=utc_now)
@@ -430,3 +469,4 @@ class AnalyzeProjectResponse(BaseModel):
     product_intelligence: ProductIntelligenceBrief
     product_brief: ProductBrief
     vision_analysis: VisionAnalysis
+    creative_plan: CreativePlan | None = None

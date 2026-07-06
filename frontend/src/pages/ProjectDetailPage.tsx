@@ -1,14 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import CreativeAngleCard from "../components/CreativeAngleCard";
-import ProductIntelligenceCard from "../components/ProductIntelligenceCard";
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import CreativePlanCard from "../components/CreativePlanCard";
 import ProgressSteps from "../components/ProgressSteps";
 import VariantCard from "../components/VariantCard";
 import {
   analyzeProject,
   deleteProject,
   exportProductionPackage,
-  generateAngles,
   generateVariants,
   getProject,
   renderProject,
@@ -20,8 +18,8 @@ import { getApiErrorMessage, toApiUrl } from "../api/client";
 import type { Project } from "../types";
 import { compactId, formatDate, formatList } from "../utils/format";
 
-type ActionName = "load" | "analyze" | "angles" | "variants" | "export" | "render" | "runPipeline" | "runStep" | "uploadStep" | "delete";
-type ProjectPhase = "assets" | "intelligence" | "angles" | "variants";
+type ActionName = "load" | "analyze" | "variants" | "export" | "render" | "runPipeline" | "runStep" | "uploadStep" | "delete";
+type ProjectPhase = "assets" | "intelligence" | "variants";
 
 interface ProjectDetailPageProps {
   phase: ProjectPhase;
@@ -29,25 +27,18 @@ interface ProjectDetailPageProps {
 
 const phaseItems: Array<{ id: ProjectPhase; label: string; description: string }> = [
   { id: "assets", label: "Assets", description: "Inputs and files" },
-  { id: "intelligence", label: "Intelligence", description: "Product signals" },
-  { id: "angles", label: "Angles", description: "Ad strategy" },
-  { id: "variants", label: "Video Workflow", description: "Manual production" },
+  { id: "intelligence", label: "Creative Plan", description: "Brief + variant directions" },
+  { id: "variants", label: "Video Variants", description: "A, B, package, render" },
 ];
 
 export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
   const { id } = useParams();
-  const location = useLocation();
   const navigate = useNavigate();
   const [project, setProject] = useState<Project | null>(null);
-  const [selectedAngles, setSelectedAngles] = useState<string[]>([]);
   const [loadingAction, setLoadingAction] = useState<ActionName | null>("load");
   const [error, setError] = useState<string | null>(null);
 
   const canAct = Boolean(project && !loadingAction);
-  const selectedAngleIdsFromQuery = useMemo(() => {
-    const rawValue = new URLSearchParams(location.search).get("angle_ids");
-    return rawValue ? rawValue.split(",").map((item) => item.trim()).filter(Boolean) : [];
-  }, [location.search]);
 
   const refreshProject = async () => {
     if (!id) {
@@ -123,33 +114,13 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
     }
   };
 
-  const toggleAngle = (angleId: string) => {
-    setSelectedAngles((current) => {
-      if (current.includes(angleId)) {
-        return current.filter((idValue) => idValue !== angleId);
-      }
-      if (current.length >= 2) {
-        return [current[1], angleId];
-      }
-      return [...current, angleId];
-    });
-  };
-
   if (loadingAction === "load" && !project) {
     return <div className="card p-6 text-sm text-slate-500">Loading project...</div>;
   }
 
   const projectBase = id ? `/projects/${id}` : "/projects";
-  const hasIntelligence = Boolean(project?.product_intelligence);
-  const hasAngles = Boolean(project?.creative_angles.length);
+  const hasCreativePlan = Boolean(project?.creative_plan);
   const hasVideoWorkflow = Boolean(project?.variants.some((variant) => variant.production_package));
-  const selectedAngleQuery = selectedAngles.length ? `?angle_ids=${selectedAngles.join(",")}` : "";
-  const variantsPath = `${projectBase}/variants${selectedAngleQuery}`;
-  const variantGenerationAngleIds = selectedAngleIdsFromQuery.length ? selectedAngleIdsFromQuery : undefined;
-  const variantGenerationAngleNames =
-    project?.creative_angles
-      .filter((angle) => selectedAngleIdsFromQuery.includes(angle.id))
-      .map((angle) => angle.name) ?? [];
   const phaseState = (item: ProjectPhase): "current" | "complete" | "ready" | "locked" => {
     if (item === phase) {
       return "current";
@@ -158,18 +129,12 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
       return "complete";
     }
     if (item === "intelligence") {
-      return hasIntelligence ? "complete" : "ready";
-    }
-    if (item === "angles") {
-      if (hasAngles) {
-        return "complete";
-      }
-      return hasIntelligence ? "ready" : "locked";
+      return hasCreativePlan ? "complete" : "ready";
     }
     if (hasVideoWorkflow) {
       return "complete";
     }
-    return hasAngles ? "ready" : "locked";
+    return hasCreativePlan ? "ready" : "locked";
   };
   const phaseClass = (state: ReturnType<typeof phaseState>) => {
     if (state === "current") {
@@ -233,7 +198,7 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
       <ProgressSteps project={project} />
 
       <nav className="card-accent p-4">
-        <div className="grid gap-3 md:grid-cols-4">
+        <div className="grid gap-3 md:grid-cols-3">
           {phaseItems.map((item, index) => {
             const state = phaseState(item.id);
             const content = (
@@ -327,7 +292,7 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
           <div className="border-t border-slate-200 px-6 py-5">
             <div className="flex justify-end">
             <Link className="btn-primary" to={`${projectBase}/intelligence`}>
-              Next: Product Intelligence
+              Next: Creative Plan
             </Link>
             </div>
           </div>
@@ -338,8 +303,8 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
       <section className="card-accent p-5">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h3 className="section-heading">Product Intelligence</h3>
-            <p className="section-subtitle">Analyze product type, use case, audiences, proof points, and playbooks.</p>
+            <h3 className="section-heading">Creative Plan</h3>
+            <p className="section-subtitle">Normalize the brief and create two practical variant directions without a 5-angle selection step.</p>
           </div>
           <button
             className="btn-primary"
@@ -347,66 +312,17 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
             onClick={() => void runAction("analyze", () => analyzeProject(id as string))}
             type="button"
           >
-            {loadingAction === "analyze" ? "Analyzing..." : hasIntelligence ? "Re-analyze Product" : "Analyze Product"}
+            {loadingAction === "analyze" ? "Generating..." : hasCreativePlan ? "Regenerate Creative Plan" : "Generate Creative Plan"}
           </button>
         </div>
-        <ProductIntelligenceCard intelligence={project?.product_intelligence} />
-        {project?.product_intelligence ? (
+        <CreativePlanCard creativePlan={project?.creative_plan} />
+        {project?.creative_plan ? (
           <div className="mt-5 flex justify-end">
-            <Link className="btn-primary" to={`${projectBase}/angles`}>
-              Next: Creative Angles
+            <Link className="btn-primary" to={`${projectBase}/variants`}>
+              Next: Generate 2 Video Variants
             </Link>
           </div>
         ) : null}
-      </section>
-      ) : null}
-
-      {phase === "angles" ? (
-      <section className="space-y-4">
-        <div className="card-accent overflow-hidden">
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
-            <div>
-              <h3 className="section-heading">Creative Angles</h3>
-              <p className="section-subtitle">Generate strategy cards, then select up to two for variant production.</p>
-            </div>
-            <button
-              className="btn-secondary"
-              disabled={!canAct || !hasIntelligence}
-              onClick={() => void runAction("angles", () => generateAngles(id as string))}
-              type="button"
-            >
-              {loadingAction === "angles" ? "Generating..." : hasAngles ? "Regenerate Angles" : "Generate Angles"}
-            </button>
-          </div>
-          <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-            <p className="text-sm text-slate-600">
-              {!hasIntelligence
-                ? "Analyze Product first so angles can use product signals instead of generic guesses."
-                : project?.creative_angles.length
-                ? selectedAngles.length
-                  ? `${selectedAngles.length} angle selected. Next step will generate video workflows from this selection.`
-                  : "No angle selected. The next step can auto-pick the top scoring angles."
-                : "Generate angles before moving to variant production."}
-            </p>
-            {project?.creative_angles.length ? (
-              <Link className="btn-primary" to={variantsPath}>
-                Next: Video Workflow
-              </Link>
-            ) : null}
-          </div>
-        </div>
-
-        {project?.creative_angles.length ? (
-          <div className="grid gap-4 xl:grid-cols-2">
-            {project.creative_angles.map((angle) => (
-              <CreativeAngleCard key={angle.id} angle={angle} selected={selectedAngles.includes(angle.id)} onToggle={toggleAngle} />
-            ))}
-          </div>
-        ) : (
-          <div className="empty-state">
-            Creative angles will appear here after generation.
-          </div>
-        )}
       </section>
       ) : null}
 
@@ -415,25 +331,18 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
         <div className="card-accent p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="section-heading">Video Production Packages</h3>
-              <p className="section-subtitle">Generate a practical step-by-step workflow for manual video production: character refs, keyframes, scene animation, overlays, edit, and export.</p>
-              {project?.creative_angles.length ? (
-                <p className="mt-2 text-sm text-slate-600">
-                  {variantGenerationAngleNames.length
-                    ? `Using selected angles: ${variantGenerationAngleNames.join(", ")}.`
-                    : "No angle passed from the Angles tab. Backend will use top scoring angles."}
-                </p>
-              ) : null}
+              <h3 className="section-heading">2 Video Variants + Production Package</h3>
+              <p className="section-subtitle">Generate Variant A and Variant B directly from the Creative Plan, then follow the production workflow.</p>
             </div>
             <button
               className="btn-primary"
-              disabled={!canAct || !project?.creative_angles.length}
+              disabled={!canAct || !project?.creative_plan}
               onClick={() =>
-                void runAction("variants", () => generateVariants(id as string, variantGenerationAngleIds))
+                void runAction("variants", () => generateVariants(id as string))
               }
               type="button"
             >
-              {loadingAction === "variants" ? "Generating..." : hasVideoWorkflow ? "Regenerate Video Workflow" : "Generate Video Workflow"}
+              {loadingAction === "variants" ? "Generating..." : hasVideoWorkflow ? "Regenerate 2 Video Variants" : "Generate 2 Video Variants"}
             </button>
           </div>
         </div>

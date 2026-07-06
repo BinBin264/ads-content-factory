@@ -26,6 +26,25 @@ export interface ProductBrief {
   recommended_ad_formats: string[];
 }
 
+export interface VariantDirection {
+  id: string;
+  name: string;
+  hypothesis: string;
+  creative_angle: string;
+  best_for_metric: string;
+}
+
+export interface CreativePlan {
+  product_truth: string;
+  audience_pain: string;
+  main_message: string;
+  safe_claims: string[];
+  forbidden_claims: string[];
+  cta: string;
+  visual_style: string;
+  variant_directions: VariantDirection[];
+}
+
 export interface VisionAnalysis {
   detected_objects: string[];
   detected_product_type: string;
@@ -82,6 +101,8 @@ export interface CreativeAngle {
   cta: string;
   reason_why_it_can_work: string;
   score: number;
+  hypothesis?: string | null;
+  best_for_metric?: string | null;
 }
 
 export interface StoryboardScene {
@@ -94,6 +115,19 @@ export interface StoryboardScene {
   voiceover_line: string;
   transition: string;
   generation_prompt: string;
+  negative_prompt: string;
+}
+
+export interface VariantTimelineScene {
+  scene: number;
+  time: string;
+  objective: string;
+  visual: string;
+  voiceover: string;
+  on_screen_text: string;
+  camera: string;
+  transition: string;
+  video_prompt: string;
   negative_prompt: string;
 }
 
@@ -307,9 +341,13 @@ export interface Variant {
   id: string;
   angle_id: string;
   name: string;
+  hypothesis?: string | null;
+  target_metric?: string | null;
   duration: string;
   format: string;
   hook: string;
+  script_summary?: string | null;
+  timeline: VariantTimelineScene[];
   script: string;
   storyboard: StoryboardScene[];
   scene_prompts: string[];
@@ -349,6 +387,7 @@ export interface Project {
   vision_analysis?: VisionAnalysis | null;
   product_brief?: ProductBrief | null;
   product_intelligence?: ProductIntelligenceBrief | null;
+  creative_plan?: CreativePlan | null;
   creative_angles: CreativeAngle[];
   variants: Variant[];
   created_at: string;
@@ -373,4 +412,5 @@ export interface AnalyzeProjectResponse {
   product_intelligence: ProductIntelligenceBrief;
   product_brief: ProductBrief;
   vision_analysis: VisionAnalysis;
+  creative_plan?: CreativePlan | null;
 }

@@ -5,20 +5,17 @@ Full-stack MVP for turning product inputs, app screenshots, product images, logo
 Pipeline:
 
 1. Product / BrandKit input
-2. Product Intelligence with Gemini Vision / Gemini LLM
-3. Creative Angles
-4. Script + basic Storyboard
-5. Auto Character Planner
-6. Character Bible
-7. Character Reference Prompts
-8. Production Scenes
-9. Keyframe Prompts
-10. Video Prompts
-11. UI Overlay Plan
-12. Edit Plan
-13. Executable Generation Pipeline
-14. Export Production Package
-15. Real Render Provider
+2. Brief Normalizer
+3. Creative Plan
+4. Variant A: Storytelling / Problem-led
+5. Variant B: Product Demo / Benefit-led
+6. Scene Builder
+7. Prompt Builder
+8. Character Bible and Reference Prompts when needed
+9. UI Overlay Plan and Edit Plan
+10. Executable Generation Pipeline
+11. Export Production Package
+12. Real Render Provider
 
 The repo does not create local video output without a configured video provider. Generate Variants creates a production package and a step-by-step generation pipeline. Manual mode lets you copy prompts, create assets in web tools, and upload step outputs. Render Video runs the same pipeline with real configured providers. No mock or placeholder video is created.
 
@@ -26,7 +23,7 @@ The generation workflow now follows three OpenMontage-inspired rules:
 
 - `backend/app/pipeline_manifests/ad_video_generation.json` is the workflow contract for stages, required artifacts, outputs, review focus, and success criteria.
 - `backend/app/services/video_provider.py` exposes a small provider registry contract for each tool type. It shows manual paths and required env, but does not fake provider output.
-- Every variant pipeline carries source artifacts from earlier phases so product intelligence, selected angle, script, storyboard, production package, prompts, uploaded assets, and final exports stay connected.
+- Every variant pipeline carries source artifacts from earlier phases so the Creative Plan, variant direction, timeline, storyboard, production package, prompts, uploaded assets, and final exports stay connected.
 
 ## Environment
 
@@ -39,7 +36,7 @@ VIDEO_PROVIDER_NAME=your_provider_name
 VIDEO_PROVIDER_API_KEY=your_video_provider_key
 ```
 
-`GEMINI_API_KEYS` is required for Product Intelligence and all content generation. If the video provider env is missing, `/render` returns a clear configuration error.
+`GEMINI_API_KEYS` is required for Creative Plan and all content generation. If the video provider env is missing, `/render` returns a clear configuration error.
 
 ## Run Backend
 
@@ -96,11 +93,10 @@ Claims to avoid: Guaranteed value, 100% accurate appraisal, you will make money,
 
 Then run:
 
-1. Analyze Product
-2. Generate Angles
-3. Generate Video Workflow
-4. Follow the Generation Pipeline cards: create character refs, upload them, create keyframes, upload clips, overlay app UI, assemble, and export
-5. Export Production Package
-6. Or configure providers and use Render Video / Run Full Pipeline
+1. Generate Creative Plan
+2. Generate 2 Video Variants
+3. Follow the Generation Pipeline cards: create character refs, upload them, create keyframes, upload clips, overlay app UI, assemble, and export
+4. Export Production Package
+5. Or configure providers and use Render Video / Run Full Pipeline
 
-Expected Coin Scanner production output includes a warm, trustworthy UGC character, five character reference steps, four keyframe steps, four video clip steps, overlay/edit/export steps, safe estimated-value language, and the disclaimer: `Estimated reference value only. Actual value may vary.`
+Expected Coin Scanner production output includes one compact Creative Plan, exactly two video variants, four scenes for 15s or five scenes for 20-30s, a warm trustworthy UGC character when needed, keyframe/video prompts, overlay/edit/export steps, safe estimated-value language, and the disclaimer: `Estimated reference value only. Actual value may vary.`

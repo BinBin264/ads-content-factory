@@ -77,8 +77,9 @@ class GeminiProductionPromptGenerator:
             "render_sequence": data.get("render_sequence"),
         }
         package = VideoProductionPackage.model_validate(package_data)
-        if len(package.production_scenes) != 4:
-            raise ValueError("Gemini production package must include exactly 4 production scenes")
+        expected_scene_count = len(variant.storyboard)
+        if len(package.production_scenes) != expected_scene_count:
+            raise ValueError(f"Gemini production package must include exactly {expected_scene_count} production scenes")
         self._validate_production_scenes(package.production_scenes)
         return package
 
@@ -87,12 +88,13 @@ class GeminiProductionPromptGenerator:
         if not isinstance(scenes, list):
             raise ValueError("Gemini production package response must include production_scenes")
 
+        expected_scene_count = len(variant.storyboard)
         data["production_scenes"] = [
             self._coerce_scene(scene, index, variant.storyboard[index - 1] if index - 1 < len(variant.storyboard) else None)
-            for index, scene in enumerate(scenes[:4], start=1)
+            for index, scene in enumerate(scenes[:expected_scene_count], start=1)
         ]
-        if len(data["production_scenes"]) != 4:
-            raise ValueError("Gemini production package must include exactly 4 production scenes")
+        if len(data["production_scenes"]) != expected_scene_count:
+            raise ValueError(f"Gemini production package must include exactly {expected_scene_count} production scenes")
         self._apply_global_overlay_timeline(data["production_scenes"])
 
         edit_plan = data.get("edit_plan")
@@ -348,13 +350,13 @@ class GeminiProductionPromptGenerator:
 
     def _ensure_coin_disclaimer(self, data: dict[str, Any]) -> None:
         scenes = data.get("production_scenes")
-        if not isinstance(scenes, list) or len(scenes) < 4 or not isinstance(scenes[3], dict):
+        if not isinstance(scenes, list) or not scenes or not isinstance(scenes[-1], dict):
             return
 
-        overlays = scenes[3].setdefault("ui_overlay_plan", [])
+        overlays = scenes[-1].setdefault("ui_overlay_plan", [])
         if not isinstance(overlays, list):
-            scenes[3]["ui_overlay_plan"] = []
-            overlays = scenes[3]["ui_overlay_plan"]
+            scenes[-1]["ui_overlay_plan"] = []
+            overlays = scenes[-1]["ui_overlay_plan"]
 
         disclaimer_text = "Estimated reference value only. Actual value may vary."
         has_disclaimer = any(isinstance(item, dict) and disclaimer_text.lower() in str(item.get("text", "")).lower() for item in overlays)
@@ -402,8 +404,8 @@ class GeminiProductionPromptGenerator:
         return (
             "You are an AI video production director and prompt engineer for short-form UGC ads.\n\n"
             "Your job is not only to write a storyboard. Your job is to create a production-ready video generation package.\n\n"
-            f"Product Intelligence:\n{json.dumps(compact_intelligence_context(product_intelligence), ensure_ascii=False, indent=2)}\n\n"
-            f"Creative Angle:\n{json.dumps(creative_angle.model_dump(mode='json'), ensure_ascii=False, indent=2)}\n\n"
+            f"Creative / brief context:\n{json.dumps(compact_intelligence_context(product_intelligence), ensure_ascii=False, indent=2)}\n\n"
+            f"Variant direction:\n{json.dumps(creative_angle.model_dump(mode='json'), ensure_ascii=False, indent=2)}\n\n"
             f"Script:\n{variant.script}\n\n"
             f"Storyboard:\n{json.dumps([scene.model_dump(mode='json') for scene in variant.storyboard], ensure_ascii=False, indent=2)}\n\n"
             f"Character Bible:\n{json.dumps(character_bible.model_dump(mode='json'), ensure_ascii=False, indent=2)}\n\n"
@@ -452,8 +454,9 @@ class GeminiProductionPromptGenerator:
             '  "render_sequence": []\n'
             "}\n\n"
             "Rules:\n"
-            "- Create exactly 4 production scenes.\n"
-            "- Scene 1 is Hook. Scene 2 is Problem/setup. Scene 3 is Product/app demo/proof. Scene 4 is Result + CTA.\n"
+            f"- Create exactly {len(variant.storyboard)} production scenes, matching the storyboard/timeline scene count.\n"
+            "- For 4-scene variants: Scene 1 Hook, Scene 2 Problem/Context, Scene 3 Product/Demo, Scene 4 CTA.\n"
+            "- For 5-scene variants: Scene 1 Hook, Scene 2 Problem/Context, Scene 3 Product/Demo, Scene 4 Proof/Benefit/Result, Scene 5 CTA.\n"
             "- Each scene must include a keyframe_prompt and video_prompt.\n"
             "- keyframe_prompt is for image generation. video_prompt is for image-to-video/reference-to-video.\n"
             "- Do not write generic prompts like 'user uses the app'.\n"

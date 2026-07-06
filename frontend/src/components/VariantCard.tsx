@@ -331,6 +331,19 @@ export default function VariantCard({
             <p className="text-xs font-black uppercase tracking-wide text-teal-300">Executable generation pipeline</p>
             <h3 className="mt-2 text-xl font-black">{variant.name}</h3>
             <p className="mt-2 text-sm leading-6 text-slate-300">{variant.hook}</p>
+            {variant.script_summary ? <p className="mt-2 text-sm leading-6 text-slate-400">{variant.script_summary}</p> : null}
+            <div className="mt-3 flex flex-wrap gap-2">
+              {variant.hypothesis ? (
+                <span className="rounded-md border border-white/15 bg-white/10 px-2 py-1 text-xs font-semibold text-slate-200">
+                  Hypothesis: {variant.hypothesis}
+                </span>
+              ) : null}
+              {variant.target_metric ? (
+                <span className="rounded-md border border-white/15 bg-white/10 px-2 py-1 text-xs font-semibold text-slate-200">
+                  Metric: {variant.target_metric}
+                </span>
+              ) : null}
+            </div>
           </div>
           <span className="rounded-md border border-white/15 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-white">
             {pipeline?.status ?? variant.video_status}

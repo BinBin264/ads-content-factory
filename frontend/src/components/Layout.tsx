@@ -16,7 +16,7 @@ export default function Layout({ children }: LayoutProps) {
             </div>
             <div>
               <h1 className="text-xl font-black text-slate-950">AI Ads Video Factory</h1>
-              <p className="text-sm text-slate-500">Product intelligence, creative angles, ad scripts, and video exports.</p>
+              <p className="text-sm text-slate-500">Creative plan, two video variants, and production exports.</p>
             </div>
           </Link>
         </div>

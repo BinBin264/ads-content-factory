@@ -19,6 +19,7 @@ Shared project shape for backend and frontend integration.
     "brand_colors": [],
     "uploaded_files": [],
     "vision_analysis": {},
+    "creative_plan": {},
     "product_intelligence": {},
     "product_brief": {},
     "creative_angles": [],
@@ -38,44 +39,50 @@ claims_to_avoid=100% accurate appraisal
 
 The backend also accepts comma, semicolon, or newline-separated values for compatibility, then stores and returns arrays. `brand_colors` remains a backend compatibility field but is no longer a primary frontend input; brand colors should usually be inferred from uploads, description, and vision analysis.
 
-## Product Brief Shape
+## Creative Plan Shape
 
 `POST /api/projects/{project_id}/analyze` returns:
 
 ```json
 {
+  "creative_plan": {},
   "product_intelligence": {},
   "product_brief": {},
   "vision_analysis": {}
 }
 ```
 
-`product_intelligence` shape:
+`creative_plan` is the primary production planning artifact:
 
 ```json
 {
-  "detected_product": "Coin Scanner App",
-  "product_category": "mobile app",
-  "product_type": "mobile_app",
-  "core_use_case": "Scan old coins, identify coin details, and view estimated reference value.",
-  "target_audience_segments": ["people who find old coins at home"],
-  "primary_audience": "people who find old coins at home",
-  "pain_points": ["Users do not know whether an old coin is worth researching."],
-  "emotional_triggers": ["curiosity", "surprise"],
-  "functional_benefits": ["scan old coins", "identify coin details"],
-  "proof_points": ["screen demo", "result screen"],
-  "demo_moments": ["Show the object or problem", "Open the app", "Use the key feature", "Show the result screen"],
-  "visual_assets_detected": ["old coin", "phone"],
-  "brand_style_notes": "phone-in-hand UGC",
+  "product_truth": "Coin Scanner App helps users scan old coins, identify details, and view estimated reference value for research.",
+  "audience_pain": "People find old coins at home but do not know what they are or whether they are worth researching.",
+  "main_message": "Scan the coin and get useful details in seconds.",
   "safe_claims": ["estimated reference value"],
-  "claims_to_avoid": ["guaranteed value", "100% accurate appraisal"],
-  "recommended_ad_playbooks": [],
-  "recommended_video_formats": ["9:16 UGC app demo"],
-  "recommended_hooks": ["I almost spent this old coin..."],
-  "recommended_cta": "Download now",
-  "confidence_score": 0.85
+  "forbidden_claims": ["guaranteed value", "100% accurate appraisal"],
+  "cta": "Download now",
+  "visual_style": "Natural UGC at a table, phone-in-hand scan demo, readable app UI overlays.",
+  "variant_directions": [
+    {
+      "id": "direction_001",
+      "name": "Storytelling / Problem-led",
+      "hypothesis": "A familiar found-at-home story can raise hook retention.",
+      "creative_angle": "I found an old coin and wanted to know what it was.",
+      "best_for_metric": "hook_rate"
+    },
+    {
+      "id": "direction_002",
+      "name": "Product Demo / Benefit-led",
+      "hypothesis": "A direct scan demo can improve install intent.",
+      "creative_angle": "Scan the coin, see details, then research the estimated reference value.",
+      "best_for_metric": "conversion_rate"
+    }
+  ]
 }
 ```
+
+`product_intelligence`, `product_brief`, and `creative_angles` are kept as compatibility fields. They are derived from `creative_plan` and should not be treated as separate planning phases.
 
 `product_brief` compatibility shape:
 
@@ -107,9 +114,13 @@ The backend also accepts comma, semicolon, or newline-separated values for compa
   "id": "variant_001",
   "angle_id": "angle_001",
   "name": "Discovery Variant",
+  "hypothesis": "A familiar found-at-home story can raise hook retention.",
+  "target_metric": "hook_rate",
   "duration": "20s",
   "format": "9:16",
   "hook": "I found this old coin at home...",
+  "script_summary": "Story-led UGC coin discovery ad.",
+  "timeline": [],
   "script": "Scene 1...",
   "storyboard": [],
   "scene_prompts": [],
@@ -310,7 +321,7 @@ app_screen_overlay, text_overlay, subtitle, cta, disclaimer, logo, price_label, 
   "variant_id": "variant_001",
   "pipeline_name": "ad_video_generation",
   "pipeline_version": "1.0",
-  "objective": "Turn product intelligence, selected angle, script, storyboard, and production package into a connected step-by-step video creation workflow.",
+  "objective": "Turn the Creative Plan, variant direction, timeline, storyboard, and production package into a connected step-by-step video creation workflow.",
   "status": "in_progress",
   "source_artifacts": [],
   "stage_contracts": [],
@@ -324,10 +335,10 @@ app_screen_overlay, text_overlay, subtitle, cta, disclaimer, logo, price_label, 
 
 ```json
 {
-  "artifact_key": "product_intelligence",
-  "label": "Product intelligence",
-  "source_phase": "intelligence",
-  "description": "Used to decide proof points, safe claims, product role, and visual direction."
+  "artifact_key": "creative_plan",
+  "label": "Creative Plan",
+  "source_phase": "creative_plan",
+  "description": "Used to decide product truth, audience pain, safe claims, CTA, visual style, and variant directions."
 }
 ```
 
@@ -406,7 +417,7 @@ uploaded_by_user, generated_by_provider, project_upload, exported
   "tool_type": "image_generation",
   "execution_mode": "manual_or_provider",
   "provider_capability": "image_generation",
-  "source_artifacts": ["character_reference_images", "product_intelligence", "selected_angle", "storyboard", "production_package.production_scenes"],
+  "source_artifacts": ["character_reference_images", "creative_plan", "variant_direction", "timeline", "storyboard", "production_package.production_scenes"],
   "required_inputs": [],
   "prompt_to_copy": "Prompt for web/manual generation.",
   "negative_prompt_to_copy": "Negative prompt.",

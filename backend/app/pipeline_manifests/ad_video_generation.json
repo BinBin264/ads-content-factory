@@ -1,7 +1,7 @@
 {
   "name": "ad_video_generation",
   "version": "1.0",
-  "objective": "Turn product intelligence, selected angle, script, storyboard, and production package into a connected step-by-step video creation workflow.",
+  "objective": "Turn the Creative Plan, variant direction, timeline, storyboard, and production package into a connected step-by-step video creation workflow.",
   "source_artifacts": [
     {
       "artifact_key": "project_inputs",
@@ -10,16 +10,16 @@
       "description": "Product name, category, short description, audience, goal, platform, duration, tone, CTA, claims to avoid, and uploaded files."
     },
     {
-      "artifact_key": "product_intelligence",
-      "label": "Product intelligence",
-      "source_phase": "intelligence",
-      "description": "The compact product brief used to decide proof points, audience, product role, safe claims, and visual direction."
+      "artifact_key": "creative_plan",
+      "label": "Creative Plan",
+      "source_phase": "creative_plan",
+      "description": "The compact plan used to decide product truth, audience pain, safe claims, CTA, visual style, and two variant directions."
     },
     {
-      "artifact_key": "selected_angle",
-      "label": "Selected creative angle",
-      "source_phase": "angles",
-      "description": "The hook, pain point, emotional trigger, product role, proof moment, CTA, and score selected for this variant."
+      "artifact_key": "variant_direction",
+      "label": "Variant direction",
+      "source_phase": "creative_plan",
+      "description": "The Storytelling / Problem-led or Product Demo / Benefit-led direction used for this variant."
     },
     {
       "artifact_key": "variant_script",
@@ -39,7 +39,7 @@
       "stage": "character_reference",
       "label": "Character lock",
       "purpose": "Create a stable actor identity before generating scenes so later keyframes and clips look like the same person.",
-      "required_artifacts_in": ["product_intelligence", "selected_angle", "variant_script", "production_package.character_bible"],
+      "required_artifacts_in": ["creative_plan", "variant_direction", "variant_script", "production_package.character_bible"],
       "produces": ["character_reference_images"],
       "tool_type": "image_generation",
       "provider_capability": "image_generation",
@@ -59,7 +59,7 @@
       "stage": "scene_keyframe",
       "label": "Scene keyframes",
       "purpose": "Create one controllable still image per production scene before video generation.",
-      "required_artifacts_in": ["character_reference_images", "product_intelligence", "selected_angle", "storyboard", "production_package.production_scenes"],
+      "required_artifacts_in": ["character_reference_images", "creative_plan", "variant_direction", "timeline", "storyboard", "production_package.production_scenes"],
       "produces": ["scene_keyframe_images"],
       "tool_type": "image_generation",
       "provider_capability": "image_generation",
@@ -107,7 +107,7 @@
       "review_focus": [
         "App UI and disclaimers are readable on mobile.",
         "Overlay timing matches voiceover and scene action.",
-        "Safe claims from Product Intelligence are respected."
+        "Safe claims from the Creative Plan are respected."
       ],
       "success_criteria": [
         "Every overlay scene has a finished edited clip.",

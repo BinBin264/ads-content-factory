@@ -17,7 +17,7 @@ ensure_app_dirs()
 app = FastAPI(
     title="AI Ads Video Factory API",
     version="0.1.0",
-    description="Backend MVP for product analysis, creative angles, ad variants, and video provider integration.",
+    description="Backend MVP for creative plans, two video variants, production packages, and video provider integration.",
 )
 
 app.add_middleware(

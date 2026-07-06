@@ -5,26 +5,24 @@ interface ProgressStepsProps {
 }
 
 const steps = [
-  { label: "Project Created" },
-  { label: "Product Analyzed" },
-  { label: "Angles Generated" },
-  { label: "Video Workflow Generated" },
-  { label: "Video Rendered" },
+  { label: "Creative Plan" },
+  { label: "Variant A" },
+  { label: "Variant B" },
+  { label: "Package / Render" },
 ] as const;
 
 export default function ProgressSteps({ project }: ProgressStepsProps) {
   const complete = [
-    Boolean(project),
-    Boolean(project?.product_intelligence),
-    Boolean(project?.creative_angles.length),
-    Boolean(project?.variants.some((variant) => variant.production_package)),
-    Boolean(project?.variants.some((variant) => variant.video_status === "ready")),
+    Boolean(project?.creative_plan),
+    Boolean(project?.variants[0]),
+    Boolean(project?.variants[1]),
+    Boolean(project?.variants.some((variant) => variant.production_package || variant.video_status === "ready")),
   ];
   const currentIndex = complete.findIndex((isComplete) => !isComplete);
 
   return (
     <div className="card-accent p-4">
-      <div className="grid gap-3 md:grid-cols-5">
+      <div className="grid gap-3 md:grid-cols-4">
         {steps.map((step, index) => {
           const isComplete = complete[index];
           const isCurrent = !isComplete && index === currentIndex;
