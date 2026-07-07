@@ -11,7 +11,6 @@ BASE_DIR = Path(__file__).resolve().parent
 BACKEND_DIR = BASE_DIR.parent
 DATA_DIR = BASE_DIR / "data"
 UPLOADS_DIR = BASE_DIR / "uploads"
-OUTPUTS_DIR = BASE_DIR / "outputs"
 PROJECTS_JSON = DATA_DIR / "projects.json"
 
 if load_dotenv:
@@ -66,9 +65,6 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_API_KEYS = _collect_gemini_api_keys()
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 GEMINI_API_BASE_URL = os.getenv("GEMINI_API_BASE_URL", "https://generativelanguage.googleapis.com/v1beta")
-VIDEO_PROVIDER_NAME = os.getenv("VIDEO_PROVIDER_NAME", "")
-VIDEO_PROVIDER_API_KEY = os.getenv("VIDEO_PROVIDER_API_KEY", "")
-
 ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
@@ -80,6 +76,5 @@ ALLOWED_ORIGINS = [
 def ensure_app_dirs() -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
-    OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
     if not PROJECTS_JSON.exists():
         PROJECTS_JSON.write_text("[]\n", encoding="utf-8")

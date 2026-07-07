@@ -28,6 +28,8 @@ frontend/dist/
 **/.codex-*.log
 backend/*.log
 frontend/*.log
+backend/logs/
+frontend/logs/
 
 # OS / editor
 .DS_Store

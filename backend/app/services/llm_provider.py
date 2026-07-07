@@ -43,7 +43,7 @@ class GeminiLLMProvider:
         api_keys: Sequence[str] | None = None,
         model: str = GEMINI_MODEL,
         base_url: str = GEMINI_API_BASE_URL,
-        timeout_seconds: int = 45,
+        timeout_seconds: int = 120,
     ) -> None:
         self.api_keys = [key.strip() for key in (api_keys if api_keys is not None else GEMINI_API_KEYS) if key.strip()]
         self.model = model
@@ -64,7 +64,7 @@ class GeminiLLMProvider:
         response_schema: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         if not self.is_configured:
-            raise LLMProviderError("GEMINI_API_KEYS is required for Creative Plan and content generation.")
+            raise LLMProviderError("GEMINI_API_KEYS is required for Plan Creation and content generation.")
 
         return self.generate_json_parts(
             [{"text": prompt}],
@@ -80,7 +80,7 @@ class GeminiLLMProvider:
         response_schema: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         if not self.is_configured:
-            raise LLMProviderError("GEMINI_API_KEYS is required for Creative Plan and content generation.")
+            raise LLMProviderError("GEMINI_API_KEYS is required for Plan Creation and content generation.")
 
         last_error: LLMProviderError | None = None
         for _ in range(len(self.api_keys)):
@@ -149,6 +149,8 @@ class GeminiLLMProvider:
         except urllib.error.HTTPError as exc:
             error_body = exc.read().decode("utf-8", errors="replace")
             raise LLMProviderError(f"Gemini API HTTP {exc.code}: {self._sanitize_error_body(error_body)}") from exc
+        except TimeoutError as exc:
+            raise LLMProviderError(f"Gemini API request timed out after {self.timeout_seconds} seconds.") from exc
         except urllib.error.URLError as exc:
             raise LLMProviderError(f"Gemini API request failed: {exc.reason}") from exc
 

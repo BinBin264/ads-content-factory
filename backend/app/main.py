@@ -3,13 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.config import ALLOWED_ORIGINS, OUTPUTS_DIR, UPLOADS_DIR, ensure_app_dirs
+from app.config import ALLOWED_ORIGINS, UPLOADS_DIR, ensure_app_dirs
 from app.models.schemas import HealthResponse
 from app.routes.generation import router as generation_router
 from app.routes.projects import router as projects_router
 from app.services.llm_provider import LLMProviderError
 from app.services.storage_service import ProjectNotFoundError
-from app.services.video_provider import VideoProviderError
 
 
 ensure_app_dirs()
@@ -17,7 +16,7 @@ ensure_app_dirs()
 app = FastAPI(
     title="AI Ads Video Factory API",
     version="0.1.0",
-    description="Backend MVP for creative plans, two video variants, production packages, and video provider integration.",
+    description="Backend MVP for turning a brief and uploaded assets into a Plan Creation workflow.",
 )
 
 app.add_middleware(
@@ -29,7 +28,6 @@ app.add_middleware(
 )
 
 app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
-app.mount("/outputs", StaticFiles(directory=OUTPUTS_DIR), name="outputs")
 
 
 @app.exception_handler(ProjectNotFoundError)
@@ -48,11 +46,6 @@ async def llm_provider_error_handler(_: Request, exc: LLMProviderError) -> JSONR
     if not detail.startswith("GEMINI_API_KEYS is required"):
         detail = f"Gemini provider failed. Please check GEMINI_API_KEYS and request format. {detail}"
     return JSONResponse(status_code=503, content={"detail": detail})
-
-
-@app.exception_handler(VideoProviderError)
-async def video_provider_error_handler(_: Request, exc: VideoProviderError) -> JSONResponse:
-    return JSONResponse(status_code=503, content={"detail": str(exc)})
 
 
 @app.get("/", response_model=HealthResponse)

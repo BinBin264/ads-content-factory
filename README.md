@@ -1,33 +1,27 @@
 # AI Ads Production Factory
 
-Full-stack MVP for turning product inputs, app screenshots, product images, logos, and brand kits into production-ready short-form AI video ad packages.
+Full-stack MVP for turning a product brief, product images, app screenshots, logos, and moodboards into a copy-ready AI video ad plan.
 
-Pipeline:
+Current flow:
 
-1. Product / Brand Kit Input
-2. Creative Plan
-3. 2 Variant Directions
-4. Script + Storyboard
-5. Character Bible / Reference Prompts
-6. Production Scenes
-7. Keyframe + Video Prompts
-8. UI Overlay + Edit Plan
-9. Export / Render
+```text
+Create Project
+-> Brief Input
+-> Upload References
+-> Plan Creation
+-> Manual video testing in Kling / other video tools
+```
 
-`Creative Plan` replaces the old separate analysis and angle-planning steps. Each project creates exactly two default variant directions:
+`Plan Creation` is now the central output. It contains:
 
-- Variant A: Storytelling / Problem-led / Emotional
-- Variant B: Product Demo / Benefit-led / Direct Response
+- Product lock rules so uploaded references are not redesigned.
+- Product reference map for uploaded files.
+- 2 to 5 continuous video scenes.
+- Keyframe/image prompts per scene.
+- Final video prompt per scene.
+- Voice lines, overlay text, timing beats, camera direction, and negative rules.
 
-The main flow does not ask users to generate or choose from five angles. `/angles` remains only for backward compatibility with older clients.
-
-The repo does not create local video output without a configured video provider. Generate Variants creates a production package and a step-by-step generation pipeline. Manual mode lets you copy prompts, create assets in web tools, and upload step outputs. Render Video runs the same pipeline with real configured providers. No mock or placeholder video is created.
-
-The generation workflow now follows three OpenMontage-inspired rules:
-
-- `backend/app/pipeline_manifests/ad_video_generation.json` is the workflow contract for stages, required artifacts, outputs, review focus, and success criteria.
-- `backend/app/services/video_provider.py` exposes a small provider registry contract for each tool type. It shows manual paths and required env, but does not fake provider output.
-- Every variant pipeline carries source artifacts from earlier phases so the Creative Plan, variant direction, timeline, storyboard, production package, prompts, uploaded assets, and final exports stay connected.
+There is no separate variant generation, package export, or local video output flow in the current MVP. After Plan Creation, the user copies scene prompts into Kling or another video model UI for manual testing. Provider automation can be added later on top of the Plan Creation schema.
 
 ## Environment
 
@@ -36,11 +30,9 @@ Backend env:
 ```text
 GEMINI_API_KEYS=your_key_1,your_key_2
 GEMINI_MODEL=gemini-2.5-flash
-VIDEO_PROVIDER_NAME=your_provider_name
-VIDEO_PROVIDER_API_KEY=your_video_provider_key
 ```
 
-`GEMINI_API_KEYS` is required for Creative Plan and all content generation. If the video provider env is missing, `/render` returns a clear configuration error.
+`GEMINI_API_KEYS` is required. The backend rotates configured Gemini keys per request and retries the next key on quota, auth, rate-limit, or provider errors. There is no fallback mock LLM.
 
 ## Run Backend
 
@@ -86,21 +78,16 @@ Create a project:
 Product name: Coin Scanner App
 Category: Mobile app
 Description: An app that helps users scan old coins, identify coin details, and view estimated reference value.
-Audience: People who find old coins at home, casual coin collectors, adults with coin jars.
-Goal: app_install
-Platform: TikTok
-Duration: 20s
-Tone: Natural UGC, relatable, curiosity-driven, realistic, not too polished.
-CTA: Download now and scan your old coins.
-Claims to avoid: Guaranteed value, 100% accurate appraisal, you will make money, this coin is definitely worth money.
+Brief: Create a 20s vertical UGC ad for people who find old coins at home. The story should start with curiosity, show the app scan flow from uploaded screenshots, keep safe estimated-value language, and end with a download CTA. Avoid guaranteed appraisal or money-making claims.
+Uploads: app scan screenshot, app result screenshot, logo, or product references.
 ```
 
 Then run:
 
-1. Generate Creative Plan
-2. Generate 2 Video Variants
-3. Review Production Package
-4. Follow the Generation Pipeline cards: create character refs, upload them, create keyframes, upload clips, overlay app UI, assemble, and export
-5. Export Production Package or configure providers and use Render Video / Run Full Pipeline
-
-Expected Coin Scanner production output includes one compact Creative Plan, exactly two video variants, four scenes for 15s or five scenes for 20-30s, a warm trustworthy UGC character when needed, keyframe/video prompts, overlay/edit/export steps, safe estimated-value language, and the disclaimer: `Estimated reference value only. Actual value may vary.`
+1. Create Project.
+2. Upload product/app references inside the project workflow.
+3. Generate Plan Creation.
+4. Review product lock and reference map.
+5. For each scene, create/pick keyframe images if needed.
+6. Copy the final scene video prompt into Kling or another video generation UI.
+7. Keep the negative rules and product reference mapping attached to every manual generation.

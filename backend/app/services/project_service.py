@@ -1,18 +1,7 @@
-import json
-import zipfile
-from pathlib import Path
-
 from fastapi import UploadFile
 
-from app.config import OUTPUTS_DIR
-from app.models.schemas import AnalyzeProjectResponse, CreativeAngle, CreativePlan, GenerateVariantsRequest, ProductBrief, Project, Variant, VariantDirection, VariantGenerationPipeline, VisionAnalysis
-from app.services.angle_generator import CreativeAngleGenerator, GeminiCreativeAngleGenerator
+from app.models.schemas import CreativePlan, Project
 from app.services.creative_plan_generator import CreativePlanGenerator, GeminiCreativePlanGenerator
-from app.services.pipeline_asset_service import PipelineAssetService
-from app.services.pipeline_builder import build_generation_pipeline, enrich_generation_pipeline
-from app.services.pipeline_runner import PipelineRunner
-from app.services.product_analyzer import ProductAnalyzer, ProductIntelligenceAnalyzer
-from app.services.script_generator import GeminiVariantScriptGenerator, VariantScriptGenerator
 from app.services.storage_service import JsonProjectStorage, LocalFileStorage
 
 
@@ -21,21 +10,11 @@ class ProjectService:
         self,
         storage: JsonProjectStorage | None = None,
         file_storage: LocalFileStorage | None = None,
-        analyzer: ProductAnalyzer | None = None,
         creative_plan_generator: CreativePlanGenerator | None = None,
-        angle_generator: CreativeAngleGenerator | None = None,
-        script_generator: VariantScriptGenerator | None = None,
-        pipeline_asset_service: PipelineAssetService | None = None,
-        pipeline_runner: PipelineRunner | None = None,
     ) -> None:
         self.storage = storage or JsonProjectStorage()
         self.file_storage = file_storage or LocalFileStorage()
-        self.analyzer = analyzer or ProductIntelligenceAnalyzer()
         self.creative_plan_generator = creative_plan_generator or GeminiCreativePlanGenerator()
-        self.angle_generator = angle_generator or GeminiCreativeAngleGenerator()
-        self.script_generator = script_generator or GeminiVariantScriptGenerator()
-        self.pipeline_asset_service = pipeline_asset_service or PipelineAssetService()
-        self.pipeline_runner = pipeline_runner or PipelineRunner(self.pipeline_asset_service)
 
     async def create_project(
         self,
@@ -43,6 +22,7 @@ class ProjectService:
         product_name: str,
         product_category: str | None,
         product_description: str | None,
+        brief: str | None,
         audience: str | None,
         goal: str,
         platform: str,
@@ -57,6 +37,7 @@ class ProjectService:
             product_name=product_name.strip(),
             product_category=self._clean_optional(product_category),
             product_description=self._clean_optional(product_description),
+            brief=self._clean_optional(brief),
             audience=self._clean_optional(audience),
             goal=goal or "app_install",
             platform=platform or "tiktok",
@@ -69,199 +50,31 @@ class ProjectService:
         project.uploaded_files = await self.file_storage.save_uploads(project.id, files)
         return self.storage.save_project(project)
 
+    async def upload_project_files(self, project_id: str, files: list[UploadFile] | None) -> Project:
+        if not files:
+            raise ValueError("Select at least one file to upload.")
+        project = self.storage.get_project(project_id)
+        project.uploaded_files.extend(await self.file_storage.save_uploads(project.id, files))
+        return self.storage.save_project(project)
+
     def list_projects(self) -> list[Project]:
         return sorted(self.storage.list_projects(), key=lambda item: item.created_at, reverse=True)
 
     def get_project(self, project_id: str) -> Project:
-        project = self.storage.get_project(project_id)
-        self._hydrate_creative_plan_from_legacy(project)
-        self._hydrate_generation_pipelines(project)
-        return project
+        return self.storage.get_project(project_id)
 
-    def analyze_project(self, project_id: str) -> AnalyzeProjectResponse:
+    def generate_plan_creation(self, project_id: str) -> CreativePlan:
         project = self.storage.get_project(project_id)
-        analysis = self.analyzer.analyze(project)
-        project.vision_analysis = analysis.vision_analysis
-        project.product_intelligence = analysis.product_intelligence
-        project.product_brief = analysis.product_brief
-        project.creative_plan = analysis.creative_plan
+        result = self.creative_plan_generator.create(project)
+        if result.creative_plan is None:
+            raise ValueError("Plan Creation generation did not return a creative_plan.")
+        project.vision_analysis = result.vision_analysis
+        project.creative_plan = result.creative_plan
         self.storage.save_project(project)
-        return analysis
-
-    def generate_creative_plan(self, project_id: str) -> CreativePlan:
-        project = self.storage.get_project(project_id)
-        analysis = self.creative_plan_generator.analyze(project)
-        if analysis.creative_plan is None:
-            raise ValueError("Creative Plan generation did not return a creative_plan.")
-        project.vision_analysis = analysis.vision_analysis
-        project.product_brief = analysis.product_brief
-        project.product_intelligence = analysis.product_intelligence
-        project.creative_plan = analysis.creative_plan
-        self.storage.save_project(project)
-        return analysis.creative_plan
-
-    def generate_angles(self, project_id: str) -> list[CreativeAngle]:
-        project = self.storage.get_project(project_id)
-        analysis = self._ensure_analysis(project)
-        brief = analysis.product_brief
-        intelligence = analysis.product_intelligence
-        creative_plan = analysis.creative_plan
-        if creative_plan is None:
-            raise ValueError("Generate Creative Plan before generating variant directions.")
-        project.product_brief = brief
-        project.product_intelligence = intelligence
-        project.vision_analysis = analysis.vision_analysis
-        project.creative_plan = creative_plan
-        project.creative_angles = self.angle_generator.generate(project, brief, intelligence, creative_plan)
-        self.storage.save_project(project)
-        return project.creative_angles
-
-    def generate_variants(self, project_id: str, request: GenerateVariantsRequest) -> list[Variant]:
-        project = self.storage.get_project(project_id)
-        _ = request
-        creative_plan = project.creative_plan or self.creative_plan_generator.generate(project)
-        project.creative_plan = creative_plan
-        project.variants = self.script_generator.generate_from_creative_plan(project, creative_plan)
-        self.storage.save_project(project)
-        return project.variants
-
-    def render_videos(self, project_id: str) -> Project:
-        project = self.storage.get_project(project_id)
-        if not project.variants:
-            raise ValueError("Generate variants before rendering video")
-
-        try:
-            self.pipeline_runner.run_all_variants(project)
-        except Exception:
-            self.storage.save_project(project)
-            raise
-        return self.storage.save_project(project)
-
-    def get_generation_pipeline(self, project_id: str, variant_id: str) -> VariantGenerationPipeline:
-        project = self.storage.get_project(project_id)
-        pipeline = self.pipeline_asset_service.ensure_pipeline(project, variant_id)
-        self.storage.save_project(project)
-        return pipeline
-
-    async def upload_pipeline_step_result(
-        self,
-        project_id: str,
-        variant_id: str,
-        step_id: str,
-        file: UploadFile,
-        asset_key: str | None,
-        notes: str | None,
-    ) -> Project:
-        project = self.storage.get_project(project_id)
-        await self.pipeline_asset_service.upload_step_result(
-            project=project,
-            variant_id=variant_id,
-            step_id=step_id,
-            file=file,
-            asset_key=asset_key,
-            notes=notes,
-        )
-        return self.storage.save_project(project)
-
-    def run_pipeline_step(self, project_id: str, variant_id: str, step_id: str) -> Project:
-        project = self.storage.get_project(project_id)
-        try:
-            self.pipeline_runner.run_step(project, variant_id, step_id)
-        except Exception:
-            self.storage.save_project(project)
-            raise
-        return self.storage.save_project(project)
-
-    def run_variant_pipeline(self, project_id: str, variant_id: str) -> Project:
-        project = self.storage.get_project(project_id)
-        try:
-            self.pipeline_runner.run_pipeline(project, variant_id)
-        except Exception:
-            self.storage.save_project(project)
-            raise
-        return self.storage.save_project(project)
-
-    def export_production_package(self, project_id: str) -> Project:
-        project = self.storage.get_project(project_id)
-        if not project.variants:
-            raise ValueError("Generate variants before exporting production package.")
-
-        for variant in project.variants:
-            if not variant.production_package:
-                raise ValueError("Variant is missing production_package. Generate variants again.")
-            if variant.generation_pipeline is None:
-                variant.generation_pipeline = build_generation_pipeline(project, variant)
-            else:
-                enrich_generation_pipeline(variant.generation_pipeline)
-            variant_dir = OUTPUTS_DIR / project.id / variant.id
-            variant_dir.mkdir(parents=True, exist_ok=True)
-            self._write_variant_package_files(variant_dir, variant)
-            zip_path = self._zip_variant_package(variant_dir)
-            variant.video_status = "package_exported"
-            variant.export_package_url = self._output_url(zip_path)
-
-        self._write_project_output_files(project)
-        return self.storage.save_project(project)
+        return result.creative_plan
 
     def delete_project(self, project_id: str) -> None:
         self.storage.delete_project(project_id)
-
-    def _ensure_analysis(self, project: Project) -> AnalyzeProjectResponse:
-        if project.product_brief and project.product_intelligence and project.creative_plan:
-            return AnalyzeProjectResponse(
-                product_intelligence=project.product_intelligence,
-                product_brief=project.product_brief,
-                vision_analysis=project.vision_analysis
-                or VisionAnalysis(detected_product_type=project.product_intelligence.product_type),
-                creative_plan=project.creative_plan,
-            )
-        return self.analyzer.analyze(project)
-
-    def _hydrate_generation_pipelines(self, project: Project) -> None:
-        for variant in project.variants:
-            if variant.generation_pipeline is not None:
-                enrich_generation_pipeline(variant.generation_pipeline)
-
-    def _hydrate_creative_plan_from_legacy(self, project: Project) -> None:
-        if project.creative_plan or not project.product_intelligence:
-            return
-        intelligence = project.product_intelligence
-        legacy_angles = project.creative_angles[:2]
-        directions: list[VariantDirection] = []
-        for index, angle in enumerate(legacy_angles):
-            directions.append(
-                VariantDirection(
-                    name=angle.name or ("Storytelling / Problem-led" if index == 0 else "Product Demo / Benefit-led"),
-                    hypothesis=angle.reason_why_it_can_work,
-                    creative_angle=angle.hook or angle.proof_demo_moment,
-                    best_for_metric=angle.best_for_metric or ("hook_rate" if index == 0 else "conversion_rate"),
-                )
-            )
-        if len(directions) < 2:
-            directions = [
-                VariantDirection(
-                    name="Storytelling / Problem-led",
-                    hypothesis="A relatable problem-led story can improve hook retention.",
-                    creative_angle=(intelligence.recommended_hooks[0] if intelligence.recommended_hooks else intelligence.core_use_case),
-                    best_for_metric="hook_rate",
-                ),
-                VariantDirection(
-                    name="Product Demo / Benefit-led",
-                    hypothesis="A direct product demo can improve conversion intent.",
-                    creative_angle=(intelligence.demo_moments[0] if intelligence.demo_moments else intelligence.core_use_case),
-                    best_for_metric="conversion_rate",
-                ),
-            ]
-        project.creative_plan = CreativePlan(
-            product_truth=intelligence.core_use_case,
-            audience_pain=intelligence.pain_points[0] if intelligence.pain_points else "Audience needs a clear reason to act.",
-            main_message=intelligence.functional_benefits[0] if intelligence.functional_benefits else intelligence.core_use_case,
-            safe_claims=intelligence.safe_claims,
-            forbidden_claims=intelligence.claims_to_avoid or project.claims_to_avoid,
-            cta=intelligence.recommended_cta or project.cta or "Learn more",
-            visual_style=intelligence.brand_style_notes,
-            variant_directions=directions[:2],
-        )
 
     def _clean_optional(self, value: str | None) -> str | None:
         if value is None:
@@ -279,164 +92,3 @@ class ProjectService:
             parts = item.replace("\n", ",").replace(";", ",").split(",")
             cleaned.extend(part.strip() for part in parts if part.strip())
         return cleaned
-
-    def _write_variant_package_files(self, variant_dir: Path, variant: Variant) -> None:
-        package = variant.production_package
-        if package is None:
-            raise ValueError("Variant is missing production_package. Generate variants again.")
-
-        self._write_json(variant_dir / "character_bible.json", package.character_bible.model_dump(mode="json"))
-        self._write_text(
-            variant_dir / "character_reference_prompts.txt",
-            "\n\n".join(
-                [
-                    f"{prompt.reference_id} ({prompt.aspect_ratio})\nPurpose: {prompt.purpose}\nPrompt:\n{prompt.prompt}\nNegative:\n{prompt.negative_prompt}\nNotes: {prompt.notes}"
-                    for prompt in package.character_reference_prompts
-                ]
-            ),
-        )
-        self._write_json(variant_dir / "production_scenes.json", [scene.model_dump(mode="json") for scene in package.production_scenes])
-        if variant.generation_pipeline:
-            self._write_json(variant_dir / "generation_pipeline.json", variant.generation_pipeline.model_dump(mode="json"))
-            self._write_json(variant_dir / "pipeline_manifest.json", {
-                "pipeline_name": variant.generation_pipeline.pipeline_name,
-                "pipeline_version": variant.generation_pipeline.pipeline_version,
-                "objective": variant.generation_pipeline.objective,
-                "source_artifacts": variant.generation_pipeline.source_artifacts,
-                "stage_contracts": variant.generation_pipeline.stage_contracts,
-                "provider_contracts": variant.generation_pipeline.provider_contracts,
-            })
-            self._write_json(variant_dir / "asset_registry.json", [asset.model_dump(mode="json") for asset in variant.generation_pipeline.assets])
-            self._write_text(
-                variant_dir / "pipeline_prompts.txt",
-                "\n\n".join(
-                    [
-                        f"Step {step.step_number}: {step.title}\n"
-                        f"Stage: {step.stage}\nTool: {step.tool_type}\n"
-                        f"Prompt:\n{step.prompt_to_copy or ''}\n"
-                        f"Negative:\n{step.negative_prompt_to_copy or ''}\n"
-                        f"Motion:\n{step.motion_instruction or ''}\n"
-                        f"Consistency:\n{step.consistency_instruction or ''}"
-                        for step in variant.generation_pipeline.steps
-                    ]
-                ),
-            )
-            self._write_text(
-                variant_dir / "manual_generation_instructions.txt",
-                "\n\n".join(
-                    [
-                        f"Step {step.step_number}: {step.title}\n"
-                        + "\n".join([f"- {instruction}" for instruction in step.manual_instructions])
-                        + "\nExpected outputs:\n"
-                        + "\n".join([f"- {output.asset_key}: {output.file_name_hint}" for output in step.expected_outputs])
-                        for step in variant.generation_pipeline.steps
-                    ]
-                ),
-            )
-        self._write_text(
-            variant_dir / "keyframe_prompts.txt",
-            "\n\n".join([f"Scene {scene.scene_number}\n{scene.keyframe_prompt}" for scene in package.production_scenes]),
-        )
-        self._write_text(
-            variant_dir / "video_prompts.txt",
-            "\n\n".join([f"Scene {scene.scene_number}\n{scene.video_prompt}" for scene in package.production_scenes]),
-        )
-        self._write_text(
-            variant_dir / "ui_overlay_plan.txt",
-            "\n\n".join(
-                [
-                    f"Scene {scene.scene_number}\n"
-                    + "\n".join(
-                        [
-                            f"- {item.overlay_type}: {item.text} ({item.start_time}-{item.end_time}, {item.position}) | {item.style_notes} | {item.safety_notes}"
-                            for item in scene.ui_overlay_plan
-                        ]
-                    )
-                    for scene in package.production_scenes
-                ]
-            ),
-        )
-        self._write_text(
-            variant_dir / "edit_plan.txt",
-            json.dumps(package.edit_plan.model_dump(mode="json"), ensure_ascii=False, indent=2),
-        )
-        self._write_text(variant_dir / "script.txt", variant.script)
-        self._write_json(variant_dir / "storyboard.json", [scene.model_dump(mode="json") for scene in variant.storyboard])
-        self._write_json(variant_dir / "timeline.json", [scene.model_dump(mode="json") for scene in variant.timeline])
-        self._write_text(variant_dir / "voiceover.txt", variant.voiceover)
-        self._write_text(variant_dir / "subtitles.srt", self._subtitle_srt(variant))
-        self._write_text(variant_dir / "caption.txt", f"{variant.title}\n\n{variant.caption}\n\nCover prompt:\n{variant.cover_prompt}")
-
-    def _write_project_output_files(self, project: Project) -> None:
-        output_dir = OUTPUTS_DIR / project.id / "project_output"
-        output_dir.mkdir(parents=True, exist_ok=True)
-        if project.creative_plan:
-            self._write_json(output_dir / "creative_plan.json", project.creative_plan.model_dump(mode="json"))
-
-        for index, variant in enumerate(project.variants[:2]):
-            suffix = "A" if index == 0 else "B"
-            variant_slug = f"variant_{suffix}"
-            self._write_json(output_dir / f"{variant_slug}.json", variant.model_dump(mode="json"))
-            variant_dir = output_dir / variant_slug
-            variant_dir.mkdir(parents=True, exist_ok=True)
-            self._write_text(variant_dir / "script.txt", variant.script)
-            self._write_json(variant_dir / "storyboard.json", [scene.model_dump(mode="json") for scene in variant.storyboard])
-            self._write_text(
-                variant_dir / "video_prompts.txt",
-                "\n\n".join([f"Scene {scene.scene_number}\n{scene.generation_prompt}" for scene in variant.storyboard]),
-            )
-            if variant.production_package:
-                self._write_text(
-                    variant_dir / "keyframe_prompts.txt",
-                    "\n\n".join([f"Scene {scene.scene_number}\n{scene.keyframe_prompt}" for scene in variant.production_package.production_scenes]),
-                )
-                self._write_text(variant_dir / "edit_plan.txt", json.dumps(variant.production_package.edit_plan.model_dump(mode="json"), ensure_ascii=False, indent=2))
-            else:
-                self._write_text(variant_dir / "keyframe_prompts.txt", "")
-                self._write_text(variant_dir / "edit_plan.txt", "")
-            self._write_text(variant_dir / "voiceover.txt", variant.voiceover)
-            self._write_text(variant_dir / "subtitles.srt", self._subtitle_srt(variant))
-            self._write_text(variant_dir / "cover_prompt.txt", variant.cover_prompt)
-            self._write_text(variant_dir / "caption.txt", variant.caption)
-
-    def _zip_variant_package(self, variant_dir: Path) -> Path:
-        zip_path = variant_dir / "production_package.zip"
-        with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-            for path in variant_dir.iterdir():
-                if path == zip_path or not path.is_file():
-                    continue
-                archive.write(path, arcname=path.name)
-        return zip_path
-
-    def _write_json(self, path: Path, data: object) -> None:
-        path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-
-    def _write_text(self, path: Path, content: str) -> None:
-        path.write_text(content, encoding="utf-8")
-
-    def _output_url(self, path: Path) -> str:
-        relative = path.relative_to(OUTPUTS_DIR).as_posix()
-        return f"/outputs/{relative}"
-
-    def _subtitle_srt(self, variant: Variant) -> str:
-        lines: list[str] = []
-        cursor = 0
-        for index, scene in enumerate(variant.storyboard, start=1):
-            start = cursor
-            end = cursor + scene.duration_seconds
-            cursor = end
-            lines.extend(
-                [
-                    str(index),
-                    f"{self._srt_time(start)} --> {self._srt_time(end)}",
-                    scene.voiceover_line,
-                    "",
-                ]
-            )
-        return "\n".join(lines).strip() + "\n"
-
-    def _srt_time(self, seconds: int) -> str:
-        hours = seconds // 3600
-        minutes = (seconds % 3600) // 60
-        secs = seconds % 60
-        return f"{hours:02d}:{minutes:02d}:{secs:02d},000"

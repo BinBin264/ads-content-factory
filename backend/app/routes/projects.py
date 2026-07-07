@@ -16,6 +16,7 @@ async def create_project(
     product_name: Annotated[str, Form(...)],
     product_category: Annotated[str | None, Form()] = None,
     product_description: Annotated[str | None, Form()] = None,
+    brief: Annotated[str | None, Form()] = None,
     audience: Annotated[str | None, Form()] = None,
     goal: Annotated[str, Form()] = "app_install",
     platform: Annotated[str, Form()] = "tiktok",
@@ -30,6 +31,7 @@ async def create_project(
         product_name=product_name,
         product_category=product_category,
         product_description=product_description,
+        brief=brief,
         audience=audience,
         goal=goal,
         platform=platform,
@@ -50,6 +52,14 @@ def list_projects() -> list[Project]:
 @router.get("/{project_id}", response_model=Project)
 def get_project(project_id: str) -> Project:
     return project_service.get_project(project_id)
+
+
+@router.post("/{project_id}/uploads", response_model=Project)
+async def upload_project_files(
+    project_id: str,
+    files: Annotated[list[UploadFile], File()],
+) -> Project:
+    return await project_service.upload_project_files(project_id, files)
 
 
 @router.delete("/{project_id}", status_code=204)

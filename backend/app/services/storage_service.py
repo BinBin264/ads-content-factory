@@ -5,7 +5,7 @@ from typing import Any
 
 from fastapi import UploadFile
 
-from app.config import OUTPUTS_DIR, PROJECTS_JSON, UPLOADS_DIR, ensure_app_dirs
+from app.config import PROJECTS_JSON, UPLOADS_DIR, ensure_app_dirs
 from app.models.schemas import Project, UploadedFileInfo, utc_now
 
 
@@ -54,10 +54,9 @@ class JsonProjectStorage:
             raise ProjectNotFoundError(f"Project '{project_id}' was not found")
         self._write_raw([item.model_dump(mode="json") for item in remaining])
 
-        for base_dir in (UPLOADS_DIR, OUTPUTS_DIR):
-            target = (base_dir / project_id).resolve()
-            if target.exists() and base_dir.resolve() in target.parents:
-                shutil.rmtree(target)
+        target = (UPLOADS_DIR / project_id).resolve()
+        if target.exists() and UPLOADS_DIR.resolve() in target.parents:
+            shutil.rmtree(target)
 
     def _read_raw(self) -> list[dict[str, Any]]:
         if not self.json_path.exists():
@@ -90,7 +89,8 @@ class LocalFileStorage:
         project_dir.mkdir(parents=True, exist_ok=True)
         saved: list[UploadedFileInfo] = []
 
-        for index, upload in enumerate(files, start=1):
+        existing_count = len([item for item in project_dir.iterdir() if item.is_file()]) if project_dir.exists() else 0
+        for index, upload in enumerate(files, start=existing_count + 1):
             original_name = upload.filename or f"upload_{index}"
             filename = f"{index:02d}_{_sanitize_filename(original_name)}"
             destination = project_dir / filename
