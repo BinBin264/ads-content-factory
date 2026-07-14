@@ -19,11 +19,23 @@ export interface StorytellingProductAnalysis {
 export interface ProductReference {
   id: string;
   name: string;
+  sourceFileName?: string;
+  referenceLabel?: string;
   kind: string;
   visualDescription: string;
   lockPrompt: string;
   useWhen: string;
   isPrimary: boolean;
+}
+
+export interface ReferenceAsset {
+  name: string;
+  description: string;
+  imagePrompt: string;
+  consistencyPrompt: string;
+  status?: string;
+  imageUrl?: string | null;
+  candidateImages?: string[];
 }
 
 export interface StorytellingCamera {
@@ -50,6 +62,17 @@ export interface KeyframePrompt {
   purpose: string;
   prompt: string;
   productReferenceIds: string[];
+  stale?: boolean;
+  candidates?: KeyframeCandidate[];
+  selectedCandidateId?: string | null;
+  selectedImageUrl?: string | null;
+}
+
+export interface KeyframeCandidate {
+  id: string;
+  imageUrl: string;
+  mimeType?: string | null;
+  warning?: string | null;
 }
 
 export interface StorytellingScene {
@@ -70,6 +93,25 @@ export interface StorytellingScene {
   keyframePrompts: KeyframePrompt[];
   finalVideoPrompt: string;
   negativeRules: string[];
+  keyframePromptStale?: boolean;
+  finalVideoPromptStale?: boolean;
+  status?: string;
+  videoUrl?: string | null;
+  videoError?: string | null;
+  videoProvider?: string | null;
+  videoModel?: string | null;
+  videoJobId?: string | null;
+  videoRatio?: string | null;
+  videoDuration?: string | null;
+  videoMode?: string | null;
+  videoResolution?: string | null;
+  videoStatusPayload?: Record<string, unknown> | null;
+  videoReferenceUploads?: Array<{
+    label?: string;
+    role?: string;
+    url?: string;
+    source?: string | null;
+  }>;
 }
 
 export interface PlanCreation {
@@ -82,6 +124,8 @@ export interface PlanCreation {
   visual_style?: string;
   productAnalysis?: StorytellingProductAnalysis | null;
   productReferences?: ProductReference[];
+  primaryCharacter?: ReferenceAsset | null;
+  primaryLocation?: ReferenceAsset | null;
   scenes?: StorytellingScene[];
 }
 

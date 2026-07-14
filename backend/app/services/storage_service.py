@@ -18,6 +18,24 @@ def _sanitize_filename(filename: str) -> str:
     return safe.strip("._") or "upload"
 
 
+def _slug_stem(filename: str) -> str:
+    stem = Path(filename).stem or "product"
+    slug = "".join(ch.lower() if ch.isalnum() else "_" for ch in stem)
+    slug = "_".join(part for part in slug.split("_") if part)
+    return slug or "product"
+
+
+def _safe_extension(upload: UploadFile) -> str:
+    suffix = Path(upload.filename or "").suffix.lower()
+    if suffix in {".jpg", ".jpeg", ".png", ".webp", ".gif"}:
+        return suffix
+    if upload.content_type == "image/png":
+        return ".png"
+    if upload.content_type == "image/webp":
+        return ".webp"
+    return ".jpeg"
+
+
 class JsonProjectStorage:
     def __init__(self, json_path: Path = PROJECTS_JSON) -> None:
         self.json_path = json_path
@@ -61,7 +79,7 @@ class JsonProjectStorage:
     def _read_raw(self) -> list[dict[str, Any]]:
         if not self.json_path.exists():
             return []
-        content = self.json_path.read_text(encoding="utf-8").strip()
+        content = self.json_path.read_text(encoding="utf-8-sig").strip()
         if not content:
             return []
         data = json.loads(content)
@@ -108,3 +126,88 @@ class LocalFileStorage:
             await upload.close()
 
         return saved
+
+    async def save_product_uploads(
+        self,
+        project_id: str,
+        files: list[UploadFile] | None,
+        *,
+        start_index: int = 1,
+    ) -> list[UploadedFileInfo]:
+        if not files:
+            return []
+
+        project_dir = self.uploads_dir / project_id
+        project_dir.mkdir(parents=True, exist_ok=True)
+        saved: list[UploadedFileInfo] = []
+
+        existing_count = len([item for item in project_dir.iterdir() if item.is_file()]) if project_dir.exists() else 0
+        for offset, upload in enumerate(files):
+            reference_index = start_index + offset
+            original_name = upload.filename or f"product_{reference_index}"
+            display_name = f"product_ref_{reference_index:02d}_{_slug_stem(original_name)}{_safe_extension(upload)}"
+            stored_name = f"{existing_count + offset + 1:02d}_{display_name}"
+            destination = project_dir / stored_name
+            content = await upload.read()
+            destination.write_bytes(content)
+            saved.append(
+                UploadedFileInfo(
+                    file_name=display_name,
+                    content_type=upload.content_type,
+                    size_bytes=len(content),
+                    path=str(destination),
+                    url=f"/uploads/{project_id}/{stored_name}",
+                )
+            )
+            await upload.close()
+
+        return saved
+
+    async def save_named_upload(self, project_id: str, upload: UploadFile, filename: str) -> UploadedFileInfo:
+        project_dir = self.uploads_dir / project_id
+        project_dir.mkdir(parents=True, exist_ok=True)
+        existing_count = len([item for item in project_dir.iterdir() if item.is_file()]) if project_dir.exists() else 0
+        safe_name = _sanitize_filename(filename)
+        stored_name = f"{existing_count + 1:02d}_{safe_name}"
+        destination = project_dir / stored_name
+        content = await upload.read()
+        destination.write_bytes(content)
+        await upload.close()
+        return UploadedFileInfo(
+            file_name=safe_name,
+            content_type=upload.content_type,
+            size_bytes=len(content),
+            path=str(destination),
+            url=f"/uploads/{project_id}/{stored_name}",
+        )
+
+    def save_generated_file(
+        self,
+        project_id: str,
+        *,
+        bucket: str,
+        filename: str,
+        content: bytes,
+        content_type: str = "image/png",
+    ) -> UploadedFileInfo:
+        project_dir = self.uploads_dir / project_id
+        project_dir.mkdir(parents=True, exist_ok=True)
+        existing_count = len([item for item in project_dir.iterdir() if item.is_file()]) if project_dir.exists() else 0
+        safe_name = _sanitize_filename(filename)
+        stored_name = f"{existing_count + 1:02d}_{_sanitize_filename(bucket)}_{safe_name}"
+        destination = project_dir / stored_name
+        destination.write_bytes(content)
+        return UploadedFileInfo(
+            file_name=filename,
+            content_type=content_type,
+            size_bytes=len(content),
+            path=str(destination),
+            url=f"/uploads/{project_id}/{stored_name}",
+        )
+
+    def delete_uploaded_files(self, files: list[UploadedFileInfo]) -> None:
+        uploads_root = self.uploads_dir.resolve()
+        for uploaded_file in files:
+            target = Path(uploaded_file.path).resolve()
+            if target.exists() and uploads_root in target.parents:
+                target.unlink()

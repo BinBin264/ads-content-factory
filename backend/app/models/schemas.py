@@ -72,6 +72,8 @@ class NormalizedBrief(BaseModel):
 class CreativePlan(BaseModel):
     productAnalysis: dict[str, Any] = Field(default_factory=dict)
     productReferences: list[dict[str, Any]] = Field(default_factory=list)
+    primaryCharacter: dict[str, Any] = Field(default_factory=dict)
+    primaryLocation: dict[str, Any] = Field(default_factory=dict)
     scenes: list[dict[str, Any]] = Field(default_factory=list)
 
     @model_validator(mode="before")
@@ -84,6 +86,8 @@ class CreativePlan(BaseModel):
         legacy_to_prompt = {
             "product_analysis": "productAnalysis",
             "product_references": "productReferences",
+            "primary_character": "primaryCharacter",
+            "primary_location": "primaryLocation",
         }
         for legacy_key, prompt_key in legacy_to_prompt.items():
             if prompt_key not in value and legacy_key in value:
@@ -101,6 +105,20 @@ class CreativePlan(BaseModel):
             }
         if not value.get("scenes"):
             value["scenes"] = cls._legacy_scenes_from_fields(value)
+        if not value.get("primaryCharacter"):
+            value["primaryCharacter"] = {
+                "name": "Primary actor",
+                "description": "Single consistent actor for this ad.",
+                "imagePrompt": "Generate one realistic commercial actor reference image for this ad.",
+                "consistencyPrompt": "Preserve the same actor identity, face, outfit, body type, and style across all keyframes.",
+            }
+        if not value.get("primaryLocation"):
+            value["primaryLocation"] = {
+                "name": "Primary setting",
+                "description": "Consistent commercial filming location for this ad.",
+                "imagePrompt": "Generate one realistic commercial location reference image for this ad.",
+                "consistencyPrompt": "Preserve the same location, lighting, layout, and recurring prop relationships across all keyframes.",
+            }
         return value
 
     @staticmethod
@@ -210,6 +228,60 @@ class Project(BaseModel):
     @classmethod
     def normalize_list_fields(cls, value: Any) -> list[str]:
         return normalize_string_list(value)
+
+
+class UpdateProductReferenceRequest(BaseModel):
+    name: str | None = None
+    kind: str | None = None
+    visualDescription: str | None = None
+    lockPrompt: str | None = None
+    useWhen: str | None = None
+    isPrimary: bool | None = None
+
+
+class UpdateSceneRequest(BaseModel):
+    title: str | None = None
+    visualAction: str | None = None
+    productMoment: str | None = None
+    characterAction: str | None = None
+    locationUse: str | None = None
+    cameraShot: str | None = None
+    cameraMovement: str | None = None
+    composition: str | None = None
+    voiceLine: str | None = None
+    voiceLines: list[dict[str, Any]] | None = None
+    ambientAudio: str | None = None
+    onScreenText: str | None = None
+    keyframePrompt: str | None = None
+
+
+class RewriteSceneRequest(BaseModel):
+    instruction: str
+
+
+class UpdateSceneVideoPromptRequest(BaseModel):
+    finalVideoPrompt: str
+
+
+class UpdateKeyframePromptSlotRequest(BaseModel):
+    label: str | None = None
+    timing: str | None = None
+    purpose: str | None = None
+    prompt: str | None = None
+    productReferenceIds: list[str] | None = None
+
+
+class UpdateReferenceAssetRequest(BaseModel):
+    imagePrompt: str | None = None
+    name: str | None = None
+    description: str | None = None
+    consistencyPrompt: str | None = None
+
+
+class SelectKeyframeCandidateRequest(BaseModel):
+    imageUrl: str | None = None
+    fileId: str | None = None
+    candidateId: str | None = None
 
 
 class HealthResponse(BaseModel):

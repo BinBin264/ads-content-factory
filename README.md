@@ -9,6 +9,8 @@ Create Project
 -> Brief Input
 -> Upload References
 -> Plan Creation
+-> Character / Location / Keyframe references
+-> 4-second scene clips
 -> Manual video testing in Kling / other video tools
 ```
 
@@ -16,12 +18,13 @@ Create Project
 
 - Product lock rules so uploaded references are not redesigned.
 - Product reference map for uploaded files.
-- 2 to 5 continuous video scenes.
+- Primary character and primary location reference prompts.
+- 4-second scene clips split from the script.
 - Keyframe/image prompts per scene.
 - Final video prompt per scene.
 - Voice lines, overlay text, timing beats, camera direction, and negative rules.
 
-There is no separate variant generation, package export, or local video output flow in the current MVP. After Plan Creation, the user copies scene prompts into Kling or another video model UI for manual testing. Provider automation can be added later on top of the Plan Creation schema.
+There is no separate variant generation, package export, or local fake video output flow in the current MVP. After Plan Creation, the user creates/selects character, location, and keyframe references, then copies each 4-second scene prompt into Flow, Kling, or another video model UI for manual testing. Provider automation can be added later on top of the same scene schema.
 
 ## Environment
 
@@ -87,7 +90,8 @@ Then run:
 1. Create Project.
 2. Upload product/app references inside the project workflow.
 3. Generate Plan Creation.
-4. Review product lock and reference map.
-5. For each scene, create/pick keyframe images if needed.
-6. Copy the final scene video prompt into Kling or another video generation UI.
-7. Keep the negative rules and product reference mapping attached to every manual generation.
+4. Review product lock, primary character, primary location, and reference map.
+5. For each 4-second scene, create/pick keyframe images.
+6. In Manual mode, copy the final 4-second scene video prompt into Flow, Kling, or another video generation UI.
+7. In Automation mode, configure `VIDEO_PROVIDER_NAME=79ai` and `VIDEO_PROVIDER_API_KEY`, then generate one VEO Omni Flash `9:16` `4s` clip per scene from the uploaded ingredients.
+8. Keep the negative rules and reference image mapping attached to every manual generation.

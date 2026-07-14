@@ -41,10 +41,11 @@ http://127.0.0.1:5173
 
 1. Create a project with product context and a free-form brief.
 2. Open the project workflow and upload product/app references as a separate step.
-3. Generate Plan Creation to turn the brief and uploaded references into one compact scene workflow.
-4. Review product locks and uploaded reference mapping.
-5. Review scene-by-scene action, camera, voice, overlay, timing, keyframe prompts, final video prompts, and negative rules.
-6. Copy keyframe prompts and final video prompts into Kling or another video generation UI for manual testing.
+3. Generate Plan Creation to turn the brief and uploaded references into 4-second scene clips.
+4. Review product locks, primary character prompt, primary location prompt, and uploaded reference mapping.
+5. Review each 4-second scene: action, camera, voice, overlay, timing, keyframe slots, final video prompt, and negative rules.
+6. Upload or select generated keyframe references.
+7. Copy each final 4-second video prompt into Flow, Kling, or another video generation UI for manual testing.
 
 ## API Contract
 

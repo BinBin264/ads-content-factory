@@ -29,7 +29,7 @@ export default function HomePage() {
     setError(null);
     try {
       const project = await createProject(values);
-      navigate(`/projects/${project.id}/assets`);
+      navigate(`/projects/${project.id}/plan-creation`);
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
@@ -62,7 +62,7 @@ export default function HomePage() {
                 <Link
                   key={project.id}
                   className="block rounded-lg border border-slate-200 bg-white p-4 transition hover:-translate-y-0.5 hover:border-teal-300 hover:shadow-soft"
-                  to={`/projects/${project.id}/assets`}
+                  to={`/projects/${project.id}/plan-creation`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">

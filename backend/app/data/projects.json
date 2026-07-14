@@ -1,10 +1,10 @@
 [
   {
-    "id": "project_d49d3aafd774",
-    "product_name": "coin scanner",
+    "id": "project_527e2a99fee4",
+    "product_name": "Coin Scanner App",
     "product_category": "Mobile app",
-    "product_description": "Coin Identifier is a mobile app that helps users identify coins by scanning them with a phone camera. The app allows users to search for coins, scan or identify a coin, view coin details, see overview information, check a reference price range, and save identified coins to a personal collection called My Coins. The app is designed for casual users, beginners, and coin collectors who want a quick and simple way to learn more about old or unfamiliar coins. The app should be presented as a helpful coin identification and reference tool. Use safe wording such as reference price range, estimated value, coin details, and coin information. Do not claim that the app can identify every coin, provide an exact price, guarantee authenticity, detect counterfeits, guarantee resale value, or replace professional grading.",
-    "brief": "Brief: Create a vertical short direct-response ad for a coin scanning app. The ad must follow this story closely: there is one old coin on a table; a foreign/Western-looking adult male actor, not Vietnamese, picks it up with curious confidence and wonders what coin it is; he opens the app, scans both sides of the coin, then shows the result screen with a high reference range. He calls loudly toward someone off-frame: ¡Mira esto! He smiles with a playful victorious expression, turns the phone toward the camera to show the result clearly, then points downward as a download CTA. Use one primary male actor only. Do not show the off-frame person. Make the actor look like a believable foreign app-commercial actor, not Vietnamese. Use English spoken dialogue, except the exact Spanish phrase ¡Mira esto! where requested. - Optional product context: The product is a mobile coin identification and collection app. Uploaded product reference 1 is the result/detail screen: it shows a 1909-S VDB Lincoln Cent detail page with coin photos, title, categories, tabs, Overview fields, a Reference Price section showing $100,000 - $500,000, a disclaimer that value may vary, and a yellow Save to My Coins button. Uploaded product reference 2 is the scan/camera screen: it shows Step 1, instruction to arrange the obverse side centrally, a circular coin guide, crosshair, OBVERSE and REVERSE controls, a large yellow capture button, Photos and Snap Tips controls, close and flash icons. The ad should preserve the yellow brand UI, readable app screens, scan flow, and result/detail screen. Do not claim guaranteed value, appraisal, payout, auction, sale, or authentication. Treat the displayed range as a reference estimate only.",
+    "product_description": "A mobile app that scans old coins, identifies coin details, and shows an estimated reference value range for collection research.",
+    "brief": "Create a vertical 20-second direct-response ad for a coin scanner app.\r\n\r\nStory:\r\nA foreign/Western-looking adult male actor finds one old coin on a table. He picks it up with curiosity and wonders what coin it is. He opens the app, scans both sides of the coin, then sees a result screen showing coin details and an estimated reference value range. He reacts with surprised excitement, turns the phone toward the camera so the result screen is readable, then points downward for the download CTA.\r\n\r\nVisual requirements:\r\nUse one primary male actor only. Do not show any second person. Keep the actor consistent across all scenes. Use a warm tabletop home setting. Preserve the uploaded app screenshots exactly, especially the yellow UI, scan screen, capture button, and result/detail screen.\r\n\r\nVoice:\r\nEnglish spoken dialogue, natural UGC style. Include the Spanish phrase â€œÂ¡Mira esto!â€ only in the reaction scene.\r\n\r\nCTA:\r\nDownload now.\r\n\r\nClaims to avoid:\r\nDo not say guaranteed value, appraisal, payout, auction, sale, authentication, counterfeit detection, or that the app replaces professional grading. Treat any price shown as an estimated reference range only.",
     "audience": null,
     "goal": "app_install",
     "platform": "tiktok",
@@ -13,83 +13,175 @@
     "cta": null,
     "claims_to_avoid": [],
     "brand_colors": [],
-    "uploaded_files": [],
+    "uploaded_files": [
+      {
+        "id": "file_d1e0bddf1506",
+        "file_name": "product_ref_01_home_screen.jpeg",
+        "content_type": "image/jpeg",
+        "size_bytes": 57129,
+        "path": "D:\\DTP_COMPANY\\ads-content-factory\\backend\\app\\uploads\\project_527e2a99fee4\\01_product_ref_01_home_screen.jpeg",
+        "url": "/uploads/project_527e2a99fee4/01_product_ref_01_home_screen.jpeg"
+      },
+      {
+        "id": "file_111d54d5333d",
+        "file_name": "product_ref_02_app_coin_detail.jpeg",
+        "content_type": "image/jpeg",
+        "size_bytes": 31248,
+        "path": "D:\\DTP_COMPANY\\ads-content-factory\\backend\\app\\uploads\\project_527e2a99fee4\\02_product_ref_02_app_coin_detail.jpeg",
+        "url": "/uploads/project_527e2a99fee4/02_product_ref_02_app_coin_detail.jpeg"
+      },
+      {
+        "id": "file_98c035922995",
+        "file_name": "character_reference.png",
+        "content_type": "image/jpeg",
+        "size_bytes": 851017,
+        "path": "D:\\DTP_COMPANY\\ads-content-factory\\backend\\app\\uploads\\project_527e2a99fee4\\03_character_reference.png",
+        "url": "/uploads/project_527e2a99fee4/03_character_reference.png"
+      },
+      {
+        "id": "file_61b68ac1c968",
+        "file_name": "location_reference.png",
+        "content_type": "image/jpeg",
+        "size_bytes": 767541,
+        "path": "D:\\DTP_COMPANY\\ads-content-factory\\backend\\app\\uploads\\project_527e2a99fee4\\04_location_reference.png",
+        "url": "/uploads/project_527e2a99fee4/04_location_reference.png"
+      },
+      {
+        "id": "file_02f10253186c",
+        "file_name": "scene_01_keyframe_01.png",
+        "content_type": "image/jpeg",
+        "size_bytes": 733720,
+        "path": "D:\\DTP_COMPANY\\ads-content-factory\\backend\\app\\uploads\\project_527e2a99fee4\\05_scene_01_keyframe_01.png",
+        "url": "/uploads/project_527e2a99fee4/05_scene_01_keyframe_01.png"
+      },
+      {
+        "id": "file_4ea310751c90",
+        "file_name": "scene_04_keyframe_01.png",
+        "content_type": "image/jpeg",
+        "size_bytes": 757688,
+        "path": "D:\\DTP_COMPANY\\ads-content-factory\\backend\\app\\uploads\\project_527e2a99fee4\\07_scene_04_keyframe_01.png",
+        "url": "/uploads/project_527e2a99fee4/07_scene_04_keyframe_01.png"
+      },
+      {
+        "id": "file_3e975a835ad2",
+        "file_name": "scene_05_keyframe_01.png",
+        "content_type": "image/jpeg",
+        "size_bytes": 702069,
+        "path": "D:\\DTP_COMPANY\\ads-content-factory\\backend\\app\\uploads\\project_527e2a99fee4\\08_scene_05_keyframe_01.png",
+        "url": "/uploads/project_527e2a99fee4/08_scene_05_keyframe_01.png"
+      },
+      {
+        "id": "file_2ab4f54cc5ec",
+        "file_name": "scene_02_keyframe_01.png",
+        "content_type": "image/jpeg",
+        "size_bytes": 676436,
+        "path": "D:\\DTP_COMPANY\\ads-content-factory\\backend\\app\\uploads\\project_527e2a99fee4\\09_scene_02_keyframe_01.png",
+        "url": "/uploads/project_527e2a99fee4/09_scene_02_keyframe_01.png"
+      },
+      {
+        "id": "file_acdab829ad97",
+        "file_name": "scene_03_keyframe_01.png",
+        "content_type": "image/jpeg",
+        "size_bytes": 664322,
+        "path": "D:\\DTP_COMPANY\\ads-content-factory\\backend\\app\\uploads\\project_527e2a99fee4\\10_scene_03_keyframe_01.png",
+        "url": "/uploads/project_527e2a99fee4/10_scene_03_keyframe_01.png"
+      },
+      {
+        "id": "file_e4e98dca7871",
+        "file_name": "scene_03_keyframe_02.png",
+        "content_type": "image/jpeg",
+        "size_bytes": 710001,
+        "path": "D:\\DTP_COMPANY\\ads-content-factory\\backend\\app\\uploads\\project_527e2a99fee4\\11_scene_03_keyframe_02.png",
+        "url": "/uploads/project_527e2a99fee4/11_scene_03_keyframe_02.png"
+      }
+    ],
     "vision_analysis": {
       "detected_objects": [
-        "Mobile phone",
-        "Coin",
-        "App UI elements"
+        "Mobile app interface",
+        "Coins (Lincoln Cent)"
       ],
       "detected_product_type": "mobile_app",
-      "detected_visual_style": "Clean, functional, informative, user-friendly, digital interface",
+      "detected_visual_style": "Clean, modern, and functional design with a focus on clear information display. Utilizes flat design principles with prominent iconography and a warm yellow/gold accent color for interactive elements.",
       "detected_brand_colors": [
-        "Yellow"
+        "Yellow",
+        "Gold",
+        "Dark Green",
+        "White",
+        "Gray"
       ],
       "detected_ui_elements": [
-        "Circular coin guide",
-        "Crosshair",
-        "OBVERSE control",
-        "REVERSE control",
-        "Large capture button",
-        "Photos control",
-        "Snap Tips control",
-        "Close icon",
-        "Flash icon",
-        "Coin photo display",
-        "Coin title/name field",
-        "Category labels",
-        "Tabs (e.g., Overview)",
-        "Overview fields",
-        "Reference Price section",
-        "Disclaimer text",
-        "Save to My Coins button"
+        "Search bar",
+        "Navigation bar",
+        "Buttons (Coin Identify, Tap to Claim, Save to My Coins)",
+        "Camera/Scan button (prominent)",
+        "Tabs (Overview, Reference Price, Rarity, Value)",
+        "Coin images",
+        "Text fields for details and values",
+        "Icons"
       ],
       "detected_text": [
-        "Coin Identifier",
-        "Step 1",
-        "arrange the obverse side centrally",
-        "OBVERSE",
-        "REVERSE",
-        "Photos",
-        "Snap Tips",
+        "9:41",
+        "Search for coins",
+        "Coin Identify",
+        "Tap here to recognize a coins",
+        "coin",
+        "total value",
+        "countries",
+        "Free Premium Available",
+        "Tap to Claim",
+        "Top 10 popular coins",
+        "$0.25",
+        "Home",
+        "Catalog",
+        "Explore",
+        "My Coins",
         "1909-S VDB Lincoln Cent",
+        "Commemorative Coins, Precious Coins, Dollar Coins, Modern Coins",
+        "Overview",
         "Reference Price",
+        "Rarity",
+        "Value",
+        "Country",
+        "United States",
+        "Years of Minting",
+        "1999",
+        "Period",
+        "States Quarters Program (1999-2008)",
+        "Coin Type",
+        "Circulation Coins",
         "$100,000 - $500,000",
-        "value may vary",
-        "Save to My Coins",
-        "¡Mira esto!"
+        "Note: The coin's actual value can vary based on its condition, shape, rarity, and other factors. This is only an approximate estimate.",
+        "Save to My Coins"
       ],
-      "confidence": 0.95,
+      "confidence": 0.98,
       "notes": [
-        "Analysis based solely on textual descriptions provided in the project brief and product details, as no image files were uploaded."
+        "The app's primary function of scanning and identifying coins is clearly represented through the UI, especially the central camera button and the detail screens.",
+        "The yellow/gold color is consistently used for key interactive elements and highlights, aligning with the brief's requirement to preserve the yellow UI.",
+        "The app displays detailed information about coins, including estimated reference values, which aligns with the product description."
       ]
     },
     "creative_plan": {
       "productAnalysis": {
         "productType": "Mobile app",
         "visibleElements": [
-          "Mobile phone",
-          "Old coin",
-          "App UI (scan screen, result screen)",
-          "Yellow brand UI elements",
-          "Circular coin guide",
-          "Crosshair",
-          "OBVERSE/REVERSE controls",
-          "Large yellow capture button",
-          "Coin photos (obverse/reverse)",
-          "Coin title/name (e.g., 1909-S VDB Lincoln Cent)",
-          "Category labels",
-          "Tabs (e.g., Overview)",
-          "Overview fields",
-          "Reference Price section ($100,000 - $500,000)",
-          "Disclaimer 'value may vary'",
-          "Yellow 'Save to My Coins' button"
+          "Mobile app interface",
+          "Coins (Lincoln Cent)",
+          "Search bar",
+          "Navigation bar",
+          "Buttons (Coin Identify, Tap to Claim, Save to My Coins)",
+          "Camera/Scan button (prominent)",
+          "Tabs (Overview, Reference Price, Rarity, Value)",
+          "Coin images",
+          "Text fields for details and values",
+          "Icons",
+          "Yellow/gold UI accents"
         ],
-        "coreBenefit": "Identify unknown coins quickly and get an estimated reference price range.",
+        "coreBenefit": "Identifies old coins, provides detailed information, and shows an estimated reference value range for collection research.",
         "brandOrVisualCues": [
-          "Yellow brand UI elements",
-          "Clean and readable app screens",
-          "Intuitive scanning flow"
+          "Yellow/gold UI accents",
+          "Prominent camera/scan button",
+          "Clean, modern, and functional design",
+          "Focus on clear information display"
         ],
         "doNotAssume": [
           "Guaranteed value",
@@ -98,180 +190,416 @@
           "Auction",
           "Sale",
           "Authentication",
-          "Exact price",
-          "Detecting counterfeits",
-          "Replacing professional grading",
-          "Any specific value beyond the provided reference range",
-          "Any off-frame person being visible"
+          "Counterfeit detection",
+          "That the app replaces professional grading"
         ],
-        "productLockPrompt": "Preserve the app's yellow UI, readable scan screen with circular guide and yellow capture button, and readable result screen showing 'Reference Price' with a range like '$100,000 - $500,000' and a 'Save to My Coins' button. Maintain the specified scan flow."
+        "productLockPrompt": "Preserve the exact yellow UI, scan screen, capture button, and result/detail screen as shown in the provided app screenshots."
       },
       "productReferences": [
         {
-          "id": "vision_summary",
-          "name": "Coin Identifier App Screens",
+          "id": "file_d1e0bddf1506",
+          "name": "App Home Screen",
           "kind": "app_screen",
-          "visualDescription": "This reference describes two key app screens: a scan/camera screen (Step 1, instructions, circular coin guide, crosshair, OBVERSE/REVERSE controls, large yellow capture button) and a result/detail screen (1909-S VDB Lincoln Cent detail page, coin photos, title, categories, tabs, Overview fields, a Reference Price section showing '$100,000 - $500,000', a disclaimer 'value may vary', and a yellow 'Save to My Coins' button). Both screens feature yellow brand UI elements.",
-          "lockPrompt": "Ensure the app's yellow UI, the circular coin guide, crosshair, OBVERSE/REVERSE controls, yellow capture button on the scan screen, and the readable result screen with 'Reference Price' showing '$100,000 - $500,000' and 'Save to My Coins' button are accurately depicted. Maintain the disclaimer 'value may vary'.",
-          "useWhen": "When showing the app's scanning process or displaying identified coin details and reference price.",
-          "isPrimary": true
+          "visualDescription": "The home screen of the Coin Scanner App, featuring a large image of a Lincoln Cent, a prominent yellow 'Coin Identify' button, a camera icon at the bottom, and a search bar at the top. The UI uses yellow/gold accents.",
+          "lockPrompt": "Preserve the exact layout, yellow UI, and prominent 'Coin Identify' button/camera icon of this home screen.",
+          "useWhen": "When introducing the app or preparing for a scan.",
+          "isPrimary": true,
+          "sourceFileName": "product_ref_01_home_screen.jpeg",
+          "referenceLabel": "product_ref_01_home_screen"
+        },
+        {
+          "id": "file_111d54d5333d",
+          "name": "App Coin Detail Screen",
+          "kind": "app_screen",
+          "visualDescription": "The detail screen of the Coin Scanner App, showing front and back images of a '1909-S VDB Lincoln Cent', with tabs for 'Overview', 'Reference Price', 'Rarity', and 'Value'. The 'Reference Price' section displays a range of '$100,000 - $500,000' and a disclaimer about estimated value. The UI maintains yellow/gold accents.",
+          "lockPrompt": "Preserve the exact layout, coin images, details, estimated reference price range, and yellow UI of this detail screen.",
+          "useWhen": "When displaying the scan results, estimated value, or for the call to action.",
+          "isPrimary": true,
+          "sourceFileName": "product_ref_02_app_coin_detail.jpeg",
+          "referenceLabel": "product_ref_02_app_coin_detail"
         }
       ],
+      "primaryCharacter": {
+        "name": "Adult Male Actor",
+        "description": "A foreign/Western-looking adult male, mid-30s to 40s, with a curious and approachable demeanor.",
+        "imagePrompt": "A foreign/Western-looking adult male, mid-30s to 40s, with short brown hair and a light stubble, wearing a casual long-sleeve shirt, looking curious and approachable. Vertical shot, warm lighting.",
+        "consistencyPrompt": "The same foreign/Western-looking adult male, mid-30s to 40s, with short brown hair and light stubble, wearing the same casual long-sleeve shirt.",
+        "status": "ready",
+        "imageUrl": "/uploads/project_527e2a99fee4/03_character_reference.png",
+        "candidateImages": [
+          "/uploads/project_527e2a99fee4/03_character_reference.png"
+        ],
+        "uploadedFileId": "file_98c035922995"
+      },
+      "primaryLocation": {
+        "name": "Warm Tabletop Home Setting",
+        "description": "A cozy, well-lit home setting with a warm wooden tabletop as the central surface. The background is slightly blurred, suggesting a comfortable living room or study.",
+        "imagePrompt": "A warm, inviting home setting with a polished wooden tabletop in the foreground, bathed in soft, natural light from an unseen window. A few subtle, tasteful decorative items (e.g., a small plant, a book) are arranged neatly on the table. The background shows a hint of a living room or study, slightly out of focus. Natural three-quarter commercial view.",
+        "consistencyPrompt": "The same warm tabletop home setting, maintaining the fixed layout of the wooden table, its relationship to background elements, the direction of soft natural light, and the consistent appearance of subtle decorative props from various camera angles.",
+        "status": "ready",
+        "imageUrl": "/uploads/project_527e2a99fee4/04_location_reference.png",
+        "candidateImages": [
+          "/uploads/project_527e2a99fee4/04_location_reference.png"
+        ],
+        "uploadedFileId": "file_61b68ac1c968"
+      },
       "scenes": [
         {
           "sceneIndex": 1,
           "narrativePurpose": "hook + product_app_introduction",
-          "title": "Curious Discovery & Scan",
-          "durationSec": 10,
-          "sceneGoal": "Show the actor finding an old coin, expressing curiosity, and then using the app to scan it, highlighting the ease of use.",
-          "visualAction": "A weathered old coin sits on a simple table. A foreign/Western-looking adult male hand enters the frame, picks up the coin, turning it over to examine it. The actor's face shows curious confidence as he wonders about the coin. He pulls out his smartphone, opens the Coin Identifier app, places the coin on the table, and aligns the obverse side within the circular guide on the app's scan screen. He taps the yellow capture button. He then flips the coin, aligns the reverse side, and taps the capture button again.",
-          "productMoment": "The physical old coin is shown, then the app's scan screen (obverse side, then reverse side) is clearly visible on the phone, preserving the yellow UI, circular guide, and yellow capture button.",
-          "characterAction": "Actor picks up coin with curious confidence, examines it, opens the app, carefully positions the coin for scanning, and interacts with the app's capture buttons.",
-          "locationUse": "A simple, clean tabletop setting, possibly a home or study, with good lighting to highlight the coin and phone.",
+          "title": "Curious Coin Find",
+          "durationSec": 4,
+          "sceneGoal": "Establish the character and his initial curiosity about an old coin, setting up the problem the app solves.",
+          "visualAction": "Actor discovers an old coin on a table, picks it up, and examines it with a puzzled expression.",
+          "productMoment": "The old coin is the focus, hinting at the app's purpose.",
+          "characterAction": "Actor enters frame, spots the coin, picks it up, turns it over in his fingers, and looks at it intently with curiosity.",
+          "locationUse": "The warm tabletop is where the coin is found and examined.",
           "camera": {
-            "selected": "Stable eye-level medium shot transitioning to a phone close-up",
-            "shot": "Medium shot of actor and coin, then close-up on phone screen",
-            "movement": "Starts with a slight push-in on the coin, then a smooth pan/tilt to follow the actor's hand to the phone, ending with a close-up on the phone screen as he scans.",
-            "composition": "Coin and actor's expression are clear initially, then the app's scan UI is fully readable and central during the scanning action.",
+            "selected": "stable eye-level medium shot",
+            "shot": "medium shot",
+            "movement": "connected camera movement",
+            "composition": "Actor's hands and face are visible, focusing on the coin.",
             "alternatives": [
-              "Over-the-shoulder shot of actor using phone",
-              "Direct overhead shot of coin being scanned"
+              "close-up of coin in hand"
             ]
           },
           "voiceLines": [
             {
               "speaker": "Primary actor",
-              "timing": "2-5s",
-              "actionState": "Examining the coin with a thoughtful expression.",
-              "emotion": "Curious, slightly intrigued.",
-              "delivery": "Natural, conversational English.",
-              "line": "Hmm, this looks really old. I wonder what it is?"
-            },
-            {
-              "speaker": "Primary actor",
-              "timing": "6-9s",
-              "actionState": "Opening the app and starting the scan.",
-              "emotion": "Focused, confident.",
-              "delivery": "Clear, instructional English.",
-              "line": "Let's see what the Coin Identifier says."
+              "timing": "0-4s",
+              "actionState": "holding and examining the coin",
+              "emotion": "curious, thoughtful",
+              "delivery": "natural UGC style",
+              "line": "Hmm, what is this old coin? I wonder where it came from."
             }
           ],
-          "ambientAudio": "Subtle room tone, sound of coin being picked up, gentle app opening sound, distinct camera shutter sound for each scan.",
-          "onScreenText": "Identify any coin!",
+          "ambientAudio": "Gentle room tone, subtle sound of coin being picked up and handled.",
+          "onScreenText": "What's this coin worth?",
           "timingBeats": [
-            "0-2s: Old coin on table, actor's hand enters and picks it up.",
-            "2-5s: Actor examines coin, speaks line 1.",
-            "5-6s: Actor pulls out phone, opens app.",
-            "6-9s: Actor places coin, scans obverse and reverse, speaks line 2.",
-            "9-10s: Final scan completes, app transitions to processing (briefly)."
+            "0-2s: Actor spots and picks up an old coin from the warm wooden tabletop.",
+            "2-4s: Actor examines the coin closely, turning it over in his fingers with a curious, puzzled expression."
           ],
           "keyframePrompts": [
             {
-              "id": "kf_coin_discovery",
-              "label": "Actor discovering the coin",
-              "timing": "0-3s",
-              "purpose": "Establish the initial curiosity and the physical coin.",
-              "prompt": "Vertical video, eye-level medium shot. A foreign/Western-looking adult male actor, not Vietnamese, with curious confidence, picks up an old, weathered coin from a simple wooden table. His face shows intrigue. The coin is clearly visible in his hand. Natural lighting.",
-              "productReferenceIds": []
-            },
-            {
-              "id": "kf_scan_obverse",
-              "label": "Scanning the obverse side",
-              "timing": "6-8s",
-              "purpose": "Show the app's scan screen and the first step of identification.",
-              "prompt": "Vertical video, close-up shot on a smartphone screen. The foreign/Western-looking male actor's hands hold the phone, displaying the Coin Identifier app's scan screen. The screen clearly shows 'Step 1', instructions to arrange the obverse side centrally, a circular coin guide, crosshair, 'OBVERSE' control, and a large yellow capture button. An old coin is perfectly aligned within the guide. The app's yellow UI is prominent and readable.",
-              "productReferenceIds": [
-                "vision_summary"
-              ]
+              "id": "kf_setup",
+              "label": "Actor and product setup",
+              "timing": "0-2s",
+              "purpose": "To establish the primary character, primary location, and the initial discovery of the coin.",
+              "prompt": "A foreign/Western-looking adult male actor, mid-30s to 40s, with short brown hair and light stubble, wearing a casual long-sleeve shirt, picking up an old coin from a warm wooden tabletop in a cozy home setting, looking curious. Medium shot, eye-level.",
+              "productReferenceIds": [],
+              "candidates": [
+                {
+                  "id": "candidate_1",
+                  "imageUrl": "/uploads/project_527e2a99fee4/05_scene_01_keyframe_01.png",
+                  "mimeType": "image/jpeg",
+                  "warning": null
+                }
+              ],
+              "selectedCandidateId": "candidate_1",
+              "selectedImageUrl": "/uploads/project_527e2a99fee4/05_scene_01_keyframe_01.png",
+              "uploadedFileId": "file_02f10253186c",
+              "stale": false
             }
           ],
-          "finalVideoPrompt": "Create a 10-second vertical video. Scene starts with an eye-level medium shot of a foreign/Western-looking adult male actor, not Vietnamese, picking up an old coin from a table, expressing curious confidence. He says, <Hmm, this looks really old. I wonder what it is?>. Camera smoothly transitions to a close-up on his smartphone as he opens the Coin Identifier app. He places the coin on the table and scans its obverse side, then flips it and scans the reverse side, interacting with the app's yellow capture button. He says, <Let's see what the Coin Identifier says.>. Preserve the app's yellow UI, readable scan screen with circular guide, crosshair, OBVERSE/REVERSE controls, and yellow capture button, as shown in the visual ingredients mapped by keyframe prompts. Use natural lighting. Overlay text: 'Identify any coin!'. Visual ingredients: kf_coin_discovery (0-3s), kf_scan_obverse (6-8s). Negative rules: do not redesign the product/app, no unreadable UI text, no off-frame person visible, actor must not be Vietnamese.",
+          "finalVideoPrompt": "Create a 4-second vertical video. A foreign/Western-looking adult male actor, mid-30s to 40s, with short brown hair and light stubble, wearing a casual long-sleeve shirt, picks up an old coin from a warm wooden tabletop in a cozy home setting, examining it with curiosity. Camera is a stable eye-level medium shot. Voiceover: [Hmm, what is this old coin? I wonder where it came from.] Ambient audio: gentle room tone, subtle coin handling SFX. Overlay text: <What's this coin worth?> Use the same foreign/Western-looking adult male actor, mid-30s to 40s, with short brown hair and light stubble, wearing the same casual long-sleeve shirt. Use the same warm tabletop home setting, maintaining the fixed layout of the wooden table, its relationship to background elements, the direction of soft natural light, and the consistent appearance of subtle decorative props. Reference images are visual ingredients, not an automatic chronological slideshow.",
           "negativeRules": [
             "do not redesign the product/app",
-            "no unreadable UI text",
-            "no off-frame person visible",
-            "actor must not be Vietnamese"
-          ]
+            "no unreadable UI text"
+          ],
+          "status": "KEYFRAME_READY",
+          "finalVideoPromptStale": true
         },
         {
           "sceneIndex": 2,
-          "narrativePurpose": "result + cta",
-          "title": "Shocking Result & CTA",
-          "durationSec": 8,
-          "sceneGoal": "Showcase the app's ability to provide significant information (high reference range) and prompt the user to download.",
-          "visualAction": "The actor's phone screen displays the Coin Identifier app's result screen, showing a high reference price range (e.g., $100,000 - $500,000). The actor's eyes widen slightly in surprise, then a playful victorious smile spreads across his face. He looks off-frame, calls loudly: <¡Mira esto!>. He then turns the phone directly towards the camera, ensuring the result screen is clearly visible and readable. Finally, he points downward, indicating a download CTA.",
-          "productMoment": "The app's result/detail screen is prominently displayed, with the 'Reference Price' section and the high range clearly readable. The yellow 'Save to My Coins' button is also visible.",
-          "characterAction": "Actor reacts with surprise and joy, calls out, proudly displays the phone, and performs a clear download gesture.",
-          "locationUse": "Same simple, clean tabletop setting, maintaining continuity.",
+          "narrativePurpose": "product_app_introduction",
+          "title": "Discovering the App",
+          "durationSec": 4,
+          "sceneGoal": "Introduce the Coin Scanner App as the solution to identifying the coin.",
+          "visualAction": "Actor pulls out his phone, opens the Coin Scanner App, and navigates to the scan screen.",
+          "productMoment": "The app's home screen (file_d1e0bddf1506) is clearly shown, highlighting the 'Coin Identify' feature.",
+          "characterAction": "Actor pulls out phone, unlocks it, taps to open the app, and holds it ready for scanning.",
+          "locationUse": "Actor is seated at the warm tabletop, phone in hand.",
           "camera": {
-            "selected": "Close-up on phone screen transitioning to a medium shot of actor",
-            "shot": "Close-up on phone, then medium shot of actor",
-            "movement": "Starts with a static close-up on the phone screen, then a quick pull-back to a medium shot of the actor as he reacts and speaks, ending with a slight push-in on the phone as he turns it to the camera.",
-            "composition": "App screen is fully readable, then actor's expression and gesture are clear, then app screen is readable again for CTA.",
+            "selected": "medium shot, then a slight push-in to a close-up of the phone screen",
+            "shot": "medium shot to close-up",
+            "movement": "push-in",
+            "composition": "Phone screen with app UI is clearly visible and readable.",
             "alternatives": [
-              "Over-the-shoulder shot of actor reacting to phone",
-              "Handheld shot following actor's movement"
+              "over-the-shoulder shot of phone"
             ]
           },
           "voiceLines": [
             {
               "speaker": "Primary actor",
-              "timing": "3-4s",
-              "actionState": "Looking off-frame with a playful victorious smile.",
-              "emotion": "Excited, triumphant.",
-              "delivery": "Loud, energetic Spanish.",
-              "line": "¡Mira esto!"
-            },
-            {
-              "speaker": "Primary actor",
-              "timing": "6-8s",
-              "actionState": "Turning phone to camera and pointing downward.",
-              "emotion": "Enthusiastic, direct.",
-              "delivery": "Clear, inviting English.",
-              "line": "You have to try this app!"
+              "timing": "0-4s",
+              "actionState": "opening the app on his phone",
+              "emotion": "hopeful, determined",
+              "delivery": "natural UGC style",
+              "line": "Wait, I remember hearing about an app for this! Let's see..."
             }
           ],
-          "ambientAudio": "Room tone, actor's excited exclamation, subtle triumphant music cue, gentle whoosh sound for CTA pointer.",
-          "onScreenText": "Download now!",
+          "ambientAudio": "Phone unlocking sound, app opening chime.",
+          "onScreenText": "Identify coins instantly!",
           "timingBeats": [
-            "0-3s: Phone screen shows result, actor reacts with surprise and smile.",
-            "3-4s: Actor calls out '¡Mira esto!'.",
-            "4-6s: Actor turns phone to camera, showing result clearly.",
-            "6-8s: Actor points downward, speaks CTA line."
+            "0-2s: Actor pulls out his smartphone and unlocks it.",
+            "2-4s: Actor opens the Coin Scanner App, showing the home screen with the prominent yellow UI and camera button (file_d1e0bddf1506)."
+          ],
+          "keyframePrompts": [
+            {
+              "id": "kf_app_home",
+              "label": "App home screen close-up",
+              "timing": "2-4s",
+              "purpose": "To clearly display the app's home screen and its primary function.",
+              "prompt": "A close-up of a foreign/Western-looking adult male actor's hands holding a smartphone, displaying the Coin Scanner App's home screen (file_d1e0bddf1506) with its yellow UI and prominent camera button. The actor is seated at a warm wooden tabletop. Medium shot, slightly angled to show the actor's face in the background, looking at the phone.",
+              "productReferenceIds": [
+                "file_d1e0bddf1506"
+              ],
+              "candidates": [
+                {
+                  "id": "candidate_1",
+                  "imageUrl": "/uploads/project_527e2a99fee4/09_scene_02_keyframe_01.png",
+                  "mimeType": "image/jpeg",
+                  "warning": null
+                }
+              ],
+              "selectedCandidateId": "candidate_1",
+              "selectedImageUrl": "/uploads/project_527e2a99fee4/09_scene_02_keyframe_01.png",
+              "uploadedFileId": "file_2ab4f54cc5ec",
+              "stale": false
+            }
+          ],
+          "finalVideoPrompt": "Create a 4-second vertical video. A foreign/Western-looking adult male actor, mid-30s to 40s, with short brown hair and light stubble, wearing a casual long-sleeve shirt, pulls out his phone, unlocks it, and opens the Coin Scanner App. The camera transitions from a medium shot of the actor to a close-up of the phone screen, clearly showing the app's home screen with the prominent yellow UI and camera button. Voiceover: [Wait, I remember hearing about an app for this! Let's see...] Ambient audio: phone unlock, app open sound. Overlay text: <Identify coins instantly!> Use the same foreign/Western-looking adult male actor, mid-30s to 40s, with short brown hair and light stubble, wearing the same casual long-sleeve shirt. Use the same warm tabletop home setting, maintaining the fixed layout of the wooden table, its relationship to background elements, the direction of soft natural light, and the consistent appearance of subtle decorative props. Reference images are visual ingredients, not an automatic chronological slideshow. Map file_d1e0bddf1506 to kf_app_home.",
+          "negativeRules": [
+            "do not redesign the product/app",
+            "no unreadable UI text"
+          ],
+          "status": "FAILED",
+          "finalVideoPromptStale": true,
+          "videoError": "100"
+        },
+        {
+          "sceneIndex": 3,
+          "narrativePurpose": "proof_demo",
+          "title": "Scanning with Ease",
+          "durationSec": 4,
+          "sceneGoal": "Demonstrate the app's core functionality: scanning both sides of a coin.",
+          "visualAction": "Actor places the coin on the table and uses the app's camera to scan both sides.",
+          "productMoment": "The app's scan screen with the capture button is visible during the scanning process.",
+          "characterAction": "Actor carefully places the coin on the tabletop, positions the phone over it, taps the scan button, flips the coin, and scans the other side.",
+          "locationUse": "The coin is scanned directly on the warm tabletop.",
+          "camera": {
+            "selected": "over-the-shoulder phone close-up",
+            "shot": "close-up",
+            "movement": "static",
+            "composition": "Phone screen and coin are clearly visible.",
+            "alternatives": [
+              "top-down shot of phone and coin"
+            ]
+          },
+          "voiceLines": [
+            {
+              "speaker": "Primary actor",
+              "timing": "0-4s",
+              "actionState": "scanning the coin",
+              "emotion": "focused, engaged",
+              "delivery": "natural UGC style",
+              "line": "Okay, just place it here... scan the front... and now the back. So simple!"
+            }
+          ],
+          "ambientAudio": "Camera shutter sound, subtle UI clicks.",
+          "onScreenText": "Scan both sides!",
+          "timingBeats": [
+            "0-2s: Actor positions the phone over the coin on the warm tabletop, showing the app's scan interface with the prominent yellow capture button.",
+            "2-4s: Actor taps the capture button, flips the coin, and scans the second side with the app."
+          ],
+          "keyframePrompts": [
+            {
+              "id": "kf_scan_front",
+              "label": "Scanning coin front",
+              "timing": "0-2s",
+              "purpose": "To show the app's scanning interface and the first side of the coin being captured.",
+              "prompt": "An over-the-shoulder close-up of a foreign/Western-looking adult male actor's hands holding a smartphone, with the Coin Scanner App's camera interface visible, positioned over an old coin on a warm wooden tabletop, ready to scan. The yellow capture button is prominent.",
+              "productReferenceIds": [],
+              "candidates": [
+                {
+                  "id": "candidate_1",
+                  "imageUrl": "/uploads/project_527e2a99fee4/10_scene_03_keyframe_01.png",
+                  "mimeType": "image/jpeg",
+                  "warning": null
+                }
+              ],
+              "selectedCandidateId": "candidate_1",
+              "selectedImageUrl": "/uploads/project_527e2a99fee4/10_scene_03_keyframe_01.png",
+              "uploadedFileId": "file_acdab829ad97",
+              "stale": false
+            },
+            {
+              "id": "kf_scan_back",
+              "label": "Scanning coin back",
+              "timing": "2-4s",
+              "purpose": "To show the app's scanning interface and the second side of the coin being captured.",
+              "prompt": "An over-the-shoulder close-up of the same foreign/Western-looking adult male actor's hands, now having flipped the old coin, scanning the second side with the Coin Scanner App's camera interface on the smartphone. The yellow capture button is prominent.",
+              "productReferenceIds": [],
+              "candidates": [
+                {
+                  "id": "candidate_1",
+                  "imageUrl": "/uploads/project_527e2a99fee4/11_scene_03_keyframe_02.png",
+                  "mimeType": "image/jpeg",
+                  "warning": null
+                }
+              ],
+              "selectedCandidateId": "candidate_1",
+              "selectedImageUrl": "/uploads/project_527e2a99fee4/11_scene_03_keyframe_02.png",
+              "uploadedFileId": "file_e4e98dca7871",
+              "stale": false
+            }
+          ],
+          "finalVideoPrompt": "Create a 4-second vertical video. An over-the-shoulder close-up shot of a foreign/Western-looking adult male actor's hands holding a smartphone, using the Coin Scanner App's camera interface to scan an old coin placed on a warm wooden tabletop. The actor taps the capture button, then flips the coin and scans the second side. Voiceover: [Okay, just place it here... scan the front... and now the back. So simple!] Ambient audio: camera shutter sound, UI clicks. Overlay text: <Scan both sides!> Use the same foreign/Western-looking adult male actor, mid-30s to 40s, with short brown hair and light stubble, wearing the same casual long-sleeve shirt. Use the same warm tabletop home setting, maintaining the fixed layout of the wooden table, its relationship to background elements, the direction of soft natural light, and the consistent appearance of subtle decorative props. Reference images are visual ingredients, not an automatic chronological slideshow.",
+          "negativeRules": [
+            "do not redesign the product/app",
+            "no unreadable UI text"
+          ],
+          "status": "KEYFRAME_READY",
+          "finalVideoPromptStale": true
+        },
+        {
+          "sceneIndex": 4,
+          "narrativePurpose": "result",
+          "title": "Surprising Discovery",
+          "durationSec": 4,
+          "sceneGoal": "Display the app's result screen with estimated value and capture the actor's surprised excitement.",
+          "visualAction": "The app displays the coin details and estimated value. The actor reacts with surprise and excitement.",
+          "productMoment": "The app's result/detail screen (file_111d54d5333d) is clearly shown, especially the estimated value range.",
+          "characterAction": "Actor looks at the phone screen, eyes widen, a gasp of surprise, then a delighted smile. He turns the phone slightly towards the camera.",
+          "locationUse": "Actor is still at the warm tabletop, reacting to the phone's display.",
+          "camera": {
+            "selected": "medium shot, then a quick push-in to a close-up of the phone screen",
+            "shot": "medium shot to close-up",
+            "movement": "push-in",
+            "composition": "Phone screen with readable UI and actor's reaction are both captured.",
+            "alternatives": [
+              "over-the-shoulder phone close-up"
+            ]
+          },
+          "voiceLines": [
+            {
+              "speaker": "Primary actor",
+              "timing": "0-4s",
+              "actionState": "reacting to the result screen",
+              "emotion": "surprised, excited",
+              "delivery": "natural UGC style with a Spanish phrase",
+              "line": "Whoa! Look at this! Â¡Mira esto! I had no idea it could be worth that much!"
+            }
+          ],
+          "ambientAudio": "Excited gasp, subtle UI transition sound.",
+          "onScreenText": "Uncover hidden value!",
+          "timingBeats": [
+            "0-2s: The app displays the coin detail screen with an estimated reference value range (file_111d54d5333d).",
+            "2-4s: Actor reacts with surprised excitement, eyes wide, and turns the phone slightly towards the camera so the screen is readable."
           ],
           "keyframePrompts": [
             {
               "id": "kf_result_screen",
-              "label": "App result screen with high value",
-              "timing": "0-2s",
-              "purpose": "Showcase the app's ability to provide valuable information clearly.",
-              "prompt": "Vertical video, close-up shot on a smartphone screen. The Coin Identifier app's result/detail screen is clearly visible, showing '1909-S VDB Lincoln Cent', coin photos, and a prominent 'Reference Price' section displaying '$100,000 - $500,000'. The disclaimer 'value may vary' and the yellow 'Save to My Coins' button are also readable. The app's yellow UI is preserved.",
+              "label": "App result screen and actor reaction",
+              "timing": "0-4s",
+              "purpose": "To clearly show the app's value proposition and the actor's emotional response.",
+              "prompt": "A close-up of a smartphone screen displaying the Coin Scanner App's result/detail screen (file_111d54d5333d), clearly showing the coin details and the estimated reference price range. The screen is held by a foreign/Western-looking adult male actor's hands, who is reacting with surprise and excitement, seated at a warm wooden tabletop.",
               "productReferenceIds": [
-                "vision_summary"
-              ]
-            },
-            {
-              "id": "kf_actor_cta",
-              "label": "Actor showing phone and CTA",
-              "timing": "6-8s",
-              "purpose": "Conclude with a clear display of the app's value and a direct call to action.",
-              "prompt": "Vertical video, medium shot. The foreign/Western-looking adult male actor, not Vietnamese, with a playful victorious expression, holds his smartphone with the Coin Identifier app's result screen clearly facing the camera. The screen shows the high reference price range. The actor points downward with his other hand, indicating a download. The app's yellow UI is visible and readable.",
-              "productReferenceIds": [
-                "vision_summary"
-              ]
+                "file_111d54d5333d"
+              ],
+              "candidates": [
+                {
+                  "id": "candidate_1",
+                  "imageUrl": "/uploads/project_527e2a99fee4/07_scene_04_keyframe_01.png",
+                  "mimeType": "image/jpeg",
+                  "warning": null
+                }
+              ],
+              "selectedCandidateId": "candidate_1",
+              "selectedImageUrl": "/uploads/project_527e2a99fee4/07_scene_04_keyframe_01.png",
+              "uploadedFileId": "file_4ea310751c90",
+              "stale": false
             }
           ],
-          "finalVideoPrompt": "Create an 8-second vertical video. Scene starts with a close-up on the Coin Identifier app's result screen on a smartphone, clearly showing the 'Reference Price' of '$100,000 - $500,000' and 'value may vary' disclaimer. Camera pulls back to a medium shot of the foreign/Western-looking adult male actor, not Vietnamese, reacting with a playful victorious smile. He calls out loudly, <¡Mira esto!>. He then turns the phone directly to the camera, ensuring the result screen is readable, and points downward, saying, <You have to try this app!>. Preserve the app's yellow UI, readable result screen, and the 'Save to My Coins' button, as shown in the visual ingredients mapped by keyframe prompts. Use natural lighting. Overlay text: 'Download now!'. Visual ingredients: kf_result_screen (0-2s), kf_actor_cta (6-8s). Negative rules: do not redesign the product/app, no unreadable UI text, no off-frame person visible, actor must not be Vietnamese.",
+          "finalVideoPrompt": "Create a 4-second vertical video. A foreign/Western-looking adult male actor, mid-30s to 40s, with short brown hair and light stubble, wearing a casual long-sleeve shirt, looks at his smartphone screen, which displays the Coin Scanner App's result/detail screen (file_111d54d5333d) with an estimated reference value range. He reacts with surprised excitement, eyes widening, and turns the phone slightly towards the camera so the screen is readable. Camera transitions from a medium shot of the actor to a close-up of the phone screen. Voiceover: [Whoa! Look at this! Â¡Mira esto! I had no idea it could be worth that much!] Ambient audio: excited gasp, UI transition sound. Overlay text: <Uncover hidden value!> Use the same foreign/Western-looking adult male actor, mid-30s to 40s, with short brown hair and light stubble, wearing the same casual long-sleeve shirt. Use the same warm tabletop home setting, maintaining the fixed layout of the wooden table, its relationship to background elements, the direction of soft natural light, and the consistent appearance of subtle decorative props. Reference images are visual ingredients, not an automatic chronological slideshow. Map file_111d54d5333d to kf_result_screen.",
           "negativeRules": [
             "do not redesign the product/app",
             "no unreadable UI text",
-            "no off-frame person visible",
-            "actor must not be Vietnamese"
-          ]
+            "do not say guaranteed value, appraisal, payout, auction, sale, authentication, counterfeit detection, or that the app replaces professional grading"
+          ],
+          "status": "KEYFRAME_READY",
+          "finalVideoPromptStale": true
+        },
+        {
+          "sceneIndex": 5,
+          "narrativePurpose": "cta",
+          "title": "Download Now",
+          "durationSec": 4,
+          "sceneGoal": "Clearly present the call to action to drive app installs.",
+          "visualAction": "Actor holds the phone with the result screen visible, points downwards, and encourages download.",
+          "productMoment": "The app's result screen (file_111d54d5333d) is still visible, reinforcing the benefit.",
+          "characterAction": "Actor holds the phone towards the camera, points downwards with a confident, encouraging smile.",
+          "locationUse": "Actor is still at the warm tabletop, engaging directly with the camera.",
+          "camera": {
+            "selected": "eye-level medium shot",
+            "shot": "medium shot",
+            "movement": "static",
+            "composition": "Phone with app screen and actor's pointing gesture are clearly visible.",
+            "alternatives": [
+              "medium close-up of actor and phone"
+            ]
+          },
+          "voiceLines": [
+            {
+              "speaker": "Primary actor",
+              "timing": "0-4s",
+              "actionState": "pointing downwards, smiling",
+              "emotion": "enthusiastic, encouraging",
+              "delivery": "natural UGC style",
+              "line": "You have to try this! Download the Coin Scanner App now!"
+            }
+          ],
+          "ambientAudio": "Upbeat, positive background music fades in.",
+          "onScreenText": "Download now!",
+          "timingBeats": [
+            "0-2s: Actor holds the phone with the result screen (file_111d54d5333d) visible towards the camera, smiling excitedly.",
+            "2-4s: Actor points downwards with a confident gesture, encouraging viewers to download, with the CTA clearly visible."
+          ],
+          "keyframePrompts": [
+            {
+              "id": "kf_cta",
+              "label": "Call to action",
+              "timing": "0-4s",
+              "purpose": "To present a clear call to action with the app's benefit still visible.",
+              "prompt": "A foreign/Western-looking adult male actor, mid-30s to 40s, with short brown hair and light stubble, wearing a casual long-sleeve shirt, holding a smartphone displaying the Coin Scanner App's result screen (file_111d54d5333d) towards the camera. He is smiling enthusiastically and pointing downwards, encouraging viewers to download. Medium shot, eye-level, at a warm wooden tabletop.",
+              "productReferenceIds": [
+                "file_111d54d5333d"
+              ],
+              "candidates": [
+                {
+                  "id": "candidate_1",
+                  "imageUrl": "/uploads/project_527e2a99fee4/08_scene_05_keyframe_01.png",
+                  "mimeType": "image/jpeg",
+                  "warning": null
+                }
+              ],
+              "selectedCandidateId": "candidate_1",
+              "selectedImageUrl": "/uploads/project_527e2a99fee4/08_scene_05_keyframe_01.png",
+              "uploadedFileId": "file_3e975a835ad2",
+              "stale": false
+            }
+          ],
+          "finalVideoPrompt": "Create a 4-second vertical video. A foreign/Western-looking adult male actor, mid-30s to 40s, with short brown hair and light stubble, wearing a casual long-sleeve shirt, holds his smartphone with the Coin Scanner App's result screen (file_111d54d5333d) visible towards the camera. He smiles enthusiastically and points downwards, encouraging viewers to download. Camera is an eye-level medium shot. Voiceover: [You have to try this! Download the Coin Scanner App now!] Ambient audio: upbeat background music fades in. Overlay text: <Download now!> Use the same foreign/Western-looking adult male actor, mid-30s to 40s, with short brown hair and light stubble, wearing the same casual long-sleeve shirt. Use the same warm tabletop home setting, maintaining the fixed layout of the wooden table, its relationship to background elements, the direction of soft natural light, and the consistent appearance of subtle decorative props. Reference images are visual ingredients, not an automatic chronological slideshow. Map file_111d54d5333d to kf_cta.",
+          "negativeRules": [
+            "do not redesign the product/app",
+            "no unreadable UI text"
+          ],
+          "status": "KEYFRAME_READY",
+          "finalVideoPromptStale": true
         }
       ]
     },
-    "created_at": "2026-07-07T08:44:11.214949Z",
-    "updated_at": "2026-07-07T08:45:14.081667Z"
+    "created_at": "2026-07-08T02:35:57.805392Z",
+    "updated_at": "2026-07-08T08:47:50.353070Z"
   }
 ]

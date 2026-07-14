@@ -7,8 +7,10 @@ from app.config import ALLOWED_ORIGINS, UPLOADS_DIR, ensure_app_dirs
 from app.models.schemas import HealthResponse
 from app.routes.generation import router as generation_router
 from app.routes.projects import router as projects_router
+from app.services.image_provider import ImageProviderError
 from app.services.llm_provider import LLMProviderError
 from app.services.storage_service import ProjectNotFoundError
+from app.services.video_provider import VideoProviderError
 
 
 ensure_app_dirs()
@@ -46,6 +48,16 @@ async def llm_provider_error_handler(_: Request, exc: LLMProviderError) -> JSONR
     if not detail.startswith("GEMINI_API_KEYS is required"):
         detail = f"Gemini provider failed. Please check GEMINI_API_KEYS and request format. {detail}"
     return JSONResponse(status_code=503, content={"detail": detail})
+
+
+@app.exception_handler(ImageProviderError)
+async def image_provider_error_handler(_: Request, exc: ImageProviderError) -> JSONResponse:
+    return JSONResponse(status_code=503, content={"detail": str(exc)})
+
+
+@app.exception_handler(VideoProviderError)
+async def video_provider_error_handler(_: Request, exc: VideoProviderError) -> JSONResponse:
+    return JSONResponse(status_code=503, content={"detail": str(exc)})
 
 
 @app.get("/", response_model=HealthResponse)

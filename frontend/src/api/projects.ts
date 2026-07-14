@@ -47,6 +47,102 @@ export async function uploadProjectFiles(id: string, files: File[]): Promise<Pro
   return response.data;
 }
 
+export async function updateProductReference(
+  id: string,
+  referenceId: string,
+  payload: Record<string, unknown>,
+): Promise<Project> {
+  const response = await apiClient.patch<Project>(`/api/projects/${id}/product-references/${referenceId}`, payload);
+  return response.data;
+}
+
+export async function updateScene(id: string, sceneIndex: number, payload: Record<string, unknown>): Promise<Project> {
+  const response = await apiClient.patch<Project>(`/api/projects/${id}/scenes/${sceneIndex}`, payload);
+  return response.data;
+}
+
+export async function rewriteScene(id: string, sceneIndex: number, instruction: string): Promise<Project> {
+  const response = await apiClient.post<Project>(`/api/projects/${id}/scenes/${sceneIndex}/rewrite`, { instruction });
+  return response.data;
+}
+
+export async function updateSceneVideoPrompt(id: string, sceneIndex: number, finalVideoPrompt: string): Promise<Project> {
+  const response = await apiClient.patch<Project>(`/api/projects/${id}/scenes/${sceneIndex}/video-prompt`, { finalVideoPrompt });
+  return response.data;
+}
+
+export async function regenerateSceneVideoPrompt(id: string, sceneIndex: number): Promise<Project> {
+  const response = await apiClient.post<Project>(`/api/projects/${id}/scenes/${sceneIndex}/video-prompt/regenerate`);
+  return response.data;
+}
+
+export async function updateKeyframePromptSlot(
+  id: string,
+  sceneIndex: number,
+  slotId: string,
+  payload: Record<string, unknown>,
+): Promise<Project> {
+  const response = await apiClient.patch<Project>(`/api/projects/${id}/scenes/${sceneIndex}/keyframe-slots/${slotId}`, payload);
+  return response.data;
+}
+
+export async function selectKeyframeCandidate(
+  id: string,
+  sceneIndex: number,
+  slotId: string,
+  payload: { imageUrl?: string; fileId?: string; candidateId?: string },
+): Promise<Project> {
+  const response = await apiClient.post<Project>(`/api/projects/${id}/scenes/${sceneIndex}/keyframe-slots/${slotId}/select`, payload);
+  return response.data;
+}
+
+export async function generateReferenceAssetImage(id: string, assetType: "character" | "location"): Promise<Project> {
+  const response = await apiClient.post<Project>(`/api/projects/${id}/reference-assets/${assetType}/generate`);
+  return response.data;
+}
+
+export async function updateReferenceAsset(id: string, assetType: "character" | "location", payload: Record<string, unknown>): Promise<Project> {
+  const response = await apiClient.patch<Project>(`/api/projects/${id}/reference-assets/${assetType}`, payload);
+  return response.data;
+}
+
+export async function uploadReferenceAssetImage(id: string, assetType: "character" | "location", file: File): Promise<Project> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const response = await apiClient.post<Project>(`/api/projects/${id}/reference-assets/${assetType}/upload`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data;
+}
+
+export async function generateKeyframeSlotImage(id: string, sceneIndex: number, slotId: string): Promise<Project> {
+  const response = await apiClient.post<Project>(`/api/projects/${id}/scenes/${sceneIndex}/keyframe-slots/${slotId}/generate`);
+  return response.data;
+}
+
+export async function uploadKeyframeSlotImage(id: string, sceneIndex: number, slotId: string, file: File): Promise<Project> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const response = await apiClient.post<Project>(`/api/projects/${id}/scenes/${sceneIndex}/keyframe-slots/${slotId}/upload`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data;
+}
+
+export async function generateSceneVideo(id: string, sceneIndex: number): Promise<Project> {
+  const response = await apiClient.post<Project>(`/api/projects/${id}/scenes/${sceneIndex}/video`);
+  return response.data;
+}
+
+export async function uploadSceneVideo(id: string, sceneIndex: number, file: File): Promise<Project> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const response = await apiClient.post<Project>(`/api/projects/${id}/scenes/${sceneIndex}/video/upload`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data;
+}
+
 export async function deleteProject(id: string): Promise<void> {
   await apiClient.delete(`/api/projects/${id}`);
 }

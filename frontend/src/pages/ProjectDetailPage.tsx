@@ -1,139 +1,36 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import PlanCreationCard from "../components/PlanCreationCard";
-import { deleteProject, generatePlanCreation, getProject, uploadProjectFiles } from "../api/projects";
+import PlanCreationCard, { type PlanWorkflowStep } from "../components/PlanCreationCard";
+import {
+  deleteProject,
+  generatePlanCreation,
+  generateKeyframeSlotImage,
+  generateReferenceAssetImage,
+  generateSceneVideo,
+  getProject,
+  updateKeyframePromptSlot,
+  updateReferenceAsset,
+  updateSceneVideoPrompt,
+  uploadKeyframeSlotImage,
+  uploadProjectFiles,
+  uploadReferenceAssetImage,
+  uploadSceneVideo,
+} from "../api/projects";
 import { getApiErrorMessage, toApiUrl } from "../api/client";
-import type { Project, StorytellingScene } from "../types";
+import type { Project } from "../types";
 import { compactId, formatDate } from "../utils/format";
 
-type ActionName = "load" | "upload" | "planCreation" | "delete";
+type ActionName = "load" | "upload" | "planCreation" | "referenceAsset" | "keyframe" | "clip" | "delete";
 type ProjectPhase = "brief" | "plan-creation";
-type PlanPipelineStep = "scene-plan" | "image-references" | "scene-clips";
+type PlanMode = "manual" | "automation";
+type ReferenceAssetType = "character" | "location";
 
 interface ProjectDetailPageProps {
   phase: ProjectPhase;
 }
 
-const phaseItems: Array<{ id: ProjectPhase; label: string; description: string }> = [
-  { id: "brief", label: "Brief Input", description: "Project setup and uploaded references" },
-  { id: "plan-creation", label: "Plan Creation", description: "4-second scene clips and copy-ready prompts" },
-];
-
 const GOOGLE_FLOW_URL = "https://labs.google/fx/tools/flow/project/4c8abe81-9457-43d0-bafb-3d28c7757b3c";
-
-function copyText(value?: string): Promise<void> {
-  if (!value) {
-    return Promise.resolve();
-  }
-
-  return navigator.clipboard.writeText(value);
-}
-
-function SceneClipCard({ scene, uploadedFileCount }: { scene: StorytellingScene; uploadedFileCount: number }) {
-  const displayDuration = scene.durationSec || 4;
-  const requiredReferenceIds = Array.from(
-    new Set(scene.keyframePrompts.flatMap((prompt) => prompt.productReferenceIds)),
-  );
-
-  return (
-    <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-black uppercase tracking-wide text-rose-600">Scene {scene.sceneIndex} / {displayDuration}s clip</p>
-          <h5 className="mt-1 text-xl font-black text-slate-950">{scene.title}</h5>
-          <p className="mt-2 text-sm leading-6 text-slate-600">{scene.sceneGoal}</p>
-        </div>
-        <a className="btn-secondary" href={GOOGLE_FLOW_URL} target="_blank" rel="noreferrer">
-          Open Flow
-        </a>
-      </div>
-
-      <div className="mt-5 grid gap-3 lg:grid-cols-3">
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-          <p className="field-label">Use these references</p>
-          <p className="mt-2 text-sm leading-6 text-slate-700">
-            {uploadedFileCount ? `${uploadedFileCount} project image reference(s) are available.` : "Use references generated or selected inside Flow."}
-          </p>
-          {requiredReferenceIds.length ? (
-            <p className="mt-2 text-xs font-semibold text-teal-700">Plan refs: {requiredReferenceIds.join(", ")}</p>
-          ) : null}
-        </div>
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-          <p className="field-label">Scene action</p>
-          <p className="mt-2 text-sm font-semibold leading-6 text-slate-900">{scene.visualAction}</p>
-        </div>
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-          <p className="field-label">Camera</p>
-          <p className="mt-2 text-sm font-semibold text-slate-900">{scene.camera?.selected || "Vertical UGC shot"}</p>
-          <p className="mt-1 text-sm leading-6 text-slate-700">{scene.camera?.movement || "Natural movement"}</p>
-        </div>
-      </div>
-
-      {scene.keyframePrompts.length ? (
-        <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4">
-          <p className="field-label">Reference image checklist</p>
-          <div className="mt-3 grid gap-3 lg:grid-cols-2">
-            {scene.keyframePrompts.map((prompt, index) => (
-              <div key={prompt.id} className="rounded-lg border border-slate-200 bg-white p-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-wide text-slate-400">Reference {index + 1} / {prompt.timing}</p>
-                    <p className="mt-1 text-sm font-black text-slate-950">{prompt.label}</p>
-                  </div>
-                  <button className="btn-secondary px-3 py-1.5 text-xs" type="button" onClick={() => void copyText(prompt.prompt)}>
-                    Copy image prompt
-                  </button>
-                </div>
-                <p className="mt-2 text-sm leading-6 text-slate-600">{prompt.purpose}</p>
-                {prompt.productReferenceIds.length ? (
-                  <p className="mt-2 text-xs font-semibold text-teal-700">Attach: {prompt.productReferenceIds.join(", ")}</p>
-                ) : null}
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      <div className="mt-5 grid gap-3 lg:grid-cols-[minmax(0,1.3fr)_minmax(280px,0.7fr)]">
-        <div className="rounded-lg border border-slate-800 bg-slate-950 p-4 text-white">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-xs font-black uppercase tracking-wide text-teal-200">Final 4s video prompt</p>
-            <button
-              className="rounded-md bg-white/10 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-white/15"
-              type="button"
-              onClick={() => void copyText(scene.finalVideoPrompt)}
-            >
-              Copy video prompt
-            </button>
-          </div>
-          <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-100">{scene.finalVideoPrompt}</p>
-        </div>
-
-        <div className="space-y-3">
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-            <p className="field-label">Voice / subtitle</p>
-            {scene.voiceLines.length ? (
-              <div className="mt-3 space-y-2">
-                {scene.voiceLines.map((line) => (
-                  <div key={`${line.timing}-${line.line}`} className="rounded-md border border-slate-200 bg-white p-3">
-                    <p className="text-xs font-bold uppercase tracking-wide text-slate-400">{line.timing} / {line.emotion}</p>
-                    <p className="mt-1 text-sm font-semibold leading-6 text-slate-900">{line.line}</p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="mt-2 text-sm text-slate-500">No voice line specified.</p>
-            )}
-          </div>
-          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-            <p className="field-label text-amber-700">Overlay text</p>
-            <p className="mt-2 text-sm font-semibold leading-6 text-slate-900">{scene.onScreenText || "No overlay text"}</p>
-          </div>
-        </div>
-      </div>
-    </article>
-  );
-}
 
 export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
   const { id } = useParams();
@@ -141,12 +38,18 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
   const [project, setProject] = useState<Project | null>(null);
   const [loadingAction, setLoadingAction] = useState<ActionName | null>("load");
   const [error, setError] = useState<string | null>(null);
-  const [planPipelineStep, setPlanPipelineStep] = useState<PlanPipelineStep>("scene-plan");
+  const [planWorkflowStep, setPlanWorkflowStep] = useState<PlanWorkflowStep>("reference-assets");
+  const [planMode, setPlanMode] = useState<PlanMode>("manual");
+  const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
+  const [showRegenerateWarning, setShowRegenerateWarning] = useState(false);
   const productReferenceInputRef = useRef<HTMLInputElement>(null);
-  const imageReferenceInputRef = useRef<HTMLInputElement>(null);
 
   const canAct = Boolean(project && !loadingAction);
   const projectBase = id ? `/projects/${id}` : "/projects";
+
+  useEffect(() => {
+    setHeaderSlot(document.getElementById("app-header-actions"));
+  }, []);
 
   const refreshProject = async () => {
     if (!id) {
@@ -183,6 +86,7 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
     try {
       await generatePlanCreation(id);
       await refreshProject();
+      setPlanWorkflowStep("reference-assets");
       onSuccess?.();
     } catch (err) {
       setError(getApiErrorMessage(err));
@@ -199,6 +103,106 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
     setError(null);
     try {
       await uploadProjectFiles(id, files);
+      await refreshProject();
+    } catch (err) {
+      setError(getApiErrorMessage(err));
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  const handleUploadReferenceAsset = async (assetType: ReferenceAssetType, file: File) => {
+    if (!id) {
+      return;
+    }
+    setLoadingAction("upload");
+    setError(null);
+    try {
+      await uploadReferenceAssetImage(id, assetType, file);
+      await refreshProject();
+    } catch (err) {
+      setError(getApiErrorMessage(err));
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  const handleGenerateReferenceAsset = async (assetType: ReferenceAssetType, imagePrompt: string) => {
+    if (!id) {
+      return;
+    }
+    setLoadingAction("referenceAsset");
+    setError(null);
+    try {
+      await updateReferenceAsset(id, assetType, { imagePrompt });
+      await generateReferenceAssetImage(id, assetType);
+      await refreshProject();
+    } catch (err) {
+      setError(getApiErrorMessage(err));
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  const handleGenerateKeyframe = async (sceneIndex: number, slotId: string, prompt: string) => {
+    if (!id) {
+      return;
+    }
+    setLoadingAction("keyframe");
+    setError(null);
+    try {
+      await updateKeyframePromptSlot(id, sceneIndex, slotId, { prompt });
+      await generateKeyframeSlotImage(id, sceneIndex, slotId);
+      await refreshProject();
+    } catch (err) {
+      setError(getApiErrorMessage(err));
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  const handleUploadKeyframe = async (sceneIndex: number, slotId: string, file: File) => {
+    if (!id) {
+      return;
+    }
+    setLoadingAction("keyframe");
+    setError(null);
+    try {
+      await uploadKeyframeSlotImage(id, sceneIndex, slotId, file);
+      await refreshProject();
+    } catch (err) {
+      setError(getApiErrorMessage(err));
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  const handleGenerateClip = async (sceneIndex: number, prompt: string) => {
+    if (!id) {
+      return;
+    }
+    setLoadingAction("clip");
+    setError(null);
+    try {
+      await updateSceneVideoPrompt(id, sceneIndex, prompt);
+      await generateSceneVideo(id, sceneIndex);
+      await refreshProject();
+    } catch (err) {
+      setError(getApiErrorMessage(err));
+      await refreshProject();
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  const handleUploadClip = async (sceneIndex: number, file: File) => {
+    if (!id) {
+      return;
+    }
+    setLoadingAction("clip");
+    setError(null);
+    try {
+      await uploadSceneVideo(id, sceneIndex, file);
       await refreshProject();
     } catch (err) {
       setError(getApiErrorMessage(err));
@@ -234,54 +238,112 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
     }
   };
 
+  const handleRegeneratePlan = async () => {
+    setShowRegenerateWarning(false);
+    await runPlanCreation();
+  };
+
   if (loadingAction === "load" && !project) {
     return <div className="card p-6 text-sm text-slate-500">Loading project...</div>;
   }
 
   const hasPlanCreation = Boolean(project?.creative_plan);
-  const phaseState = (item: ProjectPhase): "current" | "complete" | "ready" => {
-    if (item === phase) {
+  const workflowItems: Array<{ id: PlanWorkflowStep; label: string; description: string }> = [
+    { id: "reference-assets", label: "Character + location refs", description: "Create or upload two base images" },
+    { id: "keyframes", label: "Scene keyframes", description: "Create keyframe refs per 4s scene" },
+    { id: "scene-clips", label: "4s clip prompts", description: "Generate one clip per scene" },
+  ];
+  const currentWorkflowIndex = Math.max(
+    0,
+    workflowItems.findIndex((item) => item.id === planWorkflowStep),
+  );
+  const workflowState = (index: number): "current" | "complete" | "ready" => {
+    if (index === currentWorkflowIndex) {
       return "current";
     }
-    if (item === "brief") {
+    if (index < currentWorkflowIndex) {
       return "complete";
     }
-    return hasPlanCreation ? "complete" : "ready";
+    return "ready";
   };
-  const phaseClass = (state: ReturnType<typeof phaseState>) => {
-    if (state === "current") {
-      return "border-rose-300 bg-rose-50";
-    }
-    if (state === "complete") {
-      return "border-emerald-200 bg-emerald-50";
-    }
-    return "border-slate-200 bg-white hover:-translate-y-0.5 hover:shadow-soft";
-  };
-  const phaseBadgeClass = (state: ReturnType<typeof phaseState>) => {
-    if (state === "current") {
-      return "bg-rose-600 text-white";
-    }
-    if (state === "complete") {
-      return "bg-emerald-600 text-white";
-    }
-    return "bg-slate-100 text-slate-500";
-  };
-  const phaseStatusLabel = (state: ReturnType<typeof phaseState>) => {
-    if (state === "current") {
-      return "In progress";
-    }
-    if (state === "complete") {
-      return "Complete";
-    }
-    return "Ready";
-  };
+  const previousWorkflowStep = workflowItems[currentWorkflowIndex - 1]?.id;
+  const nextWorkflowStep = workflowItems[currentWorkflowIndex + 1]?.id;
+  const activeWorkflowItem = workflowItems[currentWorkflowIndex] ?? workflowItems[0];
+  const completedWorkflowCount = Math.max(0, currentWorkflowIndex);
+  const planHeaderPortal =
+    phase === "plan-creation" && headerSlot
+      ? createPortal(
+          <div className="hidden min-w-0 items-center justify-end gap-4 xl:flex">
+            <div className="min-w-[260px] max-w-[340px]">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-teal-700">Plan Creation</p>
+                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  Step {currentWorkflowIndex + 1}/{workflowItems.length}
+                </span>
+              </div>
+              <p className="mt-1 truncate text-sm font-semibold text-slate-950">{activeWorkflowItem.label}</p>
+              <div className="mt-2 h-1 rounded-full bg-slate-100">
+                <div
+                  className="h-1 rounded-full bg-teal-500 transition-all"
+                  style={{ width: `${((currentWorkflowIndex + 1) / workflowItems.length) * 100}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="grid w-56 grid-cols-2 rounded-xl border border-slate-200 bg-slate-100 p-1">
+              <button
+                className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                  planMode === "manual" ? "bg-slate-950 text-white shadow-sm" : "text-slate-600 hover:text-slate-950"
+                }`}
+                onClick={() => setPlanMode("manual")}
+                type="button"
+              >
+                Manual
+              </button>
+              <button
+                className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                  planMode === "automation" ? "bg-slate-950 text-white shadow-sm" : "text-slate-600 hover:text-slate-950"
+                }`}
+                onClick={() => setPlanMode("automation")}
+                type="button"
+              >
+                Automation
+              </button>
+            </div>
+
+          </div>,
+          headerSlot,
+        )
+      : null;
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-slate-200 bg-slate-950 p-5 text-white shadow-soft">
+      {planHeaderPortal}
+      {showRegenerateWarning ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-rose-600">Reset warning</p>
+            <h3 className="mt-2 text-xl font-semibold text-slate-950">Regenerate Plan Creation?</h3>
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              This will rebuild the plan from the brief and reset the workflow to the first step. Product images from the brief stay, but character,
+              location, keyframe, and clip reference images from later phases will be removed from this project.
+            </p>
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
+              <button className="btn-secondary" type="button" onClick={() => setShowRegenerateWarning(false)}>
+                Cancel
+              </button>
+              <button className="btn-danger" disabled={!canAct} type="button" onClick={() => void handleRegeneratePlan()}>
+                {loadingAction === "planCreation" ? "Regenerating..." : "Regenerate from start"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {phase === "brief" ? (
+      <div className="rounded-2xl border border-slate-200 bg-slate-950 p-5 text-white shadow-soft">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-black">{project?.product_name ?? "Project"}</h2>
+            <h2 className="text-3xl font-semibold">{project?.product_name ?? "Project"}</h2>
             {project ? (
               <p className="mt-2 text-sm text-slate-300">
                 {project.product_category || "General product"} / {compactId(project.id)} / Updated {formatDate(project.updated_at)}
@@ -308,28 +370,9 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
           </div>
         </div>
       </div>
+      ) : null}
 
-      {error ? <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">{error}</div> : null}
-
-      <nav className="card-accent p-4">
-        <div className="grid gap-3 md:grid-cols-2">
-          {phaseItems.map((item, index) => {
-            const state = phaseState(item.id);
-            return (
-              <Link key={item.id} className={`rounded-lg border p-4 transition ${phaseClass(state)}`} to={`${projectBase}/${item.id}`}>
-                <div className="flex items-center justify-between gap-2">
-                  <span className={`flex h-8 w-8 items-center justify-center rounded-md text-xs font-black ${phaseBadgeClass(state)}`}>
-                    {index + 1}
-                  </span>
-                  <span className="text-xs font-bold uppercase tracking-wide text-slate-400">{phaseStatusLabel(state)}</span>
-                </div>
-                <p className="mt-3 text-sm font-black text-slate-950">{item.label}</p>
-                <p className="mt-1 text-xs text-slate-500">{item.description}</p>
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
+      {error ? <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">{error}</div> : null}
 
       {project && phase === "brief" ? (
         <section className="card-accent overflow-hidden">
@@ -340,11 +383,11 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
           </div>
           <div className="space-y-7 px-6 py-6">
             <div>
-              <h4 className="mt-1 text-lg font-black text-slate-950">Confirm brief input</h4>
+              <h4 className="mt-1 text-lg font-semibold text-slate-950">Confirm brief input</h4>
               <p className="mt-1 text-sm text-slate-500">This is the text context Gemini uses together with the product reference images.</p>
             </div>
             <div className="grid gap-7 lg:grid-cols-2">
-              <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
                 <p className="field-label">Product description</p>
                 <p className="text-sm leading-7 text-slate-700">{project.product_description || "Not specified"}</p>
                 {project.audience ? (
@@ -353,16 +396,16 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
                   </p>
                 ) : null}
               </div>
-              <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
                 <p className="field-label">Brief</p>
                 <p className="whitespace-pre-wrap text-sm leading-7 text-slate-700">{project.brief || "Not specified"}</p>
               </div>
             </div>
-            <div className="rounded-lg border border-slate-200 bg-white p-5">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-wide text-teal-700">Product images</p>
-                  <h4 className="mt-1 text-lg font-black text-slate-950">Upload product references</h4>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-teal-700">Product images</p>
+                  <h4 className="mt-1 text-lg font-semibold text-slate-950">Upload product references</h4>
                   <p className="mt-1 text-sm leading-6 text-slate-500">
                     Upload app screenshots, product photos, logo, packaging, or UI screens here before Plan Creation. Next step: Gemini splits the brief into 4-second scene clips.
                   </p>
@@ -424,176 +467,166 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
       ) : null}
 
       {phase === "plan-creation" ? (
-        <section className="card-accent p-5">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h3 className="section-heading">Plan Creation</h3>
-              <p className="section-subtitle">Move through one step at a time. Every generated scene is one 4-second video clip.</p>
-            </div>
-            <button className="btn-primary" disabled={!canAct} onClick={() => void runPlanCreation()} type="button">
-              {loadingAction === "planCreation" ? "Generating..." : hasPlanCreation ? "Regenerate 4s Plan Creation" : "Generate 4s Plan Creation"}
-            </button>
-          </div>
-
-          {project?.creative_plan ? (
-            <div className="mb-4 grid gap-3 md:grid-cols-3">
-              <button
-                className={`rounded-lg border p-4 text-left transition ${
-                  planPipelineStep === "scene-plan" ? "border-rose-300 bg-rose-50" : "border-emerald-200 bg-emerald-50"
-                }`}
-                onClick={() => setPlanPipelineStep("scene-plan")}
-                type="button"
-              >
-                <p className="text-xs font-black uppercase tracking-wide text-slate-400">Step</p>
-                <p className="mt-1 text-sm font-black text-slate-950">Review 4s scene plan</p>
-                <p className="mt-1 text-xs text-slate-500">Check how the script was split.</p>
-              </button>
-              <button
-                className={`rounded-lg border p-4 text-left transition ${
-                  planPipelineStep === "image-references" ? "border-rose-300 bg-rose-50" : "border-slate-200 bg-white hover:border-teal-300"
-                }`}
-                onClick={() => setPlanPipelineStep("image-references")}
-                type="button"
-              >
-                <p className="text-xs font-black uppercase tracking-wide text-slate-400">Step</p>
-                <p className="mt-1 text-sm font-black text-slate-950">Upload clip references</p>
-                <p className="mt-1 text-xs text-slate-500">Attach generated keyframes or Flow refs.</p>
-              </button>
-              <button
-                className={`rounded-lg border p-4 text-left transition ${
-                  planPipelineStep === "scene-clips" ? "border-rose-300 bg-rose-50" : "border-slate-200 bg-white hover:border-teal-300"
-                }`}
-                onClick={() => setPlanPipelineStep("scene-clips")}
-                type="button"
-              >
-                <p className="text-xs font-black uppercase tracking-wide text-slate-400">Step</p>
-                <p className="mt-1 text-sm font-black text-slate-950">Generate 4s clips</p>
-                <p className="mt-1 text-xs text-slate-500">Copy one prompt per clip into Flow.</p>
-              </button>
-            </div>
-          ) : null}
-
-          {planPipelineStep === "scene-plan" ? (
-            <>
-              <PlanCreationCard planCreation={project?.creative_plan} />
-              {project?.creative_plan ? (
-                <div className="mt-5 flex justify-end border-t border-slate-200 pt-5">
-                  <button className="btn-primary" type="button" onClick={() => setPlanPipelineStep("image-references")}>
-                    Next
-                  </button>
-                </div>
-              ) : null}
-            </>
-          ) : null}
-
-          {planPipelineStep === "image-references" ? (
-            <div className="rounded-lg border border-slate-200 bg-white p-5">
-              <div className="flex flex-wrap items-center justify-between gap-4">
+        <section className="overflow-hidden border-t border-slate-200 bg-white">
+          <div className="grid min-h-[calc(100vh-88px)] lg:grid-cols-[280px_minmax(0,1fr)] 2xl:grid-cols-[300px_minmax(0,1fr)]">
+            <aside className="border-r border-slate-800 bg-slate-950 px-5 py-6 text-white">
+              <div className="sticky top-6 space-y-5">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-wide text-teal-700">Clip references</p>
-                  <h4 className="mt-1 text-lg font-black text-slate-950">Upload generated reference images</h4>
-                  <p className="mt-1 text-sm leading-6 text-slate-500">
-                    Upload generated keyframes here for automation, or create/select them directly in Google Flow. Next step: generate one 4-second clip per scene.
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <a className="btn-secondary" href={GOOGLE_FLOW_URL} target="_blank" rel="noreferrer">
-                    Open Flow
-                  </a>
-                  <button className="btn-primary" disabled={!canAct} type="button" onClick={() => imageReferenceInputRef.current?.click()}>
-                    {loadingAction === "upload" ? "Uploading..." : "Upload Clip References"}
-                  </button>
-                </div>
-                <input
-                  ref={imageReferenceInputRef}
-                  className="hidden"
-                  type="file"
-                  multiple
-                  accept="image/*,.pdf,.txt,.json"
-                  onChange={(event) => {
-                    const files = Array.from(event.target.files ?? []);
-                    event.currentTarget.value = "";
-                    void handleUploadImageReferences(files);
-                  }}
-                />
-              </div>
-
-              {project?.uploaded_files.length ? (
-                <div className="mt-5 border-t border-slate-200 pt-5">
-                  <p className="field-label">Uploaded project references</p>
-                  <div className="mt-3 flex flex-wrap gap-3">
-                    {project.uploaded_files.map((file) => (
-                      <a
-                        key={file.id}
-                        className="inline-flex max-w-full items-center rounded-md border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-800 transition hover:border-teal-300 hover:bg-teal-50 hover:text-teal-800"
-                        href={toApiUrl(file.url)}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {file.file_name}
-                      </a>
-                    ))}
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-teal-300">Project</p>
+                  <h2 className="mt-2 text-[22px] font-semibold leading-tight">{project?.product_name ?? "Project"}</h2>
+                  {project ? (
+                    <p className="mt-2 text-sm leading-6 text-slate-400">
+                      {project.product_category || "General product"} / {compactId(project.id)}
+                      <br />
+                      Updated {formatDate(project.updated_at)}
+                    </p>
+                  ) : null}
+                  <div className="mt-5 grid grid-cols-2 gap-2">
+                    <button
+                      className="rounded-lg border border-amber-300/30 bg-amber-400/10 px-3 py-2 text-sm font-semibold text-amber-50 transition hover:bg-amber-400/20"
+                      disabled={!project || Boolean(loadingAction)}
+                      onClick={() => setShowRegenerateWarning(true)}
+                      type="button"
+                    >
+                      {loadingAction === "planCreation" ? "Running..." : "Regenerate"}
+                    </button>
+                    <button
+                      className="rounded-lg border border-rose-300/25 bg-rose-500/10 px-3 py-2 text-sm font-semibold text-rose-100 transition hover:bg-rose-500/20"
+                      disabled={!project || Boolean(loadingAction)}
+                      onClick={handleDelete}
+                      type="button"
+                    >
+                      {loadingAction === "delete" ? "Deleting..." : "Delete"}
+                    </button>
                   </div>
                 </div>
-              ) : null}
 
-              <div className="mt-5 flex justify-between border-t border-slate-200 pt-5">
-                <button className="btn-secondary" type="button" onClick={() => setPlanPipelineStep("scene-plan")}>
-                  Back
-                </button>
-                <button className="btn-primary" type="button" onClick={() => setPlanPipelineStep("scene-clips")}>
-                  Next
-                </button>
+                <nav className="space-y-2.5">
+                  {workflowItems.map((item, index) => {
+                    const state = workflowState(index);
+                    return (
+                      <button
+                        key={item.id}
+                        className={`w-full rounded-2xl border px-4 py-4 text-left transition ${
+                          state === "current"
+                            ? "border-rose-300/50 bg-rose-500/15"
+                            : state === "complete"
+                              ? "border-emerald-300/40 bg-emerald-500/10"
+                              : "border-white/10 bg-white/[0.04] hover:border-teal-300/50 hover:bg-white/[0.07]"
+                        }`}
+                        onClick={() => setPlanWorkflowStep(item.id)}
+                        type="button"
+                      >
+                        <div className="flex items-start gap-3">
+                          <span
+                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-semibold ${
+                              state === "current" ? "bg-rose-500 text-white" : state === "complete" ? "bg-emerald-500 text-white" : "bg-white/10 text-slate-300"
+                            }`}
+                          >
+                            {index + 1}
+                          </span>
+                          <span>
+                            <span className={`block text-[11px] font-semibold uppercase tracking-[0.14em] ${state === "current" ? "text-rose-200" : state === "complete" ? "text-emerald-200" : "text-slate-500"}`}>
+                              {state === "current" ? "In progress" : state === "complete" ? "Complete" : "Ready"}
+                            </span>
+                            <span className="mt-1 block text-sm font-semibold text-white">{item.label}</span>
+                            <span className="mt-1 block text-xs leading-5 text-slate-400">{item.description}</span>
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </nav>
+
               </div>
+            </aside>
+
+            <div className="min-w-0 bg-[#f6f8fb]">
+              <main className="p-7 xl:p-10">
+                {project?.creative_plan ? (
+                  <>
+                    {planWorkflowStep === "keyframes" && project.uploaded_files.length ? (
+                      <div className="mb-6 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+                        <p className="field-label">Uploaded reference images</p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {project.uploaded_files.map((file) => (
+                            <a
+                              key={file.id}
+                              className="inline-flex max-w-full items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-teal-300 hover:bg-teal-50 hover:text-teal-800"
+                              href={toApiUrl(file.url)}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              {file.file_name}
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    <PlanCreationCard
+                      googleFlowUrl={GOOGLE_FLOW_URL}
+                      isGeneratingClip={loadingAction === "clip"}
+                      isGeneratingKeyframe={loadingAction === "keyframe"}
+                      isGeneratingReferenceAsset={loadingAction === "referenceAsset"}
+                      isUploadingClip={loadingAction === "clip"}
+                      isUploadingKeyframe={loadingAction === "keyframe"}
+                      isUploadingReferenceAsset={loadingAction === "upload"}
+                      mode={planMode}
+                      onGenerateClip={(sceneIndex, prompt) => void handleGenerateClip(sceneIndex, prompt)}
+                      onGenerateKeyframe={(sceneIndex, slotId, prompt) => void handleGenerateKeyframe(sceneIndex, slotId, prompt)}
+                      onGenerateReferenceAsset={(assetType, imagePrompt) => void handleGenerateReferenceAsset(assetType, imagePrompt)}
+                      onUploadClip={(sceneIndex, file) => void handleUploadClip(sceneIndex, file)}
+                      onUploadKeyframe={(sceneIndex, slotId, file) => void handleUploadKeyframe(sceneIndex, slotId, file)}
+                      onUploadReferenceAsset={(assetType, file) => void handleUploadReferenceAsset(assetType, file)}
+                      planCreation={project.creative_plan}
+                      step={planWorkflowStep}
+                      uploadedFiles={project.uploaded_files}
+                    />
+
+                    <div className="mt-8 flex items-center justify-between border-t border-slate-200 pt-5">
+                      <button
+                        className="btn-secondary"
+                        disabled={!previousWorkflowStep}
+                        type="button"
+                        onClick={() => previousWorkflowStep && setPlanWorkflowStep(previousWorkflowStep)}
+                      >
+                        Back
+                      </button>
+                      <div className="text-sm font-bold text-slate-500">
+                        {completedWorkflowCount} / {workflowItems.length} complete
+                      </div>
+                      {nextWorkflowStep ? (
+                        <button className="btn-primary" type="button" onClick={() => setPlanWorkflowStep(nextWorkflowStep)}>
+                          Next
+                        </button>
+                      ) : (
+                        <Link className="btn-secondary" to={`${projectBase}/brief`}>
+                          Back to brief
+                        </Link>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-teal-700">Ready to generate</p>
+                    <h4 className="mt-2 text-2xl font-semibold text-slate-950">No Plan Creation yet</h4>
+                    <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+                      Generate the plan first. The dashboard will then walk through character/location references, scene keyframes, and 4-second clip prompts.
+                    </p>
+                    <div className="mt-6 flex flex-wrap justify-center gap-3">
+                      <Link className="btn-secondary" to={`${projectBase}/brief`}>
+                        Review brief
+                      </Link>
+                      <button className="btn-primary" disabled={!canAct} onClick={() => void runPlanCreation()} type="button">
+                        {loadingAction === "planCreation" ? "Generating..." : "Generate Plan"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </main>
             </div>
-          ) : null}
-
-          {planPipelineStep === "scene-clips" ? (
-            <div className="rounded-lg border border-slate-200 bg-white p-5">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-wide text-teal-700">Scene clips</p>
-                  <h4 className="mt-1 text-lg font-black text-slate-950">Generate each 4-second clip</h4>
-                  <p className="mt-1 text-sm leading-6 text-slate-500">
-                    For each scene, attach the matching reference images, copy the final 4s video prompt, and generate one vertical clip in Flow or your video model.
-                  </p>
-                </div>
-                <a className="btn-primary" href={GOOGLE_FLOW_URL} target="_blank" rel="noreferrer">
-                  Open Google Flow
-                </a>
-              </div>
-
-              <div className="mt-5 grid gap-3 lg:grid-cols-3">
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <p className="field-label">Use references</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-700">Add the uploaded images or the references you created directly inside Flow.</p>
-                </div>
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <p className="field-label">Paste prompt</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-700">Use the final 4s video prompt for the current scene only.</p>
-                </div>
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <p className="field-label">Repeat per scene</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-700">Generate one 4-second clip per scene, then stitch the clips in your editor.</p>
-                </div>
-              </div>
-
-              <div className="mt-5 space-y-4">
-                {project?.creative_plan?.scenes?.map((scene) => (
-                  <SceneClipCard key={scene.sceneIndex} scene={scene} uploadedFileCount={project.uploaded_files.length} />
-                ))}
-              </div>
-
-              <div className="mt-5 flex justify-between border-t border-slate-200 pt-5">
-                <button className="btn-secondary" type="button" onClick={() => setPlanPipelineStep("image-references")}>
-                  Back
-                </button>
-                <button className="btn-primary" type="button" onClick={() => setPlanPipelineStep("scene-plan")}>
-                  Back to scene plan
-                </button>
-              </div>
-            </div>
-          ) : null}
+          </div>
         </section>
       ) : null}
     </div>
