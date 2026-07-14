@@ -3,6 +3,7 @@ from typing import Protocol
 from app.models.schemas import CreativePlan, PlanCreationResult, Project
 from app.services.creative_plan import BriefNormalizer, CreativePlanService
 from app.services.vision_provider import GeminiVisionProvider, VisionProvider
+from app.services.llm_provider import build_llm_provider
 
 
 class CreativePlanGenerator(Protocol):
@@ -20,9 +21,9 @@ class GeminiCreativePlanGenerator:
         brief_normalizer: BriefNormalizer | None = None,
         creative_plan_service: CreativePlanService | None = None,
     ) -> None:
-        self.vision_provider = vision_provider or GeminiVisionProvider()
+        self.vision_provider = vision_provider
         self.brief_normalizer = brief_normalizer or BriefNormalizer()
-        self.creative_plan_service = creative_plan_service or CreativePlanService()
+        self.creative_plan_service = creative_plan_service
 
     def generate(self, project: Project) -> CreativePlan:
         result = self.create(project)
@@ -31,9 +32,13 @@ class GeminiCreativePlanGenerator:
         return result.creative_plan
 
     def create(self, project: Project) -> PlanCreationResult:
-        vision = self.vision_provider.analyze_files(project)
+        llm_provider = build_llm_provider()
+        vision_provider = self.vision_provider or GeminiVisionProvider(llm_provider)
+        creative_plan_service = self.creative_plan_service or CreativePlanService(llm_provider)
+
+        vision = vision_provider.analyze_files(project)
         normalized_brief = self.brief_normalizer.normalize(project, vision)
-        creative_plan = self.creative_plan_service.build(project, normalized_brief, vision)
+        creative_plan = creative_plan_service.build(project, normalized_brief, vision)
 
         return PlanCreationResult(
             vision_analysis=vision,

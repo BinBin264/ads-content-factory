@@ -4,11 +4,15 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import PlanCreationCard, { type PlanWorkflowStep } from "../components/PlanCreationCard";
 import {
   deleteProject,
+  enqueueKeyframeSlotImage,
+  enqueueReferenceAssetImage,
   generatePlanCreation,
-  generateKeyframeSlotImage,
-  generateReferenceAssetImage,
   generateSceneVideo,
+  getImageGenerationJob,
   getProject,
+  listImageGenerationJobs,
+  pollSceneVideo,
+  reviewSceneTake,
   updateKeyframePromptSlot,
   updateReferenceAsset,
   updateSceneVideoPrompt,
@@ -16,15 +20,34 @@ import {
   uploadProjectFiles,
   uploadReferenceAssetImage,
   uploadSceneVideo,
+  updateProject,
 } from "../api/projects";
 import { getApiErrorMessage, toApiUrl } from "../api/client";
-import type { Project } from "../types";
+import type { ImageGenerationJob, ImageModelId, Project, ReviewSceneTakePayload, VideoModelId } from "../types";
 import { compactId, formatDate } from "../utils/format";
 
-type ActionName = "load" | "upload" | "planCreation" | "referenceAsset" | "keyframe" | "clip" | "delete";
+type ActionName = "load" | "upload" | "saveBrief" | "planCreation" | "referenceAsset" | "keyframe" | "clip" | "review" | "delete";
 type ProjectPhase = "brief" | "plan-creation";
 type PlanMode = "manual" | "automation";
 type ReferenceAssetType = "character" | "location";
+
+const ACTIVE_IMAGE_JOB_STATUSES = new Set(["queued", "running", "retrying"]);
+const VIDEO_POLL_INTERVAL_MS = 5000;
+
+function isVideoJobActive(project: Project, sceneIndex: number): boolean {
+  const scene = project.creative_plan?.scenes?.find((item) => item.sceneIndex === sceneIndex);
+  return Boolean(scene?.videoJobId && !scene.videoUrl && !["FAILED", "VIDEO_READY"].includes(scene.status || ""));
+}
+
+function latestJobsByTarget(jobs: ImageGenerationJob[]): Record<string, ImageGenerationJob> {
+  return jobs.reduce<Record<string, ImageGenerationJob>>((latest, job) => {
+    const existing = latest[job.target_key];
+    if (!existing || new Date(job.updated_at).getTime() >= new Date(existing.updated_at).getTime()) {
+      latest[job.target_key] = job;
+    }
+    return latest;
+  }, {});
+}
 
 interface ProjectDetailPageProps {
   phase: ProjectPhase;
@@ -40,8 +63,14 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
   const [error, setError] = useState<string | null>(null);
   const [planWorkflowStep, setPlanWorkflowStep] = useState<PlanWorkflowStep>("reference-assets");
   const [planMode, setPlanMode] = useState<PlanMode>("manual");
+  const [generatingClipSceneIndex, setGeneratingClipSceneIndex] = useState<number | null>(null);
+  const [selectedImageModel, setSelectedImageModel] = useState<ImageModelId>("nano-banana-2");
+  const [selectedVideoModel, setSelectedVideoModel] = useState<VideoModelId>("veo3.1-pro");
+  const [imageGenerationJobs, setImageGenerationJobs] = useState<Record<string, ImageGenerationJob>>({});
+  const [submittingImageTargets, setSubmittingImageTargets] = useState<Set<string>>(new Set());
   const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
   const [showRegenerateWarning, setShowRegenerateWarning] = useState(false);
+  const [briefDraft, setBriefDraft] = useState({ product_description: "", brief: "" });
   const productReferenceInputRef = useRef<HTMLInputElement>(null);
 
   const canAct = Boolean(project && !loadingAction);
@@ -67,7 +96,9 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
       setLoadingAction("load");
       setError(null);
       try {
-        await refreshProject();
+        const [nextProject, jobs] = await Promise.all([getProject(id), listImageGenerationJobs(id)]);
+        setProject(nextProject);
+        setImageGenerationJobs(latestJobsByTarget(jobs));
       } catch (err) {
         setError(getApiErrorMessage(err));
       } finally {
@@ -76,6 +107,62 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
     };
     void load();
   }, [id]);
+
+  const activeImageJobIds = Object.values(imageGenerationJobs)
+    .filter((job) => ACTIVE_IMAGE_JOB_STATUSES.has(job.status))
+    .map((job) => job.id)
+    .sort()
+    .join("|");
+
+  useEffect(() => {
+    if (!id || !activeImageJobIds) {
+      return;
+    }
+
+    let cancelled = false;
+    const jobIds = activeImageJobIds.split("|");
+    const poll = async () => {
+      const results = await Promise.allSettled(jobIds.map((jobId) => getImageGenerationJob(id, jobId)));
+      if (cancelled) {
+        return;
+      }
+      const updates = results
+        .filter((result): result is PromiseFulfilledResult<ImageGenerationJob> => result.status === "fulfilled")
+        .map((result) => result.value);
+      if (updates.length) {
+        setImageGenerationJobs((current) => {
+          const next = { ...current };
+          updates.forEach((job) => {
+            next[job.target_key] = job;
+          });
+          return next;
+        });
+      }
+      if (updates.some((job) => job.status === "succeeded" || job.status === "failed")) {
+        const nextProject = await getProject(id);
+        if (!cancelled) {
+          setProject(nextProject);
+        }
+      }
+    };
+
+    void poll();
+    const timer = window.setInterval(() => void poll(), 1000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [id, activeImageJobIds]);
+
+  useEffect(() => {
+    if (!project) {
+      return;
+    }
+    setBriefDraft({
+      product_description: project.product_description ?? "",
+      brief: project.brief ?? "",
+    });
+  }, [project?.id, project?.product_description, project?.brief]);
 
   const runPlanCreation = async (onSuccess?: () => void) => {
     if (!id) {
@@ -111,6 +198,25 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
     }
   };
 
+  const handleSaveBrief = async () => {
+    if (!id) {
+      return;
+    }
+    setLoadingAction("saveBrief");
+    setError(null);
+    try {
+      const nextProject = await updateProject(id, {
+        product_description: briefDraft.product_description,
+        brief: briefDraft.brief,
+      });
+      setProject(nextProject);
+    } catch (err) {
+      setError(getApiErrorMessage(err));
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
   const handleUploadReferenceAsset = async (assetType: ReferenceAssetType, file: File) => {
     if (!id) {
       return;
@@ -127,37 +233,56 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
     }
   };
 
-  const handleGenerateReferenceAsset = async (assetType: ReferenceAssetType, imagePrompt: string) => {
+  const handleGenerateReferenceAsset = async (
+    assetType: ReferenceAssetType,
+    imagePrompt: string,
+    model: ImageModelId,
+  ) => {
     if (!id) {
       return;
     }
-    setLoadingAction("referenceAsset");
+    const targetKey = `reference:${assetType}`;
+    setSubmittingImageTargets((current) => new Set(current).add(targetKey));
     setError(null);
     try {
       await updateReferenceAsset(id, assetType, { imagePrompt });
-      await generateReferenceAssetImage(id, assetType);
-      await refreshProject();
+      const job = await enqueueReferenceAssetImage(id, assetType, model);
+      setImageGenerationJobs((current) => ({ ...current, [job.target_key]: job }));
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
-      setLoadingAction(null);
+      setSubmittingImageTargets((current) => {
+        const next = new Set(current);
+        next.delete(targetKey);
+        return next;
+      });
     }
   };
 
-  const handleGenerateKeyframe = async (sceneIndex: number, slotId: string, prompt: string) => {
+  const handleGenerateKeyframe = async (
+    sceneIndex: number,
+    slotId: string,
+    prompt: string,
+    model: ImageModelId,
+  ) => {
     if (!id) {
       return;
     }
-    setLoadingAction("keyframe");
+    const targetKey = `keyframe:${sceneIndex}:${slotId}`;
+    setSubmittingImageTargets((current) => new Set(current).add(targetKey));
     setError(null);
     try {
       await updateKeyframePromptSlot(id, sceneIndex, slotId, { prompt });
-      await generateKeyframeSlotImage(id, sceneIndex, slotId);
-      await refreshProject();
+      const job = await enqueueKeyframeSlotImage(id, sceneIndex, slotId, model);
+      setImageGenerationJobs((current) => ({ ...current, [job.target_key]: job }));
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
-      setLoadingAction(null);
+      setSubmittingImageTargets((current) => {
+        const next = new Set(current);
+        next.delete(targetKey);
+        return next;
+      });
     }
   };
 
@@ -177,20 +302,27 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
     }
   };
 
-  const handleGenerateClip = async (sceneIndex: number, prompt: string) => {
+  const handleGenerateClip = async (sceneIndex: number, prompt: string, model: VideoModelId) => {
     if (!id) {
       return;
     }
     setLoadingAction("clip");
+    setGeneratingClipSceneIndex(sceneIndex);
     setError(null);
     try {
       await updateSceneVideoPrompt(id, sceneIndex, prompt);
-      await generateSceneVideo(id, sceneIndex);
-      await refreshProject();
+      let nextProject = await generateSceneVideo(id, sceneIndex, model);
+      setProject(nextProject);
+      while (isVideoJobActive(nextProject, sceneIndex)) {
+        await new Promise((resolve) => window.setTimeout(resolve, VIDEO_POLL_INTERVAL_MS));
+        nextProject = await pollSceneVideo(id, sceneIndex);
+        setProject(nextProject);
+      }
     } catch (err) {
       setError(getApiErrorMessage(err));
       await refreshProject();
     } finally {
+      setGeneratingClipSceneIndex(null);
       setLoadingAction(null);
     }
   };
@@ -204,6 +336,22 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
     try {
       await uploadSceneVideo(id, sceneIndex, file);
       await refreshProject();
+    } catch (err) {
+      setError(getApiErrorMessage(err));
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  const handleReviewTake = async (sceneIndex: number, payload: ReviewSceneTakePayload) => {
+    if (!id) {
+      return;
+    }
+    setLoadingAction("review");
+    setError(null);
+    try {
+      const nextProject = await reviewSceneTake(id, sceneIndex, payload);
+      setProject(nextProject);
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
@@ -248,10 +396,53 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
   }
 
   const hasPlanCreation = Boolean(project?.creative_plan);
+  const isContentCreation = project?.workflow_type === "content_creation";
+  const workflowCopy = isContentCreation
+    ? {
+        modeLabel: "Content Creation",
+        categoryFallback: "Content concept",
+        briefSubtitle: "Confirm the script, upload optional visual references, then let AI analyze and split it into concrete scenes.",
+        descriptionLabel: "Script",
+        descriptionPlaceholder: "Describe the complete story: what happens, who appears, the setting, actions, dialogue, mood, and ending.",
+        briefPlaceholder: "",
+        contextReferences: "visual reference images",
+        saveLabel: "Script",
+        uploadEyebrow: "Visual references",
+        uploadTitle: "Upload visual references",
+        uploadDescription:
+          "Upload character references, location references, props, style frames, moodboards, or example images. Next step: Gemini splits the idea into concrete scene clips with one keyframe reference per scene.",
+        uploadButton: "Upload Visual References",
+        uploadedLabel: "Uploaded visual references",
+        emptyUpload:
+          "You can generate text-only, but character/location/style references make the scene prompts more controllable.",
+      }
+    : {
+        modeLabel: "Video Ads",
+        categoryFallback: "General product",
+        briefSubtitle: "Confirm the brief, upload product images, then generate a scene plan with one anchor keyframe per scene.",
+        descriptionLabel: "Product description",
+        descriptionPlaceholder: "Short product context: what it is, who it helps, main benefit, must-preserve product details.",
+        briefPlaceholder: "Ad story, scene direction, voice language, spoken lines, must-show details, CTA, avoid claims.",
+        contextReferences: "product reference images",
+        saveLabel: "Brief",
+        uploadEyebrow: "Product images",
+        uploadTitle: "Upload product references",
+        uploadDescription:
+          "Upload app screenshots, product photos, logo, packaging, or UI screens here before Plan Creation. Next step: Gemini splits the brief into multiple concrete scene clips with one keyframe reference per scene.",
+        uploadButton: "Upload Product Images",
+        uploadedLabel: "Uploaded product references",
+        emptyUpload:
+          "You can generate text-only, but product screenshots or photos make the scene prompts more usable.",
+      };
+  const briefChanged = Boolean(
+    project &&
+      (briefDraft.product_description !== (project.product_description ?? "") ||
+        briefDraft.brief !== (project.brief ?? "")),
+  );
   const workflowItems: Array<{ id: PlanWorkflowStep; label: string; description: string }> = [
     { id: "reference-assets", label: "Character + location refs", description: "Create or upload two base images" },
-    { id: "keyframes", label: "Scene keyframes", description: "Create keyframe refs per 4s scene" },
-    { id: "scene-clips", label: "4s clip prompts", description: "Generate one clip per scene" },
+    { id: "keyframes", label: "Scene keyframes", description: "Create one anchor ref per scene" },
+    { id: "scene-clips", label: "Clip prompts", description: "Generate one timed clip per scene" },
   ];
   const currentWorkflowIndex = Math.max(
     0,
@@ -276,7 +467,7 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
           <div className="hidden min-w-0 items-center justify-end gap-4 xl:flex">
             <div className="min-w-[260px] max-w-[340px]">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-teal-700">Plan Creation</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-700">Plan Creation</p>
                 <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                   Step {currentWorkflowIndex + 1}/{workflowItems.length}
                 </span>
@@ -284,7 +475,7 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
               <p className="mt-1 truncate text-sm font-semibold text-slate-950">{activeWorkflowItem.label}</p>
               <div className="mt-2 h-1 rounded-full bg-slate-100">
                 <div
-                  className="h-1 rounded-full bg-teal-500 transition-all"
+                  className="h-1 rounded-full bg-blue-500 transition-all"
                   style={{ width: `${((currentWorkflowIndex + 1) / workflowItems.length) * 100}%` }}
                 />
               </div>
@@ -325,7 +516,7 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-rose-600">Reset warning</p>
             <h3 className="mt-2 text-xl font-semibold text-slate-950">Regenerate Plan Creation?</h3>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              This will rebuild the plan from the brief and reset the workflow to the first step. Product images from the brief stay, but character,
+              This will rebuild the plan from the brief and reset the workflow to the first step. Uploaded references from the brief stay, but character,
               location, keyframe, and clip reference images from later phases will be removed from this project.
             </p>
             <div className="mt-6 flex flex-wrap justify-end gap-3">
@@ -346,7 +537,7 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
             <h2 className="text-3xl font-semibold">{project?.product_name ?? "Project"}</h2>
             {project ? (
               <p className="mt-2 text-sm text-slate-300">
-                {project.product_category || "General product"} / {compactId(project.id)} / Updated {formatDate(project.updated_at)}
+                {project.product_category || workflowCopy.categoryFallback} / {compactId(project.id)} / Updated {formatDate(project.updated_at)}
               </p>
             ) : null}
           </div>
@@ -376,42 +567,78 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
 
       {project && phase === "brief" ? (
         <section className="card-accent overflow-hidden">
-          <div className="border-b border-slate-200/80 px-6 py-5">
-            <p className="text-xs font-bold uppercase tracking-wide text-teal-700">Input package</p>
-            <h3 className="section-heading">Brief Input</h3>
-            <p className="section-subtitle">Confirm the brief, upload product images, then generate a 4-second scene plan.</p>
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200/80 px-6 py-5">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-blue-700">Input package</p>
+              <h3 className="section-heading">Brief Input</h3>
+              <p className="section-subtitle">{workflowCopy.briefSubtitle}</p>
+            </div>
+            {hasPlanCreation ? (
+              <button
+                className="btn-primary min-w-24"
+                disabled={!canAct}
+                onClick={() => navigate(`${projectBase}/plan-creation`)}
+                type="button"
+              >
+                Next
+              </button>
+            ) : null}
           </div>
           <div className="space-y-7 px-6 py-6">
             <div>
               <h4 className="mt-1 text-lg font-semibold text-slate-950">Confirm brief input</h4>
-              <p className="mt-1 text-sm text-slate-500">This is the text context Gemini uses together with the product reference images.</p>
+              <p className="mt-1 text-sm text-slate-500">
+                This is the text context Gemini uses together with the {workflowCopy.contextReferences}.
+              </p>
             </div>
-            <div className="grid gap-7 lg:grid-cols-2">
-              <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <p className="field-label">Product description</p>
-                <p className="text-sm leading-7 text-slate-700">{project.product_description || "Not specified"}</p>
+            <div className={`grid gap-7 ${isContentCreation ? "" : "lg:grid-cols-2"}`}>
+              <label className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <span className="field-label">{workflowCopy.descriptionLabel}</span>
+                <textarea
+                  className={`field-input resize-y bg-white ${isContentCreation ? "min-h-80" : "min-h-36"}`}
+                  placeholder={workflowCopy.descriptionPlaceholder}
+                  value={briefDraft.product_description}
+                  onChange={(event) => setBriefDraft((current) => ({ ...current, product_description: event.target.value }))}
+                />
                 {project.audience ? (
                   <p className="text-sm leading-7 text-slate-700">
                     <span className="font-semibold text-slate-900">Audience:</span> {project.audience}
                   </p>
                 ) : null}
-              </div>
-              <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <p className="field-label">Brief</p>
-                <p className="whitespace-pre-wrap text-sm leading-7 text-slate-700">{project.brief || "Not specified"}</p>
-              </div>
+              </label>
+              {!isContentCreation ? (
+                <label className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <span className="field-label">Brief</span>
+                  <textarea
+                    className="field-input min-h-72 resize-y bg-white"
+                    placeholder={workflowCopy.briefPlaceholder}
+                    value={briefDraft.brief}
+                    onChange={(event) => setBriefDraft((current) => ({ ...current, brief: event.target.value }))}
+                  />
+                </label>
+              ) : null}
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
+              <p className="text-sm leading-6 text-slate-500">
+                {hasPlanCreation
+                  ? "Save text changes first, then regenerate Plan Creation when you want the scene plan to use the updated brief."
+                  : "Save edits before generating Plan Creation so Gemini uses the latest brief."}
+              </p>
+              <button className="btn-secondary" disabled={!canAct || !briefChanged} type="button" onClick={() => void handleSaveBrief()}>
+                {loadingAction === "saveBrief" ? "Saving..." : briefChanged ? `Save ${workflowCopy.saveLabel} Changes` : `${workflowCopy.saveLabel} Saved`}
+              </button>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white p-5">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-teal-700">Product images</p>
-                  <h4 className="mt-1 text-lg font-semibold text-slate-950">Upload product references</h4>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-700">{workflowCopy.uploadEyebrow}</p>
+                  <h4 className="mt-1 text-lg font-semibold text-slate-950">{workflowCopy.uploadTitle}</h4>
                   <p className="mt-1 text-sm leading-6 text-slate-500">
-                    Upload app screenshots, product photos, logo, packaging, or UI screens here before Plan Creation. Next step: Gemini splits the brief into 4-second scene clips.
+                    {workflowCopy.uploadDescription}
                   </p>
                 </div>
                 <button className="btn-primary" disabled={!canAct} type="button" onClick={() => productReferenceInputRef.current?.click()}>
-                  {loadingAction === "upload" ? "Uploading..." : "Upload Product Images"}
+                  {loadingAction === "upload" ? "Uploading..." : workflowCopy.uploadButton}
                 </button>
                 <input
                   ref={productReferenceInputRef}
@@ -429,12 +656,12 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
 
               {project.uploaded_files.length ? (
                 <div className="mt-5 border-t border-slate-200 pt-5">
-                  <p className="field-label">Uploaded product references</p>
+                  <p className="field-label">{workflowCopy.uploadedLabel}</p>
                   <div className="mt-3 flex flex-wrap gap-3">
                     {project.uploaded_files.map((file) => (
                       <a
                         key={file.id}
-                        className="inline-flex max-w-full items-center rounded-md border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-800 transition hover:border-teal-300 hover:bg-teal-50 hover:text-teal-800"
+                        className="inline-flex max-w-full items-center rounded-md border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-800 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800"
                         href={toApiUrl(file.url)}
                         target="_blank"
                         rel="noreferrer"
@@ -446,7 +673,7 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
                 </div>
               ) : (
                 <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                  You can generate text-only, but product screenshots or photos make the scene prompts more usable.
+                  {workflowCopy.emptyUpload}
                 </p>
               )}
             </div>
@@ -459,7 +686,7 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
                 onClick={() => void runPlanCreation(() => navigate(`${projectBase}/plan-creation`))}
                 type="button"
               >
-                {loadingAction === "planCreation" ? "Generating Plan Creation..." : hasPlanCreation ? "Regenerate 4s Plan Creation" : "Generate 4s Plan Creation"}
+                {loadingAction === "planCreation" ? "Generating Plan Creation..." : hasPlanCreation ? "Regenerate Plan Creation" : "Generate Plan Creation"}
               </button>
             </div>
           </div>
@@ -472,11 +699,15 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
             <aside className="border-r border-slate-800 bg-slate-950 px-5 py-6 text-white">
               <div className="sticky top-6 space-y-5">
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-teal-300">Project</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-300">Project</p>
                   <h2 className="mt-2 text-[22px] font-semibold leading-tight">{project?.product_name ?? "Project"}</h2>
                   {project ? (
                     <p className="mt-2 text-sm leading-6 text-slate-400">
-                      {project.product_category || "General product"} / {compactId(project.id)}
+                      {project.product_category || workflowCopy.categoryFallback} / {compactId(project.id)}
+                      <br />
+                      Workflow: {workflowCopy.modeLabel}
+                      <br />
+                      Prompt provider: Gemini
                       <br />
                       Updated {formatDate(project.updated_at)}
                     </p>
@@ -512,7 +743,7 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
                             ? "border-rose-300/50 bg-rose-500/15"
                             : state === "complete"
                               ? "border-emerald-300/40 bg-emerald-500/10"
-                              : "border-white/10 bg-white/[0.04] hover:border-teal-300/50 hover:bg-white/[0.07]"
+                              : "border-white/10 bg-white/[0.04] hover:border-blue-300/50 hover:bg-white/[0.07]"
                         }`}
                         onClick={() => setPlanWorkflowStep(item.id)}
                         type="button"
@@ -552,7 +783,7 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
                           {project.uploaded_files.map((file) => (
                             <a
                               key={file.id}
-                              className="inline-flex max-w-full items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-teal-300 hover:bg-teal-50 hover:text-teal-800"
+                              className="inline-flex max-w-full items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800"
                               href={toApiUrl(file.url)}
                               target="_blank"
                               rel="noreferrer"
@@ -565,17 +796,23 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
                     ) : null}
 
                     <PlanCreationCard
+                      generatingClipSceneIndex={generatingClipSceneIndex}
+                      imageGenerationJobs={imageGenerationJobs}
+                      submittingImageTargets={submittingImageTargets}
                       googleFlowUrl={GOOGLE_FLOW_URL}
-                      isGeneratingClip={loadingAction === "clip"}
-                      isGeneratingKeyframe={loadingAction === "keyframe"}
-                      isGeneratingReferenceAsset={loadingAction === "referenceAsset"}
+                      isReviewingTake={loadingAction === "review"}
                       isUploadingClip={loadingAction === "clip"}
                       isUploadingKeyframe={loadingAction === "keyframe"}
                       isUploadingReferenceAsset={loadingAction === "upload"}
                       mode={planMode}
-                      onGenerateClip={(sceneIndex, prompt) => void handleGenerateClip(sceneIndex, prompt)}
-                      onGenerateKeyframe={(sceneIndex, slotId, prompt) => void handleGenerateKeyframe(sceneIndex, slotId, prompt)}
-                      onGenerateReferenceAsset={(assetType, imagePrompt) => void handleGenerateReferenceAsset(assetType, imagePrompt)}
+                      selectedImageModel={selectedImageModel}
+                      selectedVideoModel={selectedVideoModel}
+                      onSelectedImageModelChange={setSelectedImageModel}
+                      onSelectedVideoModelChange={setSelectedVideoModel}
+                      onGenerateClip={(sceneIndex, prompt, model) => void handleGenerateClip(sceneIndex, prompt, model)}
+                      onGenerateKeyframe={(sceneIndex, slotId, prompt, model) => void handleGenerateKeyframe(sceneIndex, slotId, prompt, model)}
+                      onGenerateReferenceAsset={(assetType, imagePrompt, model) => void handleGenerateReferenceAsset(assetType, imagePrompt, model)}
+                      onReviewTake={(sceneIndex, payload) => void handleReviewTake(sceneIndex, payload)}
                       onUploadClip={(sceneIndex, file) => void handleUploadClip(sceneIndex, file)}
                       onUploadKeyframe={(sceneIndex, slotId, file) => void handleUploadKeyframe(sceneIndex, slotId, file)}
                       onUploadReferenceAsset={(assetType, file) => void handleUploadReferenceAsset(assetType, file)}
@@ -609,10 +846,10 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
                   </>
                 ) : (
                   <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-teal-700">Ready to generate</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-700">Ready to generate</p>
                     <h4 className="mt-2 text-2xl font-semibold text-slate-950">No Plan Creation yet</h4>
                     <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-                      Generate the plan first. The dashboard will then walk through character/location references, scene keyframes, and 4-second clip prompts.
+                      Generate the plan first. The dashboard will then walk through character/location references, scene keyframes, and clip prompts.
                     </p>
                     <div className="mt-6 flex flex-wrap justify-center gap-3">
                       <Link className="btn-secondary" to={`${projectBase}/brief`}>

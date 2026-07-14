@@ -14,7 +14,7 @@ UPLOADS_DIR = BASE_DIR / "uploads"
 PROJECTS_JSON = DATA_DIR / "projects.json"
 
 if load_dotenv:
-    load_dotenv(BACKEND_DIR / ".env")
+    load_dotenv(BACKEND_DIR / ".env", override=True)
 
 
 def _split_secret_list(raw_value: str) -> list[str]:
@@ -31,7 +31,9 @@ def _read_env_file_values(names: set[str]) -> list[str]:
         return []
 
     values: list[str] = []
-    for line in env_path.read_text(encoding="utf-8", errors="replace").splitlines():
+    # utf-8-sig strips a Windows BOM so the first env name is not parsed as
+    # "\ufeffGEMINI_API_KEYS".
+    for line in env_path.read_text(encoding="utf-8-sig", errors="replace").splitlines():
         stripped = line.strip()
         if not stripped or stripped.startswith("#") or "=" not in stripped:
             continue
@@ -61,27 +63,28 @@ def _collect_gemini_api_keys() -> list[str]:
     return unique_keys
 
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_API_KEYS = _collect_gemini_api_keys()
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 GEMINI_API_BASE_URL = os.getenv("GEMINI_API_BASE_URL", "https://generativelanguage.googleapis.com/v1beta")
+GEMINI_REQUEST_TIMEOUT_SECONDS = max(30, int(os.getenv("GEMINI_REQUEST_TIMEOUT_SECONDS", "180")))
+GEMINI_TRANSIENT_MAX_ATTEMPTS = max(1, min(int(os.getenv("GEMINI_TRANSIENT_MAX_ATTEMPTS", "2")), 4))
+GEMINI_RETRY_BASE_SECONDS = max(0.25, float(os.getenv("GEMINI_RETRY_BASE_SECONDS", "1.5")))
 IMAGE_PROVIDER_NAME = os.getenv("IMAGE_PROVIDER_NAME", "")
 IMAGE_PROVIDER_API_KEY = os.getenv("IMAGE_PROVIDER_API_KEY", "")
-IMAGE_PROVIDER_BASE_URL = os.getenv("IMAGE_PROVIDER_BASE_URL", "https://api.openai.com/v1")
-IMAGE_MODEL_ID = os.getenv("IMAGE_MODEL_ID", "gpt-image-1")
-VIDEO_PROVIDER_NAME = os.getenv("VIDEO_PROVIDER_NAME", "")
-VIDEO_PROVIDER_API_KEY = os.getenv("VIDEO_PROVIDER_API_KEY", "")
-VIDEO_PROVIDER_BASE_URL = os.getenv("VIDEO_PROVIDER_BASE_URL", "https://api.gommo.net")
-VIDEO_PROVIDER_DOMAIN = os.getenv("VIDEO_PROVIDER_DOMAIN", "79ai.net")
-VIDEO_MODEL_ID = os.getenv("VIDEO_MODEL_ID", "veo_omni")
-VIDEO_MODEL_MODE = os.getenv("VIDEO_MODEL_MODE", "flash")
+IMAGE_PROVIDER_BASE_URL = os.getenv("IMAGE_PROVIDER_BASE_URL", "https://api.shopaikey.com")
+IMAGE_OUTPUT_SIZE = os.getenv("IMAGE_OUTPUT_SIZE", "2K")
+IMAGE_GENERATION_CONCURRENCY = max(1, min(int(os.getenv("IMAGE_GENERATION_CONCURRENCY", "2")), 6))
+IMAGE_GENERATION_MAX_RETRIES = max(1, min(int(os.getenv("IMAGE_GENERATION_MAX_RETRIES", "3")), 6))
+IMAGE_GENERATION_RETRY_BASE_SECONDS = max(0.25, float(os.getenv("IMAGE_GENERATION_RETRY_BASE_SECONDS", "2")))
+VIDEO_PROVIDER_NAME = os.getenv("VIDEO_PROVIDER_NAME", "shopaikey")
+VIDEO_PROVIDER_API_KEY = os.getenv("VIDEO_PROVIDER_API_KEY", "") or IMAGE_PROVIDER_API_KEY
+VIDEO_PROVIDER_BASE_URL = os.getenv("VIDEO_PROVIDER_BASE_URL", "https://api.shopaikey.com")
+VIDEO_MODEL_ID = os.getenv("VIDEO_MODEL_ID", "veo3.1-pro")
 VIDEO_MODEL_RATIO = os.getenv("VIDEO_MODEL_RATIO", "9:16")
-VIDEO_MODEL_DURATION = os.getenv("VIDEO_MODEL_DURATION", "4")
-VIDEO_MODEL_RESOLUTION = os.getenv("VIDEO_MODEL_RESOLUTION", "720p")
-VIDEO_TRANSLATE_TO_EN = os.getenv("VIDEO_TRANSLATE_TO_EN", "false")
-VIDEO_REFERENCE_LIMIT = int(os.getenv("VIDEO_REFERENCE_LIMIT", "4"))
-VIDEO_POLL_INTERVAL_SECONDS = float(os.getenv("VIDEO_POLL_INTERVAL_SECONDS", "3.5"))
-VIDEO_POLL_TIMEOUT_SECONDS = float(os.getenv("VIDEO_POLL_TIMEOUT_SECONDS", "160"))
+VIDEO_ENHANCE_PROMPT = os.getenv("VIDEO_ENHANCE_PROMPT", "false").strip().lower() in {"1", "true", "yes", "on"}
+VIDEO_ENABLE_UPSAMPLE = os.getenv("VIDEO_ENABLE_UPSAMPLE", "true").strip().lower() in {"1", "true", "yes", "on"}
+VIDEO_REFERENCE_LIMIT = max(1, min(int(os.getenv("VIDEO_REFERENCE_LIMIT", "1")), 2))
+VIDEO_REQUEST_TIMEOUT_SECONDS = max(15, int(os.getenv("VIDEO_REQUEST_TIMEOUT_SECONDS", "90")))
 ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",

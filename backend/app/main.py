@@ -16,7 +16,7 @@ from app.services.video_provider import VideoProviderError
 ensure_app_dirs()
 
 app = FastAPI(
-    title="AI Ads Video Factory API",
+    title="AI Video Factory API",
     version="0.1.0",
     description="Backend MVP for turning a brief and uploaded assets into a Plan Creation workflow.",
 )
@@ -45,7 +45,19 @@ async def value_error_handler(_: Request, exc: ValueError) -> JSONResponse:
 @app.exception_handler(LLMProviderError)
 async def llm_provider_error_handler(_: Request, exc: LLMProviderError) -> JSONResponse:
     detail = str(exc)
-    if not detail.startswith("GEMINI_API_KEYS is required"):
+    if detail.startswith("GEMINI_API_KEYS is required"):
+        pass
+    elif "Gemini API HTTP 503" in detail or '"status": "UNAVAILABLE"' in detail:
+        detail = f"Gemini model is temporarily unavailable or experiencing high demand. Retry later. {detail}"
+    elif "Gemini API HTTP 429" in detail:
+        detail = f"Gemini quota or rate limit was reached. Check the active key quota and retry later. {detail}"
+    elif "Gemini API request timed out" in detail:
+        detail = f"Gemini did not respond before the configured timeout after retrying. Retry the action later or increase GEMINI_REQUEST_TIMEOUT_SECONDS. {detail}"
+    elif "Gemini API request failed" in detail:
+        detail = f"Gemini could not be reached after retrying. Check the network connection and retry. {detail}"
+    elif "API_KEY_INVALID" in detail:
+        detail = f"A configured Gemini API key is invalid. Remove or replace the invalid key. {detail}"
+    else:
         detail = f"Gemini provider failed. Please check GEMINI_API_KEYS and request format. {detail}"
     return JSONResponse(status_code=503, content={"detail": detail})
 
@@ -62,7 +74,7 @@ async def video_provider_error_handler(_: Request, exc: VideoProviderError) -> J
 
 @app.get("/", response_model=HealthResponse)
 def health_check() -> HealthResponse:
-    return HealthResponse(status="ok", service="ai-ads-video-factory")
+    return HealthResponse(status="ok", service="ai-video-factory")
 
 
 app.include_router(projects_router)

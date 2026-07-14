@@ -1,6 +1,6 @@
-# AI Ads Video Factory Frontend MVP
+# AI Video Factory Frontend MVP
 
-React + Vite + TypeScript dashboard for the AI Ads Video Factory backend MVP.
+React + Vite + TypeScript dashboard for the AI Video Factory backend MVP.
 
 ## Prerequisites
 
@@ -39,16 +39,19 @@ http://127.0.0.1:5173
 
 ## User Flow
 
-1. Create a project with product context and a free-form brief.
+1. Create a project with product context and a free-form brief. The main UI uses Gemini for prompt planning.
 2. Open the project workflow and upload product/app references as a separate step.
-3. Generate Plan Creation to turn the brief and uploaded references into 4-second scene clips.
-4. Review product locks, primary character prompt, primary location prompt, and uploaded reference mapping.
-5. Review each 4-second scene: action, camera, voice, overlay, timing, keyframe slots, final video prompt, and negative rules.
-6. Upload or select generated keyframe references.
-7. Copy each final 4-second video prompt into Flow, Kling, or another video generation UI for manual testing.
+3. Generate Plan Creation to turn the brief and uploaded references into timed scene clips.
+4. In Automation mode, select a Nano Banana or GPT Image model, then generate the primary character and location references. Manual uploads remain available.
+5. Keep or change the image model, then generate or upload one keyframe reference per scene. Every queued job retains the model selected when it was submitted.
+6. Review each scene's directorial intent, endpoint, reference roles, prompt QC, voice, overlay, and negative rules.
+7. Copy each compact scene prompt into Flow/Kling, or switch to Automation and select a supported ShopAIKey Veo/Grok model for that scene.
+8. After a clip is generated or uploaded, record a take verdict. Only accepted footage becomes continuity canon for the next scene.
 
 ## API Contract
 
 Shared FE/BE contract: `../API_CONTRACT.md`
 
 The main frontend flow uses `Project` and `PlanCreation`.
+
+Prompt generation and uploaded image understanding use the backend's configured Gemini model exclusively.

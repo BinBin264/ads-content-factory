@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, File, Form, UploadFile
 from fastapi.responses import Response
 
-from app.models.schemas import Project
+from app.models.schemas import Project, UpdateProjectRequest
 from app.services.project_service import ProjectService
 
 
@@ -14,6 +14,7 @@ project_service = ProjectService()
 @router.post("", response_model=Project, status_code=201)
 async def create_project(
     product_name: Annotated[str, Form(...)],
+    workflow_type: Annotated[str, Form()] = "video_ads",
     product_category: Annotated[str | None, Form()] = None,
     product_description: Annotated[str | None, Form()] = None,
     brief: Annotated[str | None, Form()] = None,
@@ -29,6 +30,7 @@ async def create_project(
 ) -> Project:
     return await project_service.create_project(
         product_name=product_name,
+        workflow_type=workflow_type,
         product_category=product_category,
         product_description=product_description,
         brief=brief,
@@ -52,6 +54,11 @@ def list_projects() -> list[Project]:
 @router.get("/{project_id}", response_model=Project)
 def get_project(project_id: str) -> Project:
     return project_service.get_project(project_id)
+
+
+@router.patch("/{project_id}", response_model=Project)
+def update_project(project_id: str, payload: UpdateProjectRequest) -> Project:
+    return project_service.update_project(project_id, payload)
 
 
 @router.post("/{project_id}/uploads", response_model=Project)

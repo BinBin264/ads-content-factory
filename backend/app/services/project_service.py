@@ -1,27 +1,39 @@
+from collections.abc import Callable
+
 from fastapi import UploadFile
 
 from app.models.schemas import (
     CreativePlan,
     Project,
+    ReviewSceneTakeRequest,
     RewriteSceneRequest,
     SelectKeyframeCandidateRequest,
     UpdateKeyframePromptSlotRequest,
     UpdateProductReferenceRequest,
+    UpdateProjectRequest,
     UpdateReferenceAssetRequest,
     UpdateSceneRequest,
     UpdateSceneVideoPromptRequest,
 )
 from app.services.creative_plan_generator import CreativePlanGenerator, GeminiCreativePlanGenerator
-from app.services.image_provider import OpenAICompatibleImageProvider
+from app.services.image_provider import ImageReference, OpenAICompatibleImageProvider
 from app.services.llm_provider import LLMProvider, build_llm_provider
+from app.services.production_orchestrator import ProductionOrchestrator
 from app.services.storage_service import JsonProjectStorage, LocalFileStorage
 from app.services.video_provider import (
     GeneratedVideo,
-    GommoOmniVideoProvider,
+    ShopAIKeyVideoProvider,
     VideoProviderError,
     VideoReferenceInput,
     VideoReferenceUpload,
+    VideoTaskFailedError,
 )
+
+
+DEFAULT_SCENE_CLIP_SECONDS = 8
+ALLOWED_SCENE_CLIP_SECONDS = (4, 6, 8, 10)
+KEYFRAMES_PER_SCENE = 1
+ImageProgressCallback = Callable[[int, str], None]
 
 
 class ProjectService:
@@ -32,19 +44,21 @@ class ProjectService:
         creative_plan_generator: CreativePlanGenerator | None = None,
         llm_provider: LLMProvider | None = None,
         image_provider: OpenAICompatibleImageProvider | None = None,
-        video_provider: GommoOmniVideoProvider | None = None,
+        video_provider: ShopAIKeyVideoProvider | None = None,
     ) -> None:
         self.storage = storage or JsonProjectStorage()
         self.file_storage = file_storage or LocalFileStorage()
         self.creative_plan_generator = creative_plan_generator or GeminiCreativePlanGenerator()
         self.llm_provider = llm_provider or build_llm_provider()
         self.image_provider = image_provider or OpenAICompatibleImageProvider()
-        self.video_provider = video_provider or GommoOmniVideoProvider()
+        self.video_provider = video_provider or ShopAIKeyVideoProvider()
+        self.production_orchestrator = ProductionOrchestrator()
 
     async def create_project(
         self,
         *,
         product_name: str,
+        workflow_type: str,
         product_category: str | None,
         product_description: str | None,
         brief: str | None,
@@ -59,6 +73,7 @@ class ProjectService:
         files: list[UploadFile] | None,
     ) -> Project:
         project = Project(
+            workflow_type=workflow_type,
             product_name=product_name.strip(),
             product_category=self._clean_optional(product_category),
             product_description=self._clean_optional(product_description),
@@ -113,7 +128,20 @@ class ProjectService:
         return sorted(self.storage.list_projects(), key=lambda item: item.created_at, reverse=True)
 
     def get_project(self, project_id: str) -> Project:
-        return self.storage.get_project(project_id)
+        project = self.storage.get_project(project_id)
+        if project.creative_plan and not project.creative_plan.sequenceState:
+            project.creative_plan = self.production_orchestrator.prepare_plan(project, project.creative_plan)
+            return self.storage.save_project(project)
+        return project
+
+    def update_project(self, project_id: str, payload: UpdateProjectRequest) -> Project:
+        project = self.storage.get_project(project_id)
+        values = payload.model_dump(exclude_unset=True)
+        if "product_description" in values:
+            project.product_description = self._clean_optional(values.get("product_description"))
+        if "brief" in values:
+            project.brief = self._clean_optional(values.get("brief"))
+        return self.storage.save_project(project)
 
     def generate_plan_creation(self, project_id: str) -> CreativePlan:
         project = self.storage.get_project(project_id)
@@ -123,9 +151,9 @@ class ProjectService:
         if result.creative_plan is None:
             raise ValueError("Plan Creation generation did not return a creative_plan.")
         project.vision_analysis = result.vision_analysis
-        project.creative_plan = result.creative_plan
+        project.creative_plan = self.production_orchestrator.prepare_plan(project, result.creative_plan)
         self.storage.save_project(project)
-        return result.creative_plan
+        return project.creative_plan
 
     def update_product_reference(
         self,
@@ -210,6 +238,8 @@ class ProjectService:
         if final_prompt_relevant:
             scene["finalVideoPromptStale"] = True
 
+        self.production_orchestrator.refresh_scene(plan, scene, compile_prompt=False)
+
         project.creative_plan = plan
         return self.storage.save_project(project)
 
@@ -220,9 +250,10 @@ class ProjectService:
         plan = self._require_plan(project)
         scene = self._find_scene(plan.scenes, scene_index)
         prompt = self._build_rewrite_scene_prompt(project, plan, scene, payload.instruction)
-        rewritten = self.llm_provider.generate_json(prompt, temperature=0.35)
+        rewritten = self._llm_provider_for_project(project).generate_json(prompt, temperature=0.35)
         updated = self._coerce_scene(rewritten, scene_index, scene)
         plan.scenes[plan.scenes.index(scene)] = updated
+        self.production_orchestrator.refresh_scene(plan, updated, compile_prompt=True)
         project.creative_plan = plan
         return self.storage.save_project(project)
 
@@ -247,6 +278,7 @@ class ProjectService:
             scene["status"] = "KEYFRAME_READY"
         scene["finalVideoPrompt"] = final_prompt
         scene["finalVideoPromptStale"] = False
+        scene["promptQuality"] = self.production_orchestrator.lint_scene_prompt(scene, final_prompt)
         project.creative_plan = plan
         return self.storage.save_project(project)
 
@@ -255,12 +287,14 @@ class ProjectService:
         plan = self._require_plan(project)
         scene = self._find_scene(plan.scenes, scene_index)
         prompt = self._build_regenerate_final_prompt(project, plan, scene)
-        data = self.llm_provider.generate_json(prompt, temperature=0.25)
+        data = self._llm_provider_for_project(project).generate_json(prompt, temperature=0.25)
         final_prompt = str(data.get("finalVideoPrompt") or "").strip()
         if not final_prompt:
             raise ValueError("Gemini did not return finalVideoPrompt.")
-        scene["finalVideoPrompt"] = self._force_four_second_prompt(final_prompt)
+        scene["sourceVideoPrompt"] = self._clean_video_prompt(final_prompt)
+        scene["finalVideoPrompt"] = self.production_orchestrator.compile_scene_prompt(plan, scene)
         scene["finalVideoPromptStale"] = False
+        scene["promptQuality"] = self.production_orchestrator.lint_scene_prompt(scene)
         project.creative_plan = plan
         return self.storage.save_project(project)
 
@@ -279,8 +313,16 @@ class ProjectService:
         for key, value in values.items():
             if value is not None:
                 slot[key] = value
+
+        # Re-run prompt cleanup and product-reference routing after an edited
+        # source prompt is saved. This keeps compiled UI instructions out of
+        # storage and prevents stale product references from surviving edits.
+        plan = CreativePlan.model_validate(plan.model_dump(mode="python"))
+        scene = self._find_scene(plan.scenes, scene_index)
+        slot = self._find_keyframe_slot(scene, slot_id)
         slot["stale"] = True
         scene["finalVideoPromptStale"] = True
+        self.production_orchestrator.refresh_scene(plan, scene, compile_prompt=False)
         project.creative_plan = plan
         return self.storage.save_project(project)
 
@@ -322,10 +364,19 @@ class ProjectService:
         slot["stale"] = False
         scene["finalVideoPromptStale"] = True
         scene["status"] = "KEYFRAME_READY"
+        self.production_orchestrator.refresh_scene(plan, scene, compile_prompt=True)
         project.creative_plan = plan
         return self.storage.save_project(project)
 
-    def generate_reference_asset_image(self, project_id: str, asset_type: str) -> Project:
+    def generate_reference_asset_image(
+        self,
+        project_id: str,
+        asset_type: str,
+        *,
+        model_id: str,
+        progress_callback: ImageProgressCallback | None = None,
+    ) -> Project:
+        self._report_image_progress(progress_callback, 8, "Loading project")
         project = self.storage.get_project(project_id)
         plan = self._require_plan(project)
         normalized_type = asset_type.lower().strip()
@@ -333,22 +384,40 @@ class ProjectService:
             raise ValueError("asset_type must be character or location.")
         asset = plan.primaryCharacter if normalized_type == "character" else plan.primaryLocation
         prompt = self._build_reference_asset_prompt(normalized_type, asset)
-        generated = self.image_provider.generate_image(prompt=prompt, aspect_ratio="9:16")
-        saved = self.file_storage.save_generated_file(
-            project.id,
-            bucket=normalized_type,
-            filename=f"{normalized_type}_reference.png",
-            content=generated.content,
-            content_type=generated.content_type,
+        selected_model = self.image_provider.resolve_model_id(model_id)
+        generated = self.image_provider.generate_image(
+            prompt=prompt,
+            aspect_ratio="9:16",
+            model_id=selected_model,
+            reference_images=self._build_reference_asset_image_references(project, normalized_type, asset),
+            progress_callback=progress_callback,
         )
-        self._replace_reference_asset_file(project, asset, saved)
-        project.uploaded_files.append(saved)
-        asset["imageUrl"] = saved.url
-        asset["status"] = "ready"
-        asset["uploadedFileId"] = saved.id
-        asset["candidateImages"] = [saved.url]
-        project.creative_plan = plan
-        return self.storage.save_project(project)
+
+        self._report_image_progress(progress_callback, 94, "Saving generated image")
+
+        def apply_result(latest_project: Project) -> Project:
+            latest_plan = self._require_plan(latest_project)
+            latest_asset = latest_plan.primaryCharacter if normalized_type == "character" else latest_plan.primaryLocation
+            saved = self.file_storage.save_generated_file(
+                latest_project.id,
+                bucket=normalized_type,
+                filename=f"{normalized_type}_reference.png",
+                content=generated.content,
+                content_type=generated.content_type,
+            )
+            self._replace_reference_asset_file(latest_project, latest_asset, saved)
+            latest_project.uploaded_files.append(saved)
+            latest_asset["imageUrl"] = saved.url
+            latest_asset["status"] = "ready"
+            latest_asset["uploadedFileId"] = saved.id
+            latest_asset["candidateImages"] = [saved.url]
+            latest_asset["generationModel"] = selected_model
+            latest_project.creative_plan = latest_plan
+            return latest_project
+
+        project = self.storage.mutate_project(project_id, apply_result)
+        self._report_image_progress(progress_callback, 98, "Updating project")
+        return project
 
     def update_reference_asset(self, project_id: str, asset_type: str, payload: UpdateReferenceAssetRequest) -> Project:
         project = self.storage.get_project(project_id)
@@ -370,38 +439,88 @@ class ProjectService:
         project.creative_plan = plan
         return self.storage.save_project(project)
 
-    def generate_keyframe_slot_image(self, project_id: str, scene_index: int, slot_id: str) -> Project:
+    def generate_keyframe_slot_image(
+        self,
+        project_id: str,
+        scene_index: int,
+        slot_id: str,
+        *,
+        model_id: str,
+        progress_callback: ImageProgressCallback | None = None,
+    ) -> Project:
+        self._report_image_progress(progress_callback, 8, "Loading scene contract")
         project = self.storage.get_project(project_id)
         plan = self._require_plan(project)
         scene = self._find_scene(plan.scenes, scene_index)
         slot = self._find_keyframe_slot(scene, slot_id)
+        source_prompt = str(slot.get("prompt") or "").strip()
+        product_reference_ids = [
+            str(reference_id)
+            for reference_id in (slot.get("productReferenceIds") or [])
+            if str(reference_id).strip()
+        ][:1]
         prompt = self._build_keyframe_image_prompt(plan, scene, slot)
-        generated = self.image_provider.generate_image(prompt=prompt, aspect_ratio="9:16")
-        output_filename = self._keyframe_output_filename(scene_index, scene, slot)
-        saved = self.file_storage.save_generated_file(
-            project.id,
-            bucket="keyframe",
-            filename=output_filename,
-            content=generated.content,
-            content_type=generated.content_type,
+        reference_images = self._build_keyframe_image_references(project, plan, scene, slot)
+        selected_model = self.image_provider.resolve_model_id(model_id)
+        generated = self.image_provider.generate_image(
+            prompt=prompt,
+            aspect_ratio="9:16",
+            model_id=selected_model,
+            reference_images=reference_images,
+            progress_callback=progress_callback,
         )
-        self._replace_keyframe_slot_file(project, slot, saved)
-        project.uploaded_files.append(saved)
-        candidate = {
-            "id": "candidate_1",
-            "imageUrl": saved.url,
-            "mimeType": saved.content_type,
-            "warning": generated.warning,
-        }
-        slot["candidates"] = [candidate]
-        slot["selectedCandidateId"] = candidate["id"]
-        slot["selectedImageUrl"] = candidate["imageUrl"]
-        slot["uploadedFileId"] = saved.id
-        slot["stale"] = False
-        scene["status"] = "KEYFRAME_READY"
-        scene["finalVideoPromptStale"] = True
-        project.creative_plan = plan
-        return self.storage.save_project(project)
+
+        self._report_image_progress(progress_callback, 94, "Saving keyframe image")
+
+        def apply_result(latest_project: Project) -> Project:
+            latest_plan = self._require_plan(latest_project)
+            latest_scene = self._find_scene(latest_plan.scenes, scene_index)
+            latest_slot = self._find_keyframe_slot(latest_scene, slot_id)
+            # Treat prompt + routed product reference as one atomic generation
+            # contract. Provider latency and model re-validation must not replace
+            # the selected app screen after generation.
+            latest_slot["prompt"] = source_prompt
+            latest_slot["productReferenceIds"] = product_reference_ids
+            output_filename = self._keyframe_output_filename(scene_index, latest_scene, latest_slot)
+            saved = self.file_storage.save_generated_file(
+                latest_project.id,
+                bucket="keyframe",
+                filename=output_filename,
+                content=generated.content,
+                content_type=generated.content_type,
+            )
+            self._replace_keyframe_slot_file(latest_project, latest_slot, saved)
+            latest_project.uploaded_files.append(saved)
+            candidate = {
+                "id": "candidate_1",
+                "imageUrl": saved.url,
+                "mimeType": saved.content_type,
+                "warning": generated.warning,
+            }
+            latest_slot["candidates"] = [candidate]
+            latest_slot["selectedCandidateId"] = candidate["id"]
+            latest_slot["selectedImageUrl"] = candidate["imageUrl"]
+            latest_slot["uploadedFileId"] = saved.id
+            latest_slot["generationModel"] = selected_model
+            latest_slot["stale"] = False
+            latest_scene["status"] = "KEYFRAME_READY"
+            latest_scene["finalVideoPromptStale"] = True
+            self.production_orchestrator.refresh_scene(latest_plan, latest_scene, compile_prompt=True)
+            latest_project.creative_plan = latest_plan
+            return latest_project
+
+        project = self.storage.mutate_project(project_id, apply_result)
+        self._report_image_progress(progress_callback, 98, "Updating project")
+        return project
+
+    def _report_image_progress(
+        self,
+        callback: ImageProgressCallback | None,
+        progress: int,
+        phase: str,
+    ) -> None:
+        if callback:
+            callback(progress, phase)
 
     async def upload_keyframe_slot_image(
         self,
@@ -433,15 +552,20 @@ class ProjectService:
         slot["stale"] = False
         scene["status"] = "KEYFRAME_READY"
         scene["finalVideoPromptStale"] = True
+        self.production_orchestrator.refresh_scene(plan, scene, compile_prompt=True)
         project.creative_plan = plan
         return self.storage.save_project(project)
 
-    def generate_scene_video(self, project_id: str, scene_index: int) -> Project:
+    def generate_scene_video(self, project_id: str, scene_index: int, model_id: str | None = None) -> Project:
         project = self.storage.get_project(project_id)
         plan = self._require_plan(project)
         scene = self._find_scene(plan.scenes, scene_index)
         if not str(scene.get("finalVideoPrompt") or "").strip():
             raise ValueError("Final video prompt is required before video generation.")
+        prompt_quality = self.production_orchestrator.lint_scene_prompt(scene)
+        scene["promptQuality"] = prompt_quality
+        if prompt_quality.get("hardFailures"):
+            raise ValueError("Video prompt quality gate failed: " + " ".join(prompt_quality["hardFailures"]))
         if scene.get("videoUrl"):
             return project
 
@@ -458,8 +582,21 @@ class ProjectService:
         if not references:
             raise ValueError("Upload or generate at least one keyframe/reference image before video generation.")
 
+        selected_model = str(scene.get("videoModel") or model_id or "").strip() if previous_job_id else model_id
+        profile = self.video_provider.get_model_profile(
+            model_id=selected_model or None,
+            duration=str(scene.get("videoDuration") or scene.get("durationSec") or DEFAULT_SCENE_CLIP_SECONDS),
+        )
         scene["status"] = "VIDEO_GENERATING"
         scene["videoError"] = None
+        scene["videoProvider"] = "ShopAIKey"
+        scene["videoModel"] = profile.model_id
+        scene["videoRatio"] = profile.ratio
+        scene["videoDuration"] = profile.duration
+        scene["videoMode"] = profile.mode
+        scene["videoResolution"] = profile.resolution
+        if not previous_job_id:
+            scene["videoProgress"] = 0
         project.creative_plan = plan
         self.storage.save_project(project)
 
@@ -474,6 +611,8 @@ class ProjectService:
                     project_id=project.id,
                     job_id=previous_job_id,
                     references=uploaded_references,
+                    duration=str(scene.get("videoDuration") or scene.get("durationSec") or DEFAULT_SCENE_CLIP_SECONDS),
+                    model_id=profile.model_id,
                 )
             else:
                 result = self.video_provider.generate_video(
@@ -481,10 +620,16 @@ class ProjectService:
                     scene_index=scene_index,
                     prompt=str(scene.get("finalVideoPrompt") or ""),
                     references=references,
+                    duration=str(scene.get("durationSec") or DEFAULT_SCENE_CLIP_SECONDS),
+                    model_id=profile.model_id,
                 )
         except VideoProviderError as exc:
             scene["status"] = "FAILED"
             scene["videoError"] = str(exc)
+            if isinstance(exc, VideoTaskFailedError):
+                scene["videoJobId"] = None
+                scene["videoStatusPayload"] = None
+                scene["videoReferenceUploads"] = []
             project.creative_plan = plan
             self.storage.save_project(project)
             raise
@@ -493,13 +638,23 @@ class ProjectService:
         project.creative_plan = plan
         return self.storage.save_project(project)
 
+    def poll_scene_video(self, project_id: str, scene_index: int) -> Project:
+        project = self.storage.get_project(project_id)
+        plan = self._require_plan(project)
+        scene = self._find_scene(plan.scenes, scene_index)
+        if scene.get("videoUrl"):
+            return project
+        if not str(scene.get("videoJobId") or "").strip():
+            raise ValueError("Generate the scene video before polling its status.")
+        return self.generate_scene_video(project_id, scene_index, str(scene.get("videoModel") or "") or None)
+
     async def upload_scene_video(self, project_id: str, scene_index: int, file: UploadFile | None) -> Project:
         if file is None:
             raise ValueError("Select one video file to upload.")
         project = self.storage.get_project(project_id)
         plan = self._require_plan(project)
         scene = self._find_scene(plan.scenes, scene_index)
-        output_filename = f"scene_{scene_index:02d}_clip_4s.mp4"
+        output_filename = self._scene_clip_output_filename(scene_index, scene)
         saved = await self.file_storage.save_named_upload(project.id, file, output_filename)
         self._replace_scene_video_file(project, scene, saved)
         project.uploaded_files.append(saved)
@@ -507,6 +662,17 @@ class ProjectService:
         scene["uploadedVideoFileId"] = saved.id
         scene["status"] = "VIDEO_READY"
         scene["videoError"] = None
+        scene["videoProgress"] = 100
+        project.creative_plan = plan
+        return self.storage.save_project(project)
+
+    def review_scene_take(self, project_id: str, scene_index: int, payload: ReviewSceneTakeRequest) -> Project:
+        project = self.storage.get_project(project_id)
+        plan = self._require_plan(project)
+        scene = self._find_scene(plan.scenes, scene_index)
+        if not scene.get("videoUrl"):
+            raise ValueError("Generate or upload the scene clip before reviewing the take.")
+        self.production_orchestrator.review_take(plan, scene, payload.model_dump(mode="json"))
         project.creative_plan = plan
         return self.storage.save_project(project)
 
@@ -615,6 +781,114 @@ class ProjectService:
             self.file_storage.delete_uploaded_files(removed_files)
             project.uploaded_files = kept_files
 
+    def _build_reference_asset_image_references(
+        self,
+        project: Project,
+        asset_type: str,
+        asset: dict,
+    ) -> list[ImageReference]:
+        existing_url = str(asset.get("imageUrl") or "").strip()
+        if not existing_url:
+            return []
+        reference = self._image_reference_from_selector(
+            project,
+            label=f"{asset_type}_reference",
+            role=f"existing {asset_type} identity and appearance",
+            selector=existing_url,
+        )
+        return [reference] if reference else []
+
+    def _build_keyframe_image_references(
+        self,
+        project: Project,
+        plan: CreativePlan,
+        scene: dict,
+        slot: dict,
+    ) -> list[ImageReference]:
+        references: list[ImageReference] = []
+        seen: set[str] = set()
+
+        def add_reference(label: str, role: str, selector: object) -> None:
+            reference = self._image_reference_from_selector(project, label, role, str(selector or ""))
+            if reference is None:
+                return
+            identity = reference.file_path or reference.url or reference.id
+            if identity in seen:
+                return
+            seen.add(identity)
+            references.append(reference)
+
+        relevant_product_refs = self._filter_product_references(
+            plan.productReferences,
+            slot.get("productReferenceIds"),
+        )[:1]
+        for product_ref in relevant_product_refs:
+            label = str(
+                product_ref.get("referenceLabel")
+                or product_ref.get("sourceFileName")
+                or product_ref.get("name")
+                or "product_reference"
+            )
+            selector = product_ref.get("id") or product_ref.get("sourceFileName") or product_ref.get("name")
+            add_reference(
+                label,
+                "pixel-locked product/app UI for this scene only; copy the visible reference unchanged into the product or phone screen",
+                selector,
+            )
+
+        # Put the scene's hero product/UI reference first. Multimodal image
+        # providers tend to preserve earlier image inputs more faithfully, and
+        # the remaining references should only supply actor and environment.
+        add_reference(
+            "character_reference",
+            "primary character identity, face, body, outfit, and age",
+            plan.primaryCharacter.get("imageUrl"),
+        )
+        add_reference(
+            "location_reference",
+            "primary location layout, recurring props, lighting direction, and atmosphere",
+            plan.primaryLocation.get("imageUrl"),
+        )
+
+        return references
+
+    def _image_reference_from_selector(
+        self,
+        project: Project,
+        label: str,
+        role: str,
+        selector: str,
+    ) -> ImageReference | None:
+        cleaned = selector.strip()
+        if not cleaned:
+            return None
+
+        for uploaded_file in project.uploaded_files:
+            if (
+                cleaned == uploaded_file.id
+                or cleaned == uploaded_file.url
+                or cleaned == uploaded_file.file_name
+                or cleaned.endswith(uploaded_file.url)
+                or cleaned.endswith(uploaded_file.file_name)
+            ):
+                return ImageReference(
+                    id=uploaded_file.id,
+                    label=label,
+                    role=role,
+                    file_path=uploaded_file.path,
+                    url=uploaded_file.url,
+                    content_type=uploaded_file.content_type,
+                )
+
+        if cleaned.startswith("https://") or cleaned.startswith("http://") or cleaned.startswith("data:image/"):
+            return ImageReference(
+                id=cleaned,
+                label=label,
+                role=role,
+                url=cleaned,
+            )
+        return None
+
     def _build_scene_video_references(self, project: Project, plan: CreativePlan, scene: dict) -> list[VideoReferenceInput]:
         references: list[VideoReferenceInput] = []
         seen: set[str] = set()
@@ -635,6 +909,9 @@ class ProjectService:
                 continue
             output_name = f"scene_{scene_index:02d}_keyframe_{slot_index:02d}.png"
             add_reference(output_name, "keyframe", slot.get("selectedImageUrl"))
+            keyframe_count = len([reference for reference in references if reference.role == "keyframe"])
+            if keyframe_count >= KEYFRAMES_PER_SCENE:
+                break
 
         return references
 
@@ -691,6 +968,7 @@ class ProjectService:
         scene["videoDuration"] = result.duration
         scene["videoMode"] = result.mode
         scene["videoResolution"] = result.resolution
+        scene["videoProgress"] = result.progress
         scene["videoJobId"] = result.job_id
         scene["videoStatusPayload"] = result.raw_response
         scene["videoReferenceUploads"] = [
@@ -736,6 +1014,9 @@ class ProjectService:
             raise ValueError("Generate Plan Creation before using the production workflow.")
         return project.creative_plan
 
+    def _llm_provider_for_project(self, project: Project) -> LLMProvider:
+        return build_llm_provider()
+
     def _find_reference(self, references: list[dict], reference_id: str) -> dict:
         for reference in references:
             if reference.get("id") == reference_id or reference.get("name") == reference_id:
@@ -779,14 +1060,28 @@ class ProjectService:
         scene = dict(previous)
         scene.update(data)
         scene["sceneIndex"] = scene_index
-        scene["durationSec"] = 4
+        scene["durationSec"] = self._normalize_scene_duration(scene.get("durationSec"))
         scene["voiceLines"] = self._normalize_voice_lines(scene.get("voiceLines") or [])
         if not scene.get("keyframePrompts"):
             scene["keyframePrompts"] = previous.get("keyframePrompts") or []
-        scene["finalVideoPrompt"] = self._force_four_second_prompt(str(scene.get("finalVideoPrompt") or previous.get("finalVideoPrompt") or ""))
+        scene["keyframePrompts"] = self._normalize_keyframe_prompts(scene.get("keyframePrompts") or [])
+        scene["finalVideoPrompt"] = self._clean_video_prompt(str(scene.get("finalVideoPrompt") or previous.get("finalVideoPrompt") or ""))
         scene["keyframePromptStale"] = True
         scene["finalVideoPromptStale"] = False
         return scene
+
+    def _normalize_keyframe_prompts(self, slots: list) -> list:
+        normalized = []
+        for index, slot in enumerate(slots):
+            if isinstance(slot, dict):
+                next_slot = dict(slot)
+                next_slot["id"] = "kf_main"
+                next_slot["label"] = next_slot.get("label") or "Main keyframe"
+                next_slot["timing"] = "0s"
+                normalized.append(next_slot)
+            if len(normalized) >= KEYFRAMES_PER_SCENE:
+                break
+        return normalized
 
     def _resolve_candidate_url(self, project: Project, payload: SelectKeyframeCandidateRequest) -> str | None:
         if payload.imageUrl:
@@ -799,31 +1094,54 @@ class ProjectService:
             return None
         return None
 
-    def _force_four_second_prompt(self, prompt: str) -> str:
+    def _clean_video_prompt(self, prompt: str) -> str:
         import re
 
-        prompt = re.sub(r"\b\d+\s*[- ]seconds?\b", "4-second", prompt.strip(), flags=re.IGNORECASE)
-        if prompt and "4-second vertical video" not in prompt.lower():
-            prompt = f"Create a 4-second vertical video. {prompt}"
-        return prompt
+        cleaned = prompt.strip()
+        cleaned = re.sub(
+            r"^\s*Create\s+(?:exactly\s+)?(?:one\s+)?(?:an?\s+)?\d+\s*[- ]seconds?\s+(?:vertical\s+)?(?:\d+:\d+\s+)?(?:ad\s+)?(?:video|clip)\.?\s*",
+            "",
+            cleaned,
+            flags=re.IGNORECASE,
+        )
+        cleaned = re.sub(r"\bCreate an? \d+\s*[- ]seconds? vertical video\.\s*", "", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"\bexact(?:ly)? \d+\s*[- ]seconds? duration,?\s*", "", cleaned, flags=re.IGNORECASE)
+        return cleaned.strip() or prompt.strip()
+
+    def _normalize_scene_duration(self, value: object) -> int:
+        import re
+
+        if isinstance(value, (int, float)):
+            raw_duration = int(value)
+        else:
+            match = re.search(r"\d+", str(value or ""))
+            raw_duration = int(match.group(0)) if match else DEFAULT_SCENE_CLIP_SECONDS
+        return min(ALLOWED_SCENE_CLIP_SECONDS, key=lambda item: abs(item - raw_duration))
+
+    def _scene_clip_output_filename(self, scene_index: int, scene: dict) -> str:
+        duration = self._normalize_scene_duration(scene.get("durationSec"))
+        return f"scene_{scene_index:02d}_clip_{duration}s.mp4"
 
     def _build_rewrite_scene_prompt(self, project: Project, plan: CreativePlan, scene: dict, instruction: str) -> str:
         import json
 
         return (
-            "You are rewriting one 4-second scene in an existing short video ad plan.\n\n"
+            "You are rewriting one scene in an existing short video ad plan.\n\n"
             "Return strict JSON for the updated scene only. No markdown.\n\n"
             f"Project context: {json.dumps(self._project_context(project, plan), ensure_ascii=False)}\n"
             f"Current scene JSON: {json.dumps(scene, ensure_ascii=False)}\n"
             f"User instruction: {instruction}\n\n"
             "Rules:\n"
-            "1. Preserve sceneIndex and set durationSec to exactly 4.\n"
+            "1. Preserve sceneIndex and choose durationSec from 4, 6, 8, or 10 based on scene complexity.\n"
             "2. Keep the same product references, primary character, and primary location.\n"
             "3. Return all scene fields: title, visualAction, productMoment, characterAction, locationUse, camera, voiceLines, ambientAudio, onScreenText, timingBeats, keyframePrompts, finalVideoPrompt, negativeRules.\n"
-            "4. Use structured voiceLines. Keep each voiceLines.line in the project voice language unless instructed otherwise.\n"
-            "5. Keep 1 to 2 keyframePrompts. Use productReferenceIds only for relevant product references.\n"
-            "6. finalVideoPrompt must be self-contained and include dialogue/audio, action, camera, 4-second duration, product/character/location locks, reference image mapping, overlay intent, and negative rules.\n"
-            "7. If quoted speech is needed inside a JSON string, use corner brackets instead of raw ASCII double quotes.\n"
+            "4. Use structured voiceLines. Keep each voiceLines.line in the requested dialogue language, but keep all production planning fields in English unless the user explicitly asks the whole plan to use another language.\n"
+            "5. Keep exactly 1 keyframePrompts item with id kf_main. Use productReferenceIds only for relevant product references. If the visual beat needs another keyframe, split it into another scene instead.\n"
+            "6. finalVideoPrompt must be self-contained and include dialogue/audio, action, camera, product/character/location locks, reference image mapping, overlay intent, and negative rules.\n"
+            "7. finalVideoPrompt must not mention duration, seconds, vertical format, portrait mode, or 9:16 because those are provider parameters.\n"
+            "8. Preserve uploaded product/app/user references exactly. Do not redesign UI layout, text, colors, packaging, product shape, coin details, logo, or any user-provided visual reference.\n"
+            "9. Spanish, Vietnamese, or other dialogue snippets must not change the language of title, goals, keyframe prompts, finalVideoPrompt, product locks, or production instructions.\n"
+            "10. If quoted speech is needed inside a JSON string, use corner brackets instead of raw ASCII double quotes.\n"
         )
 
     def _build_regenerate_final_prompt(self, project: Project, plan: CreativePlan, scene: dict) -> str:
@@ -839,11 +1157,11 @@ class ProjectService:
                 "prompt": slot.get("prompt"),
                 "selectedImageUrl": slot.get("selectedImageUrl"),
             }
-            for index, slot in enumerate(scene.get("keyframePrompts") or [])
+            for index, slot in enumerate((scene.get("keyframePrompts") or [])[:KEYFRAMES_PER_SCENE])
             if isinstance(slot, dict)
         ]
         return (
-            "You are writing the final video prompt for one 4-second scene in a product/app ad.\n\n"
+            "You are writing the final video prompt for one product/app ad scene.\n\n"
             'Return strict JSON only: {"finalVideoPrompt": "..."}\n\n'
             f"Project brief: {project.brief or project.product_description or project.product_name}\n"
             f"Product analysis JSON: {json.dumps(plan.productAnalysis, ensure_ascii=False)}\n"
@@ -855,13 +1173,16 @@ class ProjectService:
             f"Current final video prompt: {scene.get('finalVideoPrompt') or ''}\n\n"
             "Rules:\n"
             "1. Output one self-contained finalVideoPrompt for a video model.\n"
-            "2. The video model input will be selected keyframe images plus this prompt.\n"
-            "3. Treat selected keyframes as ordered visual ingredients, not an automatic slideshow.\n"
-            "4. Include this mapping in natural text: Reference image 1: slot label. Use it for slot purpose.\n"
-            "5. Include action chain, camera shot, movement, composition, exact 4-second duration, product/app lock, primary character lock, location lock, native audio intent, overlay intent, and negative rules.\n"
+            "2. The video model input will be one selected keyframe image plus this prompt.\n"
+            "3. Treat the selected keyframe as the visual anchor and continue naturally from it; do not create a slideshow, montage, jump cut, or unrelated camera reset.\n"
+            "4. Include this mapping in natural text: Reference image 1: main keyframe. Use it for the scene's visual anchor and product/actor/location lock.\n"
+            "5. Include action chain, camera shot, movement, composition, product/app lock, primary character lock, location lock, native audio intent, overlay intent, and negative rules.\n"
             "6. Render every voiceLines item as direct dialogue with exact spoken text in ASCII quotes. Do not paraphrase spoken lines.\n"
             "7. If overlay text is empty, explicitly say: No overlay text. Do not request captions, subtitles, labels, slogans, lower-thirds, or random text.\n"
-            "8. Do not mention JSON, schemas, or internal field names inside finalVideoPrompt.\n"
+            "8. Do not mention duration, seconds, vertical format, portrait mode, or 9:16 inside finalVideoPrompt because those are provider parameters.\n"
+            "9. Preserve uploaded product/app/user references exactly. Do not redesign UI layout, text, colors, packaging, product shape, coin details, logo, or any user-provided visual reference.\n"
+            "10. Write finalVideoPrompt production instructions in English. Keep only direct dialogue/voiceover text in the requested dialogue language.\n"
+            "11. Do not mention JSON, schemas, or internal field names inside finalVideoPrompt.\n"
         )
 
     def _project_context(self, project: Project, plan: CreativePlan) -> dict:
@@ -872,7 +1193,8 @@ class ProjectService:
             "productReferences": plan.productReferences,
             "primaryCharacter": plan.primaryCharacter,
             "primaryLocation": plan.primaryLocation,
-            "durationSec": 4,
+            "durationSecOptions": list(ALLOWED_SCENE_CLIP_SECONDS),
+            "defaultDurationSec": DEFAULT_SCENE_CLIP_SECONDS,
             "aspectRatio": "9:16",
         }
 
@@ -895,8 +1217,6 @@ class ProjectService:
         )
 
     def _build_keyframe_image_prompt(self, plan: CreativePlan, scene: dict, slot: dict) -> str:
-        import json
-
         relevant_refs = self._filter_product_references(plan.productReferences, slot.get("productReferenceIds"))
         product_lock = "\n".join(
             str(ref.get("lockPrompt") or ref.get("visualDescription") or "").strip()
@@ -909,31 +1229,63 @@ class ProjectService:
             for item in [camera.get("selected"), camera.get("shot"), camera.get("movement"), camera.get("composition")]
             if item
         )
+        reference_contract = "\n".join(
+            f"- @{ref.get('sourceFileName') or ref.get('name') or ref.get('referenceLabel')}: "
+            f"transfer only {ref.get('lockPrompt') or ref.get('visualDescription') or 'the exact visible product appearance'}; "
+            "ignore actor identity, location, camera, motion, and unrelated product states."
+            for ref in relevant_refs
+        ) or "- No uploaded product reference is required for this keyframe."
+        direction = scene.get("direction") if isinstance(scene.get("direction"), dict) else {}
+        compact_context = "; ".join(
+            str(item).strip()
+            for item in [
+                scene.get("sceneGoal"),
+                scene.get("visualAction"),
+                scene.get("characterAction"),
+                scene.get("productMoment"),
+                direction.get("feltIntent"),
+                direction.get("lighting"),
+                direction.get("atmosphere"),
+            ]
+            if str(item or "").strip()
+        )
         return (
             "Generate exactly one high-quality keyframe image for a short product/app ad.\n\n"
-            "Aspect ratio: 9:16\n\n"
-            f"Keyframe slot label:\n{slot.get('label') or ''}\n\n"
-            f"Keyframe slot timing:\n{slot.get('timing') or ''}\n\n"
-            f"Keyframe slot purpose:\n{slot.get('purpose') or ''}\n\n"
-            f"Scene context:\n{json.dumps(scene, ensure_ascii=False)}\n\n"
+            f"Scene intention and visible state:\n{compact_context}\n\n"
             f"Keyframe prompt:\n{slot.get('prompt') or ''}\n\n"
-            f"Relevant product references:\n{json.dumps(relevant_refs, ensure_ascii=False)}\n\n"
+            f"Reference transfer contract:\n{reference_contract}\n\n"
             f"Product lock:\n{product_lock}\n\n"
             f"Character lock:\n{plan.primaryCharacter.get('consistencyPrompt') or plan.primaryCharacter.get('description') or ''}\n\n"
             f"Location lock:\n{plan.primaryLocation.get('consistencyPrompt') or plan.primaryLocation.get('description') or ''}\n\n"
             f"Camera and composition:\n{camera_context}\n\n"
-            "Rules: Use the relevant product, character, and location references for consistency when supported. "
-            "This is one keyframe candidate for one visual ingredient, not a collage and not a storyboard sheet. "
+            "Rules: Spend this image on one visible beat and one readable hero subject. Use the relevant product, character, and location references for consistency when supported. "
+            "Preserve uploaded product/app/user references exactly: do not redesign UI layout, text, colors, packaging, product shape, coin details, logo, or any visible product reference. "
+            "Preserve face anatomy, hands, object ownership, wardrobe, product geometry, location layout, and motivated light direction. This is one keyframe candidate for one visual ingredient, not a collage and not a storyboard sheet. "
             "No subtitles, labels, numbers, watermarks, UI mock text, or extra symbols unless the product reference itself contains readable UI that must be shown."
         )
 
     def _filter_product_references(self, references: list[dict], reference_ids: object) -> list[dict]:
         if not isinstance(reference_ids, list):
             return references
-        ids = {str(item) for item in reference_ids}
-        if not ids:
+        ordered_ids = [str(item) for item in reference_ids if str(item).strip()]
+        if not ordered_ids:
             return []
-        return [reference for reference in references if str(reference.get("id")) in ids or str(reference.get("name")) in ids]
+        by_selector: dict[str, dict] = {}
+        for reference in references:
+            for selector in (reference.get("id"), reference.get("name"), reference.get("sourceFileName")):
+                cleaned = str(selector or "").strip()
+                if cleaned:
+                    by_selector[cleaned] = reference
+
+        ordered: list[dict] = []
+        seen: set[int] = set()
+        for reference_id in ordered_ids:
+            reference = by_selector.get(reference_id)
+            if reference is None or id(reference) in seen:
+                continue
+            seen.add(id(reference))
+            ordered.append(reference)
+        return ordered
 
     def _clean_optional(self, value: str | None) -> str | None:
         if value is None:

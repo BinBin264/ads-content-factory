@@ -36,6 +36,7 @@ export interface ReferenceAsset {
   status?: string;
   imageUrl?: string | null;
   candidateImages?: string[];
+  generationModel?: ImageModelId | string;
 }
 
 export interface StorytellingCamera {
@@ -66,6 +67,9 @@ export interface KeyframePrompt {
   candidates?: KeyframeCandidate[];
   selectedCandidateId?: string | null;
   selectedImageUrl?: string | null;
+  referenceBindings?: ReferenceBinding[];
+  qualityGate?: QualityGate;
+  generationModel?: ImageModelId | string;
 }
 
 export interface KeyframeCandidate {
@@ -74,6 +78,36 @@ export interface KeyframeCandidate {
   mimeType?: string | null;
   warning?: string | null;
 }
+
+export type ImageGenerationJobStatus = "queued" | "running" | "retrying" | "succeeded" | "failed";
+
+export interface ImageGenerationJob {
+  id: string;
+  project_id: string;
+  job_type: "reference_asset" | "keyframe" | string;
+  target_key: string;
+  scene_index?: number | null;
+  slot_id?: string | null;
+  asset_type?: "character" | "location" | null;
+  model_id?: ImageModelId | null;
+  status: ImageGenerationJobStatus;
+  progress: number;
+  phase: string;
+  attempt: number;
+  max_attempts: number;
+  error?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type ImageModelId =
+  | "nano-banana"
+  | "nano-banana-2"
+  | "nano-banana-pro"
+  | "gpt-image-1-mini"
+  | "gpt-image-1"
+  | "gpt-image-1.5"
+  | "gpt-image-2";
 
 export interface StorytellingScene {
   sceneIndex: number;
@@ -105,6 +139,7 @@ export interface StorytellingScene {
   videoDuration?: string | null;
   videoMode?: string | null;
   videoResolution?: string | null;
+  videoProgress?: number | null;
   videoStatusPayload?: Record<string, unknown> | null;
   videoReferenceUploads?: Array<{
     label?: string;
@@ -112,6 +147,98 @@ export interface StorytellingScene {
     url?: string;
     source?: string | null;
   }>;
+  sceneId?: string;
+  clipId?: string;
+  arcPosition?: string;
+  dramaticFunction?: string;
+  direction?: SceneDirection;
+  shotContract?: ShotContract;
+  promptQuality?: PromptQuality;
+  takeReview?: TakeReview | null;
+}
+
+export type VideoModelId =
+  | "veo3.1-pro"
+  | "veo3.1-fast"
+  | "veo3.1-fast-components"
+  | "grok-video-3"
+  | "grok-video-3-10s";
+
+export interface ReferenceBinding {
+  stage: "keyframe" | "video" | string;
+  tag: string;
+  role: string;
+  transfer: string;
+  ignore: string;
+}
+
+export interface QualityGate {
+  status: string;
+  checks: string[];
+  repairRule: string;
+}
+
+export interface SceneDirection {
+  valueShift: string;
+  feltIntent: string;
+  lighting: string;
+  atmosphere: string;
+  performanceSubtext: string;
+}
+
+export interface ShotContract {
+  generationMode: string;
+  shotStructure: string;
+  primarySpend: string;
+  secondarySpend: string;
+  economize: string[];
+  alreadyHappened: string[];
+  thisClipOnly: string[];
+  reservedForLater: string[];
+  plannedStartState: Record<string, unknown>;
+  plannedEndState: Record<string, unknown>;
+  observedHandoff?: Record<string, unknown> | null;
+  continuityLocks: string[];
+  allowedChanges: string[];
+  referenceBindings: ReferenceBinding[];
+  transitionIn: string;
+  transitionOut: string;
+  extensionDepth: number;
+}
+
+export interface PromptQuality {
+  status: "ready" | "warning" | "blocked" | string;
+  score: number;
+  hardFailures: string[];
+  warnings: string[];
+  promptLength: number;
+  promptBudget: number;
+}
+
+export interface TakeReview {
+  takeId: string;
+  verdict: string;
+  canonAccepted: boolean;
+  observedStartState: Record<string, unknown>;
+  observedEndState: Record<string, unknown>;
+  completedBeats: string[];
+  continuityBreaks: string[];
+  acceptedDeviations: string[];
+  changedVariable?: string;
+  evidence?: string;
+  observationConfidence: string;
+  notes?: string;
+  reviewedAt: string;
+  nextAction: string;
+}
+
+export interface StorySpine {
+  logline: string;
+  storyPromise: string;
+  objective: string;
+  initialCondition: string;
+  finalOutcome: string;
+  tone: string;
 }
 
 export interface PlanCreation {
@@ -127,6 +254,25 @@ export interface PlanCreation {
   primaryCharacter?: ReferenceAsset | null;
   primaryLocation?: ReferenceAsset | null;
   scenes?: StorytellingScene[];
+  storySpine?: StorySpine;
+  worldBible?: Record<string, unknown>;
+  surfaceProfile?: Record<string, unknown>;
+  safetyPlan?: Record<string, unknown>;
+  qualityStrategy?: Record<string, unknown>;
+  sequenceState?: Record<string, unknown>;
+}
+
+export interface ReviewSceneTakePayload {
+  verdict: "keep" | "fix_in_post" | "edit" | "reroll" | "rewrite" | "reject";
+  observed_start_state?: Record<string, unknown>;
+  observed_end_state?: Record<string, unknown>;
+  completed_beats?: string[];
+  continuity_breaks?: string[];
+  accepted_deviations?: string[];
+  changed_variable?: string;
+  evidence?: string;
+  observation_confidence?: "low" | "medium" | "high";
+  notes?: string;
 }
 
 export interface VisionAnalysis {
@@ -142,6 +288,7 @@ export interface VisionAnalysis {
 
 export interface Project {
   id: string;
+  workflow_type?: "video_ads" | "content_creation";
   product_name: string;
   product_category?: string | null;
   product_description?: string | null;
@@ -162,6 +309,7 @@ export interface Project {
 }
 
 export interface CreateProjectValues {
+  workflowType: "video_ads" | "content_creation";
   productName: string;
   productCategory: string;
   productDescription: string;

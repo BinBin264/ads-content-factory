@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import ProjectForm from "../components/ProjectForm";
 import { createProject, listProjects } from "../api/projects";
@@ -29,7 +30,7 @@ export default function HomePage() {
     setError(null);
     try {
       const project = await createProject(values);
-      navigate(`/projects/${project.id}/plan-creation`);
+      navigate(`/projects/${project.id}/brief`);
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
@@ -37,48 +38,67 @@ export default function HomePage() {
     }
   };
 
-  return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
-      <ProjectForm loading={loading} onSubmit={handleCreateProject} />
+  const headerActions = document.getElementById("app-header-actions");
 
-      <aside className="space-y-4">
-        {error ? <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">{error}</div> : null}
-        <section className="card-accent p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h2 className="section-heading">Projects</h2>
-              <p className="section-subtitle">Recent local MVP projects.</p>
-            </div>
-            <button className="btn-secondary px-3 py-1 text-xs" type="button" onClick={() => void loadProjects()}>
-              Refresh
-            </button>
+  return (
+    <>
+      {headerActions
+        ? createPortal(
+            <div className="header-workflow" aria-label="Production workflow">
+              <div className="header-workflow-step is-active"><span>01</span><p>Brief</p></div>
+              <i />
+              <div className="header-workflow-step"><span>02</span><p>Plan</p></div>
+              <i />
+              <div className="header-workflow-step"><span>03</span><p>Keyframes</p></div>
+              <i />
+              <div className="header-workflow-step"><span>04</span><p>Clips</p></div>
+            </div>,
+            headerActions,
+          )
+        : null}
+      <div className="home-page">
+        <aside className="home-project-rail">
+          <div className="home-rail-heading">
+            <p className="home-eyebrow">Workspace</p>
+            <h3>Projects</h3>
+            <p>Start a new workflow or continue where you left off.</p>
           </div>
 
-          {projects.length === 0 ? (
-            <p className="empty-state">No projects yet.</p>
-          ) : (
-            <div className="space-y-3">
-              {projects.map((project) => (
-                <Link
-                  key={project.id}
-                  className="block rounded-lg border border-slate-200 bg-white p-4 transition hover:-translate-y-0.5 hover:border-teal-300 hover:shadow-soft"
-                  to={`/projects/${project.id}/plan-creation`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-bold text-slate-950">{project.product_name}</p>
-                      <p className="mt-1 text-xs text-slate-500">
-                        {project.product_category || "General"} / {compactId(project.id)}
-                      </p>
-                    </div>
-                    <span className="text-xs text-slate-400">{formatDate(project.updated_at)}</span>
+          <div className="home-new-project-item">
+            <span>+</span>
+            <div><strong>New project</strong><p>Define a fresh video brief</p></div>
+          </div>
+
+          <div className="home-recent-heading">
+            <span>Recent projects</span>
+            <button type="button" onClick={() => void loadProjects()}>Refresh</button>
+          </div>
+
+          <div className="home-project-list">
+            {projects.length === 0 ? (
+              <p className="home-empty-projects">No saved projects yet.</p>
+            ) : (
+              projects.map((project) => (
+                <Link key={project.id} className="home-project-row" to={`/projects/${project.id}/brief`}>
+                  <span className={project.workflow_type === "content_creation" ? "is-content" : "is-ads"}>
+                    {project.workflow_type === "content_creation" ? "C" : "A"}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <strong className="truncate">{project.product_name}</strong>
+                    <p>{project.product_category || "General"} / {compactId(project.id)}</p>
+                    <small>{formatDate(project.updated_at)}</small>
                   </div>
                 </Link>
-              ))}
-            </div>
-          )}
-        </section>
-      </aside>
-    </div>
+              ))
+            )}
+          </div>
+        </aside>
+
+        <main className="home-editor">
+          {error ? <div className="home-error">{error}</div> : null}
+          <ProjectForm loading={loading} onSubmit={handleCreateProject} />
+        </main>
+      </div>
+    </>
   );
 }

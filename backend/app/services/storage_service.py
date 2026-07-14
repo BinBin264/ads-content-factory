@@ -1,5 +1,7 @@
 import json
 import shutil
+import threading
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -36,14 +38,27 @@ def _safe_extension(upload: UploadFile) -> str:
     return ".jpeg"
 
 
+def _next_storage_index(project_dir: Path) -> int:
+    indexes = []
+    for item in project_dir.iterdir():
+        if not item.is_file():
+            continue
+        prefix = item.name.split("_", 1)[0]
+        if prefix.isdigit():
+            indexes.append(int(prefix))
+    return max(indexes, default=0) + 1
+
+
 class JsonProjectStorage:
     def __init__(self, json_path: Path = PROJECTS_JSON) -> None:
         self.json_path = json_path
+        self._write_lock = threading.RLock()
         ensure_app_dirs()
 
     def list_projects(self) -> list[Project]:
-        raw = self._read_raw()
-        return [Project.model_validate(item) for item in raw]
+        with self._write_lock:
+            raw = self._read_raw()
+            return [Project.model_validate(item) for item in raw]
 
     def get_project(self, project_id: str) -> Project:
         for project in self.list_projects():
@@ -52,25 +67,41 @@ class JsonProjectStorage:
         raise ProjectNotFoundError(f"Project '{project_id}' was not found")
 
     def save_project(self, project: Project) -> Project:
-        projects = self.list_projects()
-        project.updated_at = utc_now()
-        replaced = False
-        for index, existing in enumerate(projects):
-            if existing.id == project.id:
-                projects[index] = project
-                replaced = True
-                break
-        if not replaced:
-            projects.append(project)
-        self._write_raw([item.model_dump(mode="json") for item in projects])
-        return project
+        with self._write_lock:
+            projects = self.list_projects()
+            project.updated_at = utc_now()
+            replaced = False
+            for index, existing in enumerate(projects):
+                if existing.id == project.id:
+                    projects[index] = project
+                    replaced = True
+                    break
+            if not replaced:
+                projects.append(project)
+            self._write_raw([item.model_dump(mode="json") for item in projects])
+            return project
+
+    def mutate_project(self, project_id: str, mutator: Callable[[Project], Project | None]) -> Project:
+        """Apply a targeted mutation against the latest project under one lock."""
+        with self._write_lock:
+            projects = self.list_projects()
+            for index, project in enumerate(projects):
+                if project.id != project_id:
+                    continue
+                updated = mutator(project) or project
+                updated.updated_at = utc_now()
+                projects[index] = updated
+                self._write_raw([item.model_dump(mode="json") for item in projects])
+                return updated
+        raise ProjectNotFoundError(f"Project '{project_id}' was not found")
 
     def delete_project(self, project_id: str) -> None:
-        projects = self.list_projects()
-        remaining = [project for project in projects if project.id != project_id]
-        if len(remaining) == len(projects):
-            raise ProjectNotFoundError(f"Project '{project_id}' was not found")
-        self._write_raw([item.model_dump(mode="json") for item in remaining])
+        with self._write_lock:
+            projects = self.list_projects()
+            remaining = [project for project in projects if project.id != project_id]
+            if len(remaining) == len(projects):
+                raise ProjectNotFoundError(f"Project '{project_id}' was not found")
+            self._write_raw([item.model_dump(mode="json") for item in remaining])
 
         target = (UPLOADS_DIR / project_id).resolve()
         if target.exists() and UPLOADS_DIR.resolve() in target.parents:
@@ -97,6 +128,7 @@ class JsonProjectStorage:
 class LocalFileStorage:
     def __init__(self, uploads_dir: Path = UPLOADS_DIR) -> None:
         self.uploads_dir = uploads_dir
+        self._write_lock = threading.Lock()
         ensure_app_dirs()
 
     async def save_uploads(self, project_id: str, files: list[UploadFile] | None) -> list[UploadedFileInfo]:
@@ -107,13 +139,14 @@ class LocalFileStorage:
         project_dir.mkdir(parents=True, exist_ok=True)
         saved: list[UploadedFileInfo] = []
 
-        existing_count = len([item for item in project_dir.iterdir() if item.is_file()]) if project_dir.exists() else 0
-        for index, upload in enumerate(files, start=existing_count + 1):
-            original_name = upload.filename or f"upload_{index}"
-            filename = f"{index:02d}_{_sanitize_filename(original_name)}"
-            destination = project_dir / filename
+        for upload in files:
             content = await upload.read()
-            destination.write_bytes(content)
+            with self._write_lock:
+                storage_index = _next_storage_index(project_dir)
+                original_name = upload.filename or f"upload_{storage_index}"
+                filename = f"{storage_index:02d}_{_sanitize_filename(original_name)}"
+                destination = project_dir / filename
+                destination.write_bytes(content)
             saved.append(
                 UploadedFileInfo(
                     file_name=original_name,
@@ -141,15 +174,16 @@ class LocalFileStorage:
         project_dir.mkdir(parents=True, exist_ok=True)
         saved: list[UploadedFileInfo] = []
 
-        existing_count = len([item for item in project_dir.iterdir() if item.is_file()]) if project_dir.exists() else 0
         for offset, upload in enumerate(files):
             reference_index = start_index + offset
             original_name = upload.filename or f"product_{reference_index}"
             display_name = f"product_ref_{reference_index:02d}_{_slug_stem(original_name)}{_safe_extension(upload)}"
-            stored_name = f"{existing_count + offset + 1:02d}_{display_name}"
-            destination = project_dir / stored_name
             content = await upload.read()
-            destination.write_bytes(content)
+            with self._write_lock:
+                storage_index = _next_storage_index(project_dir)
+                stored_name = f"{storage_index:02d}_{display_name}"
+                destination = project_dir / stored_name
+                destination.write_bytes(content)
             saved.append(
                 UploadedFileInfo(
                     file_name=display_name,
@@ -166,12 +200,13 @@ class LocalFileStorage:
     async def save_named_upload(self, project_id: str, upload: UploadFile, filename: str) -> UploadedFileInfo:
         project_dir = self.uploads_dir / project_id
         project_dir.mkdir(parents=True, exist_ok=True)
-        existing_count = len([item for item in project_dir.iterdir() if item.is_file()]) if project_dir.exists() else 0
         safe_name = _sanitize_filename(filename)
-        stored_name = f"{existing_count + 1:02d}_{safe_name}"
-        destination = project_dir / stored_name
         content = await upload.read()
-        destination.write_bytes(content)
+        with self._write_lock:
+            storage_index = _next_storage_index(project_dir)
+            stored_name = f"{storage_index:02d}_{safe_name}"
+            destination = project_dir / stored_name
+            destination.write_bytes(content)
         await upload.close()
         return UploadedFileInfo(
             file_name=safe_name,
@@ -192,11 +227,12 @@ class LocalFileStorage:
     ) -> UploadedFileInfo:
         project_dir = self.uploads_dir / project_id
         project_dir.mkdir(parents=True, exist_ok=True)
-        existing_count = len([item for item in project_dir.iterdir() if item.is_file()]) if project_dir.exists() else 0
         safe_name = _sanitize_filename(filename)
-        stored_name = f"{existing_count + 1:02d}_{_sanitize_filename(bucket)}_{safe_name}"
-        destination = project_dir / stored_name
-        destination.write_bytes(content)
+        with self._write_lock:
+            storage_index = _next_storage_index(project_dir)
+            stored_name = f"{storage_index:02d}_{_sanitize_filename(bucket)}_{safe_name}"
+            destination = project_dir / stored_name
+            destination.write_bytes(content)
         return UploadedFileInfo(
             file_name=filename,
             content_type=content_type,

@@ -8,7 +8,7 @@ Main flow:
 Brief Input
 -> Plan Creation
 -> Product/character/location references
--> 4-second scene clips
+-> timed scene clips
 -> Manual video testing
 ```
 
@@ -22,6 +22,8 @@ PATCH /api/projects/{project_id}/scenes/{scene_index}
 POST  /api/projects/{project_id}/scenes/{scene_index}/video-prompt/regenerate
 POST  /api/projects/{project_id}/scenes/{scene_index}/keyframe-slots/{slot_id}/select
 POST  /api/projects/{project_id}/scenes/{scene_index}/video
+GET   /api/projects/{project_id}/scenes/{scene_index}/video-status
+POST  /api/projects/{project_id}/scenes/{scene_index}/take-review
 GET  /api/projects/{project_id}
 ```
 
@@ -60,6 +62,8 @@ brief=Create a short vertical UGC ad...
 ```
 
 The main frontend form does not upload files during project creation. Uploaded references are a separate workflow step.
+
+The backend uses `GEMINI_MODEL` and the rotating `GEMINI_API_KEYS` pool for all planning and prompt generation. Provider/model selection is not accepted per project.
 
 ## Upload References Endpoint
 
@@ -119,6 +123,17 @@ Response: `PlanCreation`
 
 The backend also stores the response in `project.creative_plan`.
 
+In addition to product/reference/scene fields, `PlanCreation` now includes:
+
+- `storySpine`: global story objective, opening condition, and final outcome.
+- `worldBible`: canonical character, location, product, visual, lighting, atmosphere, and anti-drift locks.
+- `surfaceProfile`: conservative Google Veo generation constraints.
+- `safetyPlan`: unsupported-claim and authorized-reference rules.
+- `qualityStrategy`: take verdicts, attempt budget, and one-variable retake rule.
+- `sequenceState`: state/canon revisions, current scene, and take history.
+
+Each scene may include `direction`, `shotContract`, `promptQuality`, and `takeReview`. The final provider prompt is compiled from the current scene contract only; it does not contain the whole project JSON.
+
 ## PlanCreation Shape
 
 ```json
@@ -165,7 +180,7 @@ The backend also stores the response in `project.creative_plan`.
       "sceneIndex": 1,
       "narrativePurpose": "hook + product_app_introduction",
       "title": "Found coin scan",
-      "durationSec": 4,
+      "durationSec": 6,
       "sceneGoal": "Show why the user needs the app.",
       "visualAction": "Actor finds an old coin and reacts with curiosity.",
       "productMoment": "Coin and phone are visible as the product need is established.",
@@ -181,7 +196,7 @@ The backend also stores the response in `project.creative_plan`.
       "voiceLines": [
         {
           "speaker": "Primary actor",
-          "timing": "0-4s",
+          "timing": "0-6s",
           "actionState": "holding the old coin",
           "emotion": "curious",
           "delivery": "natural UGC",
@@ -205,7 +220,7 @@ The backend also stores the response in `project.creative_plan`.
           "selectedImageUrl": null
         }
       ],
-      "finalVideoPrompt": "Create a 4-second vertical video using selected reference images as visual ingredients...",
+      "finalVideoPrompt": "Scene video prompt using the selected keyframe as the visual anchor. Duration, aspect ratio, and model mode are provider parameters, not prompt text.",
       "negativeRules": ["do not redesign the product/app", "no unreadable UI text"],
       "keyframePromptStale": false,
       "finalVideoPromptStale": false,
@@ -219,6 +234,7 @@ The backend also stores the response in `project.creative_plan`.
       "videoDuration": null,
       "videoMode": null,
       "videoResolution": null,
+      "videoProgress": null,
       "videoReferenceUploads": [],
       "videoStatusPayload": null
     }
@@ -230,19 +246,43 @@ The backend also stores the response in `project.creative_plan`.
 
 - `PATCH /api/projects/{project_id}/product-references/{reference_id}` - update product reference metadata.
 - `PATCH /api/projects/{project_id}/scenes/{scene_index}` - edit scene fields and mark keyframe/final prompts stale.
-- `POST /api/projects/{project_id}/scenes/{scene_index}/rewrite` - rewrite a scene with Gemini.
+- `POST /api/projects/{project_id}/scenes/{scene_index}/rewrite` - rewrite a scene with the configured Gemini model.
 - `PATCH /api/projects/{project_id}/scenes/{scene_index}/video-prompt` - manually update final video prompt.
-- `POST /api/projects/{project_id}/scenes/{scene_index}/video-prompt/regenerate` - regenerate final video prompt with Gemini.
+- `POST /api/projects/{project_id}/scenes/{scene_index}/video-prompt/regenerate` - regenerate final video prompt with the configured Gemini model.
 - `PATCH /api/projects/{project_id}/scenes/{scene_index}/keyframe-slots/{slot_id}` - edit a keyframe prompt slot.
-- `POST /api/projects/{project_id}/reference-assets/{asset_type}/generate` - generate primary character or location reference image when an image provider is configured. `asset_type` is `character` or `location`.
-- `POST /api/projects/{project_id}/scenes/{scene_index}/keyframe-slots/{slot_id}/generate` - generate one keyframe candidate image for a slot when an image provider is configured.
+- `POST /api/projects/{project_id}/reference-assets/{asset_type}/generate` - generate primary character or location reference image when an image provider is configured. `asset_type` is `character` or `location`. The required JSON body is `{ "model": "nano-banana-2" }`; allowed models are `nano-banana`, `nano-banana-2`, `nano-banana-pro`, `gpt-image-1-mini`, `gpt-image-1`, `gpt-image-1.5`, and `gpt-image-2`. Nano Banana uses the Google image endpoint at exact `9:16`; GPT Image uses the OpenAI image endpoint at `1024x1536` with a centered `9:16` safe-crop prompt.
+- `POST /api/projects/{project_id}/reference-assets/{asset_type}/generate-async` - enqueue reference generation and return `ImageGenerationJob` immediately. The same required model body is accepted and the job records it as `model_id`.
+- `POST /api/projects/{project_id}/scenes/{scene_index}/keyframe-slots/{slot_id}/generate` - generate one keyframe candidate image for a slot with the required image model body. ShopAIKey uploads and supplies only the mapped primary character, primary location, and at most one scene-relevant product/app reference in `image_urls`; unrelated project uploads are excluded.
+- `POST /api/projects/{project_id}/scenes/{scene_index}/keyframe-slots/{slot_id}/generate-async` - enqueue keyframe generation with the selected model without blocking generation buttons for other scenes.
+- `GET /api/projects/{project_id}/image-generation-jobs` - list image jobs. Use `active_only=true` to return only `queued`, `running`, or `retrying` jobs.
+- `GET /api/projects/{project_id}/image-generation-jobs/{job_id}` - poll phase-based `progress`, `phase`, retry attempt, completion, or error state.
 - `POST /api/projects/{project_id}/scenes/{scene_index}/keyframe-slots/{slot_id}/select` - select an uploaded/generated image as the keyframe reference for that slot.
-- `POST /api/projects/{project_id}/scenes/{scene_index}/video` - generate or poll one real 4-second scene clip. With `VIDEO_PROVIDER_NAME=79ai`, backend first uploads selected keyframe images to `POST https://api.gommo.net/ai/image-upload` as `application/x-www-form-urlencoded` with base64 `data`, sends `POST https://api.gommo.net/ai/create-video` as `application/x-www-form-urlencoded`, passes returned image URLs in `images` as a JSON-stringified URL array, calls `veo_omni` in `flash` mode, ratio `9:16`, duration `4`, then polls video status until `download_url` is available. The scene stores `videoUrl`, `videoJobId`, provider metadata, and uploaded image URLs.
+- `POST /api/projects/{project_id}/scenes/{scene_index}/video` - submit one real ShopAIKey clip task and return the stored `task_id` immediately. Optional body: `{ "model": "veo3.1-pro" }`. Supported values are `veo3.1-pro`, `veo3.1-fast`, `veo3.1-fast-components`, `grok-video-3`, and `grok-video-3-10s`; omitting the body uses `VIDEO_MODEL_ID`. The backend uploads only the selected keyframe and maps provider fields by model: Veo uses `metadata.aspect_ratio`, while Grok uses `metadata.ratio`, `metadata.duration`, and `metadata.resolution`. `veo3.1-fast-components` is forced to `16:9`; the portrait models use `9:16` for Veo or `2:3` for Grok.
+- `GET /api/projects/{project_id}/scenes/{scene_index}/video-status` - poll ShopAIKey once with the stored `task_id`. The project scene stores the provider's real `data.progress` value as `videoProgress`; the frontend calls this endpoint every five seconds until `VIDEO_READY` or `FAILED`.
+- `POST /api/projects/{project_id}/scenes/{scene_index}/take-review` - record the operator verdict and observed take state. `keep` and `fix_in_post` update canon and hand the observed end state to the next scene. `edit`, `reroll`, `rewrite`, and `reject` do not update canon.
+
+Example take review:
+
+```json
+{
+  "verdict": "keep",
+  "observed_end_state": {
+    "actorPose": "phone in right hand",
+    "productState": "coin held in left palm",
+    "cameraState": "stable phone close-up"
+  },
+  "completed_beats": ["Scan the coin"],
+  "continuity_breaks": [],
+  "accepted_deviations": [],
+  "evidence": "Primary product proof is readable and identity is stable.",
+  "observation_confidence": "high"
+}
+```
 
 If video provider env is missing, this endpoint returns:
 
 ```text
-Video provider is not configured. Set VIDEO_PROVIDER_NAME and VIDEO_PROVIDER_API_KEY.
+Video provider is not configured. Set IMAGE_PROVIDER_API_KEY or VIDEO_PROVIDER_API_KEY for ShopAIKey.
 ```
 
 If image provider env is missing, image generation endpoints return:

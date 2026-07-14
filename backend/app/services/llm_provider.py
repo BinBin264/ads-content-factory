@@ -1,12 +1,20 @@
 import json
 import re
 import threading
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
 from typing import Any, Protocol, Sequence
 
-from app.config import GEMINI_API_BASE_URL, GEMINI_API_KEYS, GEMINI_MODEL
+from app.config import (
+    GEMINI_API_BASE_URL,
+    GEMINI_API_KEYS,
+    GEMINI_MODEL,
+    GEMINI_REQUEST_TIMEOUT_SECONDS,
+    GEMINI_RETRY_BASE_SECONDS,
+    GEMINI_TRANSIENT_MAX_ATTEMPTS,
+)
 
 
 class LLMProviderError(Exception):
@@ -43,12 +51,16 @@ class GeminiLLMProvider:
         api_keys: Sequence[str] | None = None,
         model: str = GEMINI_MODEL,
         base_url: str = GEMINI_API_BASE_URL,
-        timeout_seconds: int = 120,
+        timeout_seconds: int = GEMINI_REQUEST_TIMEOUT_SECONDS,
+        transient_max_attempts: int = GEMINI_TRANSIENT_MAX_ATTEMPTS,
+        retry_base_seconds: float = GEMINI_RETRY_BASE_SECONDS,
     ) -> None:
         self.api_keys = [key.strip() for key in (api_keys if api_keys is not None else GEMINI_API_KEYS) if key.strip()]
         self.model = model
         self.base_url = base_url.rstrip("/")
         self.timeout_seconds = timeout_seconds
+        self.transient_max_attempts = max(1, transient_max_attempts)
+        self.retry_base_seconds = max(0.0, retry_base_seconds)
         self._next_key_index = 0
         self._lock = threading.Lock()
 
@@ -83,7 +95,13 @@ class GeminiLLMProvider:
             raise LLMProviderError("GEMINI_API_KEYS is required for Plan Creation and content generation.")
 
         last_error: LLMProviderError | None = None
-        for _ in range(len(self.api_keys)):
+        transient_failures = 0
+        key_specific_failures = 0
+        attempts = 0
+        max_attempts = len(self.api_keys) + self.transient_max_attempts - 1
+
+        while attempts < max_attempts:
+            attempts += 1
             api_key = self._take_next_api_key()
             try:
                 return self._generate_json_parts_with_key(
@@ -97,8 +115,21 @@ class GeminiLLMProvider:
                 if not self._should_try_next_key(exc):
                     raise
 
+                if self._is_provider_transient(exc):
+                    transient_failures += 1
+                    if transient_failures >= self.transient_max_attempts:
+                        break
+                else:
+                    key_specific_failures += 1
+                    if key_specific_failures >= len(self.api_keys):
+                        break
+
+                self._wait_before_retry(attempts)
+
         if last_error:
-            raise LLMProviderError(f"All configured Gemini API keys failed: {last_error}") from last_error
+            raise LLMProviderError(
+                f"Gemini request failed after {attempts} attempt(s): {last_error}"
+            ) from last_error
         raise LLMProviderError("Gemini request failed before an API key was selected")
 
     def _take_next_api_key(self) -> str:
@@ -158,8 +189,6 @@ class GeminiLLMProvider:
 
     def _should_try_next_key(self, exc: LLMProviderError) -> bool:
         message = str(exc)
-        if len(self.api_keys) <= 1:
-            return False
         return any(
             marker in message
             for marker in (
@@ -171,8 +200,29 @@ class GeminiLLMProvider:
                 "Gemini API HTTP 502",
                 "Gemini API HTTP 503",
                 "Gemini API HTTP 504",
+                "Gemini API request timed out",
+                "Gemini API request failed",
             )
         )
+
+    def _is_provider_transient(self, exc: LLMProviderError) -> bool:
+        message = str(exc)
+        return any(
+            marker in message
+            for marker in (
+                "Gemini API HTTP 500",
+                "Gemini API HTTP 502",
+                "Gemini API HTTP 503",
+                "Gemini API HTTP 504",
+                "Gemini API request timed out",
+                "Gemini API request failed",
+            )
+        )
+
+    def _wait_before_retry(self, attempts: int) -> None:
+        if self.retry_base_seconds <= 0:
+            return
+        time.sleep(min(self.retry_base_seconds * (2 ** max(0, attempts - 1)), 8.0))
 
     def _sanitize_error_body(self, error_body: str) -> str:
         sanitized = error_body
@@ -201,4 +251,5 @@ class GeminiLLMProvider:
 
 
 def build_llm_provider() -> LLMProvider:
-    return GeminiLLMProvider()
+    """Build the single text/vision provider used by the production workflow."""
+    return GeminiLLMProvider(model=GEMINI_MODEL)

@@ -11,6 +11,12 @@ from app.models.schemas import (
     VisionAnalysis,
 )
 from app.services.llm_provider import LLMProvider, build_llm_provider
+from app.services.production_orchestrator import ProductionOrchestrator
+
+
+DEFAULT_SCENE_CLIP_SECONDS = 8
+ALLOWED_SCENE_CLIP_SECONDS = (4, 6, 8, 10)
+KEYFRAMES_PER_SCENE = 1
 
 
 class BriefNormalizer:
@@ -162,7 +168,7 @@ class CreativePlanService:
                         "keyframePrompts": {
                             "type": "array",
                             "minItems": 1,
-                            "maxItems": 3,
+                            "maxItems": 1,
                             "items": {
                                 "type": "object",
                                 "properties": {
@@ -215,7 +221,8 @@ class CreativePlanService:
         # The storytelling scene schema is intentionally enforced by prompt + Pydantic coercion.
         # Passing the full nested schema to Gemini can exceed the service's schema-state limit.
         data = self.llm_provider.generate_json_parts(self._build_parts(project, prompt), temperature=0.35)
-        return CreativePlan.model_validate(self._coerce_plan(data, project, brief, vision))
+        plan = CreativePlan.model_validate(self._coerce_plan(data, project, brief, vision))
+        return ProductionOrchestrator().prepare_plan(project, plan)
 
     def _build_parts(self, project: Project, prompt: str) -> list[dict[str, Any]]:
         parts: list[dict[str, Any]] = [{"text": prompt}]
@@ -259,20 +266,62 @@ class CreativePlanService:
         if not isinstance(scenes, list) or len(scenes) < 2:
             raise ValueError("Plan Creation must include 2 to 8 scenes.")
         scene_limit = self._target_scene_count(project)
-        coerced_scenes = self._coerce_four_second_scenes(scenes[:scene_limit])
+        coerced_product_references = self._coerce_product_references(product_references, project, vision)
+        coerced_scenes = self._coerce_scene_clips(scenes[:scene_limit], coerced_product_references)
 
         return {
             "productAnalysis": product_analysis,
-            "productReferences": self._coerce_product_references(product_references, project, vision),
+            "productReferences": coerced_product_references,
             "primaryCharacter": self._coerce_primary_character(primary_character, project, brief),
             "primaryLocation": self._coerce_primary_location(primary_location, project, brief),
+            "storySpine": data.get("storySpine") if isinstance(data.get("storySpine"), dict) else {},
+            "worldBible": data.get("worldBible") if isinstance(data.get("worldBible"), dict) else {},
+            "safetyPlan": data.get("safetyPlan") if isinstance(data.get("safetyPlan"), dict) else {},
             "scenes": coerced_scenes,
         }
 
     def _build_prompt(self, project: Project, brief: NormalizedBrief, vision: VisionAnalysis) -> str:
         target_scene_count = self._target_scene_count(project)
+        is_content_creation = project.workflow_type == "content_creation"
+        planner_role = (
+            "You are an expert AI video content production planner."
+            if is_content_creation
+            else "You are an expert direct-response video ads planner."
+        )
+        planning_task = (
+            "Create a short content video production plan from the user's idea and uploaded visual reference set. "
+            if is_content_creation
+            else "Create a short storytelling ad plan from the user's brief and uploaded product reference set. "
+        )
+        workflow_note = (
+            "- Workflow type: content_creation. This is not necessarily an ad. Treat product_name as the content title or concept name. "
+            "Do not force a CTA, product proof, app demo, purchase logic, or direct-response structure unless the user explicitly asks for it. "
+            "Use uploaded files as optional visual references for characters, props, places, style, or objects.\n"
+            if is_content_creation
+            else "- Workflow type: video_ads. Optimize for a product/app ad with clear hook, problem, demo/proof, result, and CTA when relevant.\n"
+        )
+        structure_rule = (
+            "4. Use a content creation structure across the scene list: hook/opening image, setup, visual development, payoff, ending beat. "
+            "Do not force product proof, purchase, app demo, or CTA unless the user requested those. If the idea is cinematic, educational, vlog, skit, or story content, preserve that format.\n"
+            if is_content_creation
+            else "4. Use storytelling structure across the scene list: hook, setup, product/app introduction, proof/demo, result/reaction, CTA. Do not compress discovery, scan, result, reaction, payment, and CTA into one scene if they can be separated into clearer keyframes.\n"
+        )
+        reference_policy = (
+            "- Visual reference policy: each keyframe may use zero or one uploaded visual reference, plus the generated character/location references. "
+            "Do not attach multiple unrelated references to one keyframe. If a scene needs multiple distinct visual states, split those into separate scenes/keyframes.\n"
+            if is_content_creation
+            else "- Product/app reference policy: each keyframe may use zero or one uploaded product/app reference. "
+            "Do not attach multiple app screens to one keyframe. If a scene needs the home screen, scan screen, and result screen, split those into separate scenes/keyframes.\n"
+        )
+        reference_rule = (
+            "9. Visual reference handling: analyze each uploaded reference independently and preserve its existing id. Preserve each uploaded file_name or stable uploaded name exactly in productReferences.name when available. Use only the one relevant visual reference for each keyframe prompt, or use none if no uploaded reference is visibly needed. Do not dump every reference into every keyframe prompt.\n"
+            if is_content_creation
+            else "9. Product reference handling: analyze each uploaded product reference independently and preserve its existing id. Preserve each uploaded file_name or stable uploaded name exactly in productReferences.name when available. Do not assume every reference is an app screen. Use only the one relevant product reference for each keyframe prompt, or use none if the uploaded product/app is not visibly shown. Do not dump every product reference into every keyframe prompt.\n"
+        )
+        reference_json_label = "Uploaded visual references JSON" if is_content_creation else "Uploaded product references JSON"
         product_context = {
             "project": {
+                "workflow_type": project.workflow_type,
                 "product_name": project.product_name,
                 "product_category": project.product_category,
                 "product_description": project.product_description,
@@ -290,21 +339,29 @@ class CreativePlanService:
         user_brief = project.brief or brief.short_description
         product_references_json = self._product_references_payload(project, vision)
         return (
-            "You are an expert direct-response video ads planner.\n\n"
-            "Create a short storytelling ad plan from the user's brief and uploaded product reference set. "
+            f"{planner_role}\n\n"
+            f"{planning_task}"
             "The output is the main production plan users will copy into image/video tools, so return strict JSON only.\n\n"
             "Inputs:\n"
             f"- Brief: {user_brief}\n"
             f"- Optional product context: {json.dumps(product_context, ensure_ascii=False, indent=2)}\n"
-            "- Aspect ratio: 9:16\n"
+            f"{workflow_note}"
+            "- The brief may contain a user script/timeline, character brief, location brief, target duration, spoken lines, subtitles, translations, or notes. Treat those as user constraints when present.\n"
+            "- Aspect ratio: 9:16. This is a provider parameter; do not repeat aspect ratio or vertical format inside finalVideoPrompt.\n"
             "- Voice mode: native_video_audio\n"
-            "- Voice language: same language as the user's brief; use Vietnamese if the brief is Vietnamese\n"
+            "- Planning/output language: English for scene titles, scene goals, keyframe prompts, final video prompts, product locks, and production instructions unless the user explicitly asks the whole plan to be in another language.\n"
+            "- Voice language: use the exact dialogue language requested in the brief only for voiceLines.line and onScreenText when relevant. Preserve user-supplied spoken lines exactly. If the brief includes Spanish dialogue snippets, keep those snippets in Spanish but do not translate the entire plan into Spanish.\n"
             "- Overlay mode: enabled\n"
-            "- Scene clip length: 4 seconds exactly\n"
-            f"- Target scene count: {target_scene_count} scenes, one 4-second video clip per scene\n"
-            f"- Uploaded product references JSON: {json.dumps(product_references_json, ensure_ascii=False, indent=2)}\n\n"
+            f"- Scene clip duration options: {', '.join(str(item) + 's' for item in ALLOWED_SCENE_CLIP_SECONDS)}. Choose durationSec per scene based on action complexity. This is a provider parameter; do not repeat clip duration inside finalVideoPrompt.\n"
+            f"- Target scene count: {target_scene_count} scenes, one video clip per scene\n"
+            f"- Keyframes per scene: exactly {KEYFRAMES_PER_SCENE}. Use the keyframe as the single visual anchor for that clip.\n"
+            f"{reference_policy}"
+            f"- {reference_json_label}: {json.dumps(product_references_json, ensure_ascii=False, indent=2)}\n\n"
             "Required JSON shape:\n"
             "{\n"
+            '  "storySpine": {"logline": "one-sentence story", "storyPromise": "what the audience expects", "objective": "production objective", "initialCondition": "visible opening state", "finalOutcome": "visible final state", "tone": "consistent tone"},\n'
+            '  "worldBible": {"visualGrammar": "project-wide camera and composition rules", "lightingContinuity": "motivated light direction and color relationship", "atmosphereContinuity": "recurring environmental and audio cues"},\n'
+            '  "safetyPlan": {"claimsToAvoid": ["unsupported claims"], "referencePolicy": "authorized-reference rule", "rewriteRules": ["safe original alternative when a protected identity or style cannot be used"]},\n'
             '  "productAnalysis": {\n'
             '    "productType": "what the references show",\n'
             '    "visibleElements": ["observable details only"],\n'
@@ -316,7 +373,7 @@ class CreativePlanService:
             '  "productReferences": [\n'
             "    {\n"
             '      "id": "use the uploaded product reference id exactly",\n'
-            '      "name": "clean human label derived from the uploaded file name when available",\n'
+            '      "name": "use the uploaded product reference file_name or stable uploaded name exactly when available",\n'
             '      "kind": "app_screen | physical_product | packaging | logo | usage_photo | before_after | other",\n'
             '      "visualDescription": "what this reference image visibly contains",\n'
             '      "lockPrompt": "what must be preserved when this reference is used",\n'
@@ -341,39 +398,56 @@ class CreativePlanService:
             '      "sceneIndex": 1,\n'
             '      "narrativePurpose": "hook + product_app_introduction",\n'
             '      "title": "short scene title",\n'
-            '      "durationSec": 4,\n'
+            f'      "durationSec": {DEFAULT_SCENE_CLIP_SECONDS},\n'
             '      "sceneGoal": "why this scene exists in the ad",\n'
-            '      "visualAction": "one focused 4-second action beat with a clear start and end",\n'
-            '      "productMoment": "how the uploaded product/app references are shown inside this 4-second clip",\n'
-            '      "characterAction": "what the primary character does inside this 4-second clip",\n'
-            '      "locationUse": "how the primary location appears inside this 4-second clip",\n'
+            '      "dramaticFunction": "introduce | deepen | turn | payoff",\n'
+            '      "arcPosition": "open | rising | turn | climax | release",\n'
+            '      "direction": {"valueShift": "visible before-to-after shift", "feltIntent": "what the viewer should feel or notice", "lighting": "motivated lighting choice serving that intent", "atmosphere": "environment and sound density serving that intent", "performanceSubtext": "truth expressed through one visible behavior"},\n'
+            '      "visualAction": "continuous action chain with an opening state and 2-4 connected visible actions",\n'
+            '      "productMoment": "how the uploaded product/app references are shown inside this clip without redesigning them; mention @suggested_reference_label or @file_name when a product reference is visible",\n'
+            '      "characterAction": "what the primary character does inside this clip, including visible facial expression, body language, hands, and gaze",\n'
+            '      "locationUse": "how the primary location appears inside this clip, including camera viewpoint relative to the location reference",\n'
             '      "camera": {"selected": "stable eye-level medium shot", "shot": "medium shot", "movement": "connected camera movement", "composition": "product/app visible and readable at the important moment", "alternatives": ["over-the-shoulder phone close-up"]},\n'
-            '      "voiceLines": [{"speaker": "Primary actor", "timing": "0-4s", "actionState": "visible action or state while speaking", "emotion": "natural emotion", "delivery": "voice style in requested language", "line": "exact spoken line"}],\n'
+            '      "voiceLines": [{"speaker": "Primary actor", "timing": "0-[durationSec]s", "actionState": "visible action or state while speaking", "emotion": "natural emotion", "delivery": "voice style in requested language", "line": "exact spoken line"}],\n'
             '      "ambientAudio": "room tone and useful SFX for this video segment",\n'
             '      "onScreenText": "short overlay text only when Overlay mode is enabled; otherwise empty string",\n'
-            '      "timingBeats": ["0-2s: ...", "2-4s: ..."],\n'
-            '      "keyframePrompts": [{"id": "kf_setup", "label": "Actor and product setup", "timing": "0-2s", "purpose": "product state, primary character, primary location, composition, and camera this image should contribute to video generation", "prompt": "image generation prompt for this visual ingredient", "productReferenceIds": ["uploaded_product_ref_id"]}],\n'
-            '      "finalVideoPrompt": "self-contained video prompt with action, camera, duration, dialogue/audio, product/character/location locks, reference mapping, overlay intent, and negative rules",\n'
+            '      "timingBeats": ["0-2s: ...", "2-[durationSec]s: ..."],\n'
+            f'      "keyframePrompts": [{{"id": "kf_main", "label": "Main keyframe", "timing": "0s", "purpose": "single visual anchor for this scene: exact actor pose/expression, product/app state, location viewpoint, composition, camera, and the most important readable product/UI detail", "prompt": "image generation prompt for the scene keyframe that preserves uploaded product/app references exactly and mentions at most one visible product reference as @suggested_reference_label or @file_name, never internal file ids", "productReferenceIds": ["zero_or_one_uploaded_product_ref_id"]}}],\n'
+            '      "finalVideoPrompt": "self-contained video prompt with action, camera, dialogue/audio, product/character/location locks, reference mapping using the single keyframe as visual anchor, overlay intent, continuity handoff, and negative rules; do not mention duration, vertical format, or 9:16",\n'
             '      "negativeRules": ["do not redesign the product/app", "no unreadable UI text"]\n'
             "    }\n"
             "  ]\n"
             "}\n\n"
             "Rules:\n"
             "1. Return JSON only, no markdown, no code fence.\n"
-            f"2. Generate exactly {target_scene_count} scenes unless the brief is extremely simple. Each scene is one separate 4-second video generation clip.\n"
-            "3. Split the story by natural 4-second beats. Do not cram discovery, scanning, result, reaction, and CTA into one clip. Make each clip visually executable by a video model.\n"
-            "4. Use storytelling structure across the scene list: hook, product/app introduction, proof/demo, result, CTA. A scene should contain only what can happen clearly in 4 seconds.\n"
-            "5. Use one primaryCharacter and one primaryLocation. They are first-class reference-image prompts for the next production step.\n"
+            f"2. Generate exactly {target_scene_count} scenes. Ignore the user's requested duration when deciding scene count; optimize for controllable keyframe quality and manual review.\n"
+            "3. Split the story into clear visual production units. Prefer more small scenes over fewer abstract scenes. Each scene should be one concrete visual beat that can be judged from one generated keyframe before creating video.\n"
+            "3a. Every scene must have one dramatic function, one visible value shift, one felt intent, one primary generation spend, and one changed endpoint. If a scene asks for several major actions, locations, product states, or story turns, split it into more scenes.\n"
+            "3b. Direct from intention rather than generic adjectives. Camera, blocking, performance, motivated lighting, atmosphere, and sound must all serve the same feltIntent. Do not use cinematic, epic, or beautiful as substitutes for concrete direction.\n"
+            f"{structure_rule}"
+            "5. Use one primaryCharacter and one primaryLocation. They are first-class reference-image prompts for the next production step. If the brief includes character or location instructions, primaryCharacter and primaryLocation must follow them.\n"
             "6. Include camera terms for every scene.\n"
             "7. Use structured voiceLines, not one short voiceLine string. A scene may have multiple spoken lines if they fit the continuous action naturally.\n"
-            "8. All voiceLines.line values must be written in Voice language unless the brief explicitly asks for a different phrase. Do not add English translations unless visible product/app UI itself contains English.\n"
-            "9. Analyze each uploaded product reference independently and preserve its existing id. Do not assume every reference is an app screen. Use only relevant product references for each keyframe prompt.\n"
-            "9a. For each uploaded product reference, derive the name from its file_name so the user can match the plan back to the uploaded image. Example: home_screen.jpg -> Home Screen. Do not invent unrelated reference names.\n"
-            "10. Each 4-second scene must have 1 to 2 keyframePrompts. Each prompt must mention product, primary character, primary location, composition, and camera. If an app screen needs readable UI, at least one relevant keyframe prompt must be a phone/UI close-up or insert shot.\n"
-            "11. finalVideoPrompt must be self-contained and must map reference images by keyframe prompt order. Include product, character, and location locks. Explicitly say reference images are visual ingredients, not an automatic chronological slideshow.\n"
-            "12. Every scene durationSec must be exactly 4. Every finalVideoPrompt must explicitly start with or include: Create a 4-second vertical video.\n"
+            "8. Voice handling: all production planning fields must stay in Planning/output language. voiceLines.line may use the requested dialogue language from the brief. Treat quoted spoken dialogue in the brief as spoken line exactly. Do not paraphrase, translate, shorten, soften, or rewrite spoken lines. Text marked as subtitles, translations, Vietsub, notes, or parenthetical non-spoken explanations is not spoken unless the user explicitly says it should be spoken.\n"
+            f"{reference_rule}"
+            "9a. For each uploaded product reference, keep sourceFileName and referenceLabel aligned with the real uploaded file so the user can match the plan back to the uploaded image. Do not invent unrelated reference names.\n"
+            "9b. productReferenceIds must contain at most one id. Use [] for actor-only, location-only, coin-only, reaction, payment, or CTA shots where the uploaded app/product UI is not visible and readable. A phone as a prop is not enough to attach an app-screen reference; attach an app reference only when the screen content should be preserved.\n"
+            "9c. For app references, choose exactly one screen state per keyframe: home/start screen OR scan/camera screen OR result/detail/price screen. Never combine home, scan, and result screenshots in the same keyframe prompt.\n"
+            "9d. Assign every reference one role and an exclusion boundary. Character references carry identity and wardrobe only; location references carry environment geometry and light direction only; product references carry exact product or UI appearance only. Never let one reference overwrite unrelated identity, location, camera, motion, or audio.\n"
+            "10. Each scene must have exactly 1 keyframePrompts item with id kf_main. This keyframe is the manual quality gate for that scene's video clip. If the keyframe would be hard to judge, split the story into another scene instead of adding more keyframes inside the same scene.\n"
+            "10a. Keyframe prompts and finalVideoPrompt must preserve uploaded product/app/user references exactly: do not redesign UI layout, text, colors, packaging, product shape, coin details, logo, actor identity, outfit, location layout, or any user-provided visual reference. If the scene needs readable UI or readable text, the relevant keyframe prompt must make the phone/UI/product reference large enough and angled for readability, not a tiny background prop.\n"
+            "10b. Never write internal file ids like file_xxx inside keyframe prompt text or finalVideoPrompt. Use @suggested_reference_label or @file_name in human-readable prompt text, while productReferenceIds keeps the exact uploaded reference id.\n"
+            "10c. Keyframe prompts must include visible performance direction when an actor is present: facial expression, body posture, hand action, and gaze. Do not use abstract emotion alone.\n"
+            "10d. The keyframe must show the exact state the video should preserve: actor identity, face, outfit, hand position, product/app state, location geometry, lighting direction, camera viewpoint, and any readable UI/product detail.\n"
+            "11. finalVideoPrompt must be self-contained and must map the single keyframe image as the scene's visual anchor. Include action chain, camera shot, movement, composition, dialogue/audio intent, product lock, character lock, location lock, overlay intent, continuity handoff to the next scene, and negative rules. Explicitly say the model should continue naturally from the keyframe, not create a slideshow, montage, jump cut, or unrelated camera reset.\n"
+            "12. Choose durationSec from exactly one of 4, 6, 8, or 10. Use 4s for one simple visual beat, 6s for one action plus reaction, 8s for two connected actions or a product demo, and 10s only when the scene has a complex continuous action or multiple spoken lines. finalVideoPrompt must NOT mention duration, seconds, vertical format, portrait mode, or 9:16 because those are provider parameters.\n"
             "13. If Overlay mode is disabled, set onScreenText to an empty string and say No overlay text in finalVideoPrompt. If enabled, onScreenText must be no more than 6 words.\n"
-            "14. primaryLocation.imagePrompt must create a natural, attractive commercial reference image with depth, warm lighting, and a usable filming surface. Its consistencyPrompt must define fixed layout, recurring props, physical relationships, window/light direction, and background anchors.\n"
+            "14. primaryLocation.imagePrompt must create a natural, attractive commercial reference image with depth, warm lighting, and a usable filming surface. Its consistencyPrompt must define fixed world-space layout, recurring props, physical relationships, window/light direction, background anchors, and the chosen reference view.\n"
+            "14a. Each keyframe prompt must state the camera viewpoint relative to the location reference: same reference view, left side angle, right side angle, top-down view, or opposite side view. If a scene uses an opposite or side angle, explicitly say it is the same fixed layout viewed from that new angle.\n"
+            "14b. Smooth scene continuity: each scene's main keyframe should visually hand off from the previous scene and into the next scene through matching actor posture, screen/product state, gaze direction, hand position, camera angle, or motion direction. Avoid hard resets unless the brief needs a deliberate cut.\n"
+            "14c. Treat each generated scene as an intentional editorial shot opened from canonical references. Do not build an unlimited output-to-output chain. Accepted footage may inform the next scene's opening state, but character, wardrobe, product geometry, location layout, and style must re-anchor from the canonical references.\n"
+            "14d. Put subtitles, precise CTA copy, prices, disclaimers, and small readable text in post-production. Do not spend generation fidelity trying to render them inside moving footage.\n"
+            "14e. Prefer original, authorized characters and references. Do not imitate a real private person, celebrity, protected character, artist style, logo, voice, or copyrighted performance unless the brief clearly establishes authorization; rewrite to a generic original alternative instead of attempting to bypass provider safeguards.\n"
             "15. JSON SAFETY: never use raw ASCII double quotes inside string values. If quoted speech is needed inside a string value, use corner brackets.\n"
         )
 
@@ -414,11 +488,12 @@ class CreativePlanService:
             reference = dict(raw_reference)
             uploaded_file = file_by_id.get(reference_id)
             if uploaded_file:
-                display_name = self._clean_uploaded_file_label(uploaded_file.file_name)
+                display_name = uploaded_file.file_name
+                clean_display_name = self._clean_uploaded_file_label(uploaded_file.file_name)
                 order = file_order.get(reference_id, len(references) + 1)
                 reference["name"] = display_name
                 reference["sourceFileName"] = uploaded_file.file_name
-                reference["referenceLabel"] = self._product_reference_label(uploaded_file.file_name, order, display_name)
+                reference["referenceLabel"] = self._product_reference_label(uploaded_file.file_name, order, clean_display_name)
                 reference["visualDescription"] = self._string(reference.get("visualDescription")) or (
                     f"Uploaded product reference image named {uploaded_file.file_name}."
                 )
@@ -434,14 +509,15 @@ class CreativePlanService:
         for uploaded_file in uploaded_files:
             if uploaded_file.id in seen:
                 continue
-            display_name = self._clean_uploaded_file_label(uploaded_file.file_name)
+            display_name = uploaded_file.file_name
+            clean_display_name = self._clean_uploaded_file_label(uploaded_file.file_name)
             order = file_order.get(uploaded_file.id, len(references) + 1)
             references.append(
                 {
                     "id": uploaded_file.id,
                     "name": display_name,
                     "sourceFileName": uploaded_file.file_name,
-                    "referenceLabel": self._product_reference_label(uploaded_file.file_name, order, display_name),
+                    "referenceLabel": self._product_reference_label(uploaded_file.file_name, order, clean_display_name),
                     "kind": "uploaded_product_reference",
                     "visualDescription": f"Uploaded product reference image named {uploaded_file.file_name}.",
                     "lockPrompt": f"Preserve the visible product/app details from {uploaded_file.file_name}.",
@@ -487,35 +563,354 @@ class CreativePlanService:
         }
 
     def _target_scene_count(self, project: Project) -> int:
-        duration_text = str(project.duration or "").lower()
-        match = re.search(r"\d+", duration_text)
-        duration_seconds = int(match.group(0)) if match else 20
-        if duration_seconds <= 12:
-            return 3
-        if duration_seconds <= 16:
-            return 4
-        if duration_seconds <= 22:
-            return 5
-        if duration_seconds <= 26:
+        text = "\n".join(
+            part
+            for part in [
+                project.brief or "",
+                project.product_description or "",
+            ]
+            if part
+        )
+        non_empty_lines = [
+            line.strip()
+            for line in text.splitlines()
+            if line.strip() and not line.strip().endswith(":")
+        ]
+        sentence_count = len(re.findall(r"[.!?。！？]+", text))
+        bullet_count = len(re.findall(r"(?m)^\s*[-*•]\s+", text))
+        quoted_dialogue_count = len(re.findall(r'"[^"]+"|“[^”]+”|<[^>]+>', text))
+        complexity = max(len(non_empty_lines), sentence_count, bullet_count, quoted_dialogue_count)
+        if complexity >= 10 or len(text) > 1800:
+            return 8
+        if complexity >= 7 or len(text) > 1200:
+            return 7
+        if complexity >= 4 or len(text) > 500:
             return 6
-        return 8
+        return 5
 
-    def _coerce_four_second_scenes(self, scenes: list[Any]) -> list[dict[str, Any]]:
+    def _coerce_scene_clips(self, scenes: list[Any], product_references: list[dict[str, Any]]) -> list[dict[str, Any]]:
         coerced_scenes: list[dict[str, Any]] = []
         for index, raw_scene in enumerate(scenes):
             if not isinstance(raw_scene, dict):
                 continue
             scene = dict(raw_scene)
             scene["sceneIndex"] = index + 1
-            scene["durationSec"] = 4
+            scene["durationSec"] = self._normalize_scene_duration(scene.get("durationSec"))
+            for text_key in ("visualAction", "productMoment", "characterAction", "locationUse"):
+                if scene.get(text_key):
+                    scene[text_key] = self._replace_reference_aliases(str(scene.get(text_key) or ""), product_references)
             final_prompt = str(scene.get("finalVideoPrompt") or "").strip()
             if final_prompt:
-                final_prompt = re.sub(r"\b\d+\s*[- ]seconds?\b", "4-second", final_prompt, flags=re.IGNORECASE)
-                if "4-second vertical video" not in final_prompt.lower():
-                    final_prompt = f"Create a 4-second vertical video. {final_prompt}"
-                scene["finalVideoPrompt"] = final_prompt
+                scene["finalVideoPrompt"] = self._replace_reference_aliases(self._clean_video_prompt(final_prompt), product_references)
+            scene["keyframePrompts"] = self._coerce_keyframe_slots(scene, product_references)
             coerced_scenes.append(scene)
         return coerced_scenes
+
+    def _coerce_keyframe_slots(self, scene: dict[str, Any], product_references: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        raw_slots = scene.get("keyframePrompts") if isinstance(scene.get("keyframePrompts"), list) else []
+        slots = [slot for slot in raw_slots if isinstance(slot, dict)][:KEYFRAMES_PER_SCENE]
+        while len(slots) < KEYFRAMES_PER_SCENE:
+            slot_id = "kf_main"
+            label = "Main keyframe"
+            timing = "0s"
+            purpose = "Single visual anchor and manual quality gate for this scene before video generation."
+            prompt = " ".join(
+                str(value or "")
+                for value in [
+                    scene.get("title"),
+                    scene.get("visualAction"),
+                    scene.get("productMoment"),
+                    scene.get("characterAction"),
+                    scene.get("locationUse"),
+                    scene.get("camera", {}).get("composition") if isinstance(scene.get("camera"), dict) else "",
+                    purpose,
+                ]
+            ).strip()
+            slots.append(
+                {
+                    "id": slot_id,
+                    "label": label,
+                    "timing": timing,
+                    "purpose": purpose,
+                    "prompt": prompt,
+                    "productReferenceIds": [],
+                }
+            )
+
+        normalized_slots: list[dict[str, Any]] = []
+        for index, slot in enumerate(slots):
+            normalized_slot = dict(slot)
+            normalized_slot["id"] = "kf_main"
+            normalized_slot["label"] = self._string(normalized_slot.get("label")) or "Main keyframe"
+            normalized_slot["timing"] = "0s"
+            normalized_slot["purpose"] = self._string(normalized_slot.get("purpose")) or "Single visual anchor and manual quality gate for this scene before video generation."
+            normalized_slot["prompt"] = self._replace_reference_aliases(str(normalized_slot.get("prompt") or ""), product_references)
+            normalized_slot["productReferenceIds"] = self._normalize_slot_product_reference_ids(scene, normalized_slot, product_references)
+            normalized_slots.append(normalized_slot)
+        return normalized_slots
+
+    def _normalize_scene_duration(self, value: Any) -> int:
+        if isinstance(value, (int, float)):
+            raw_duration = int(value)
+        else:
+            match = re.search(r"\d+", str(value or ""))
+            raw_duration = int(match.group(0)) if match else DEFAULT_SCENE_CLIP_SECONDS
+        return min(ALLOWED_SCENE_CLIP_SECONDS, key=lambda item: abs(item - raw_duration))
+
+    def _normalize_slot_product_reference_ids(self, scene: dict[str, Any], slot: dict[str, Any], product_references: list[dict[str, Any]]) -> list[str]:
+        aliases = self._reference_alias_lookup(product_references)
+        reference_by_id = {str(reference.get("id") or ""): reference for reference in product_references}
+        normalized: list[str] = []
+
+        def add(reference_id: str) -> None:
+            if reference_id and reference_id not in normalized:
+                normalized.append(reference_id)
+
+        searchable_text = " ".join(
+            str(value or "")
+            for value in [
+                slot.get("prompt"),
+                slot.get("purpose"),
+                slot.get("label"),
+                scene.get("title"),
+                scene.get("visualAction"),
+                scene.get("productMoment"),
+            ]
+        )
+        lowered_text = searchable_text.lower()
+        if self._blocks_uploaded_product_reference(lowered_text):
+            return []
+        if not self._needs_uploaded_product_reference(lowered_text):
+            return []
+
+        raw_ids = slot.get("productReferenceIds")
+        if isinstance(raw_ids, list):
+            for raw_id in raw_ids:
+                key = str(raw_id or "").strip().lstrip("@")
+                reference_id = aliases.get(key.lower(), key if key in aliases.values() else "")
+                reference = reference_by_id.get(reference_id)
+                if reference and self._reference_matches_slot_text(reference, lowered_text):
+                    add(reference_id)
+
+        for alias, reference_id in aliases.items():
+            if alias and alias in lowered_text:
+                add(reference_id)
+
+        if not normalized:
+            for reference in self._keyword_matched_references(lowered_text, product_references):
+                add(str(reference.get("id") or ""))
+
+        return self._prioritize_product_reference_ids(normalized, lowered_text, reference_by_id)[:1]
+
+    def _blocks_uploaded_product_reference(self, lowered_text: str) -> bool:
+        blocking_phrases = (
+            "no app visible",
+            "no app is visible",
+            "no app visible yet",
+            "no app visible.",
+            "no app/product visible",
+            "no product visible",
+            "no product reference visible",
+            "no uploaded product reference visible",
+            "no ui visible",
+            "no screen visible",
+            "phone is lowered slightly, out of focus",
+            "phone is now slightly out of focus",
+            "not showing the app yet",
+            "phone is visible but kept hidden",
+            "out of focus below frame",
+            "focus on character and cta",
+            "focus on the physical coin",
+        )
+        return any(phrase in lowered_text for phrase in blocking_phrases)
+
+    def _needs_uploaded_product_reference(self, lowered_text: str) -> bool:
+        return self._contains_any_keyword(
+            lowered_text,
+            (
+                "phone screen",
+                "smartphone screen",
+                "app screen",
+                "mobile app screen",
+                "ui",
+                "interface",
+                "scan",
+                "scanning",
+                "capture button",
+                "identify",
+                "result",
+                "detail",
+                "reference price",
+                "price range",
+                "value range",
+                "logo",
+                "packaging",
+                "package",
+                "bottle",
+                "jar",
+                "tube",
+                "box",
+                "label",
+            ),
+        )
+
+    def _reference_matches_slot_text(self, reference: dict[str, Any], lowered_text: str) -> bool:
+        reference_text = " ".join(
+            str(reference.get(key) or "")
+            for key in ("name", "sourceFileName", "referenceLabel", "visualDescription", "useWhen", "kind")
+        ).lower()
+
+        direct_aliases = [
+            str(reference.get("id") or "").lower(),
+            str(reference.get("name") or "").lower(),
+            str(reference.get("sourceFileName") or "").lower(),
+            str(reference.get("referenceLabel") or "").lower(),
+            Path(str(reference.get("sourceFileName") or "")).stem.lower(),
+        ]
+        if any(alias and alias in lowered_text for alias in direct_aliases):
+            return True
+
+        is_app_reference = self._contains_any_keyword(reference_text, ("app", "screen", "ui", "scan", "result", "detail", "home", "interface"))
+        if is_app_reference:
+            groups = [
+                (("detail", "result", "value", "price", "rarity", "reference price", "price range"), ("detail", "result", "value", "price", "rarity", "coin_detail")),
+                (("scan", "scanning", "capture button", "identify", "camera interface", "scan interface"), ("scan", "camera", "capture", "scan interface")),
+                (("home screen", "start screen", "app home", "main screen"), ("home", "start")),
+            ]
+            return any(
+                self._contains_any_keyword(lowered_text, scene_keywords)
+                and self._contains_any_keyword(reference_text, reference_keywords)
+                for scene_keywords, reference_keywords in groups
+            )
+
+        return self._contains_any_keyword(lowered_text, ("visible product reference", "uploaded product", "logo", "packaging", "package", "bottle", "jar", "tube", "box", "label"))
+
+    def _contains_any_keyword(self, lowered_text: str, keywords: tuple[str, ...]) -> bool:
+        for keyword in keywords:
+            normalized_keyword = keyword.lower()
+            if " " in normalized_keyword or "_" in normalized_keyword:
+                if normalized_keyword in lowered_text:
+                    return True
+                continue
+            if re.search(rf"(?<![a-z0-9]){re.escape(normalized_keyword)}(?![a-z0-9])", lowered_text):
+                return True
+        return False
+
+    def _reference_alias_lookup(self, product_references: list[dict[str, Any]]) -> dict[str, str]:
+        aliases: dict[str, str] = {}
+        for reference in product_references:
+            reference_id = str(reference.get("id") or "").strip()
+            if not reference_id:
+                continue
+            for value in [
+                reference.get("id"),
+                reference.get("name"),
+                reference.get("sourceFileName"),
+                reference.get("referenceLabel"),
+                Path(str(reference.get("sourceFileName") or "")).stem,
+            ]:
+                text = str(value or "").strip().lstrip("@")
+                if text:
+                    aliases[text.lower()] = reference_id
+        return aliases
+
+    def _keyword_matched_references(self, lowered_text: str, product_references: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        if not lowered_text or not product_references:
+            return []
+        if not self._needs_uploaded_product_reference(lowered_text):
+            return []
+
+        groups = [
+            (("detail", "result", "value", "price", "rarity", "save", "cta"), ("detail", "result", "value", "price", "rarity", "coin_detail")),
+            (("scan", "scanning", "capture button", "identify", "camera interface", "scan interface"), ("scan", "camera", "capture", "scan interface")),
+            (("home screen", "start screen", "app home", "main screen"), ("home", "start")),
+        ]
+        matched: list[dict[str, Any]] = []
+        for scene_keywords, reference_keywords in groups:
+            if not self._contains_any_keyword(lowered_text, scene_keywords):
+                continue
+            for reference in product_references:
+                reference_text = " ".join(
+                    str(reference.get(key) or "")
+                    for key in ("name", "sourceFileName", "referenceLabel", "visualDescription", "useWhen", "kind")
+                ).lower()
+                if self._contains_any_keyword(reference_text, reference_keywords) and reference not in matched:
+                    matched.append(reference)
+        return matched
+
+    def _prioritize_product_reference_ids(
+        self,
+        reference_ids: list[str],
+        lowered_text: str,
+        reference_by_id: dict[str, dict[str, Any]],
+    ) -> list[str]:
+        if len(reference_ids) <= 1:
+            return reference_ids
+
+        priority_groups = [
+            (("detail", "result", "value", "price", "rarity", "reference price", "price range"), ("detail", "result", "value", "price", "rarity", "coin_detail")),
+            (("scan", "scanning", "capture button", "identify", "camera interface", "scan interface"), ("scan", "camera", "capture", "scan interface")),
+            (("home screen", "start screen", "app home", "main screen"), ("home", "start")),
+        ]
+        for scene_keywords, reference_keywords in priority_groups:
+            if not self._contains_any_keyword(lowered_text, scene_keywords):
+                continue
+            ranked = [
+                reference_id
+                for reference_id in reference_ids
+                if self._contains_any_keyword(self._reference_search_text(reference_by_id.get(reference_id, {})), reference_keywords)
+            ]
+            if ranked:
+                return ranked
+        return [reference_ids[0]]
+
+    def _reference_search_text(self, reference: dict[str, Any]) -> str:
+        return " ".join(
+            str(reference.get(key) or "")
+            for key in ("name", "sourceFileName", "referenceLabel", "visualDescription", "useWhen", "kind")
+        ).lower()
+
+    def _replace_reference_aliases(self, value: str, product_references: list[dict[str, Any]]) -> str:
+        next_value = value
+        replacements: list[tuple[str, str]] = []
+        for reference in product_references:
+            mention = self._reference_mention(reference)
+            if not mention:
+                continue
+            mention_target = mention.lstrip("@").lower()
+            for raw_alias in [reference.get("id"), reference.get("referenceLabel"), Path(str(reference.get("sourceFileName") or "")).stem]:
+                alias = str(raw_alias or "").strip()
+                if alias and alias.lower() in mention_target:
+                    continue
+                if alias and alias != mention.lstrip("@"):
+                    replacements.append((alias, mention))
+        for alias, mention in sorted(replacements, key=lambda item: len(item[0]), reverse=True):
+            next_value = next_value.replace(alias, mention)
+        next_value = re.sub(r"@+", "@", next_value)
+        next_value = re.sub(r"(@[A-Za-z0-9_.-]+?\.(?:jpe?g|png|webp|gif))(?:\.(?:jpe?g|png|webp|gif))+", r"\1", next_value, flags=re.IGNORECASE)
+        return next_value
+
+    def _reference_mention(self, reference: dict[str, Any]) -> str:
+        source_file_name = str(reference.get("sourceFileName") or "").strip()
+        if source_file_name:
+            return f"@{source_file_name}"
+        reference_label = str(reference.get("referenceLabel") or "").strip()
+        if reference_label:
+            return f"@{reference_label}"
+        reference_id = str(reference.get("id") or "").strip()
+        return f"@{reference_id}" if reference_id else ""
+
+    def _clean_video_prompt(self, prompt: str) -> str:
+        cleaned = prompt.strip()
+        cleaned = re.sub(
+            r"^\s*Create\s+(?:exactly\s+)?(?:one\s+)?(?:an?\s+)?\d+\s*[- ]seconds?\s+(?:vertical\s+)?(?:\d+:\d+\s+)?(?:ad\s+)?(?:video|clip)\.?\s*",
+            "",
+            cleaned,
+            flags=re.IGNORECASE,
+        )
+        cleaned = re.sub(r"\bCreate an? \d+\s*[- ]seconds? vertical video\.\s*", "", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"\bexact(?:ly)? \d+\s*[- ]seconds? duration,?\s*", "", cleaned, flags=re.IGNORECASE)
+        return cleaned.strip() or prompt.strip()
 
     def _product_references_payload(self, project: Project, vision: VisionAnalysis) -> list[dict[str, Any]]:
         if project.uploaded_files:

@@ -9,7 +9,7 @@ export default function FieldLabel({ children, help }: FieldLabelProps) {
       {children}
       <span className="group relative inline-flex">
         <button
-          className="flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 bg-white text-[10px] font-black leading-none text-slate-500 transition hover:border-teal-500 hover:text-teal-700 focus:border-teal-600 focus:outline-none"
+          className="flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 bg-white text-[10px] font-black leading-none text-slate-500 transition hover:border-blue-500 hover:text-blue-700 focus:border-blue-600 focus:outline-none"
           type="button"
           aria-label={`Help: ${children}`}
         >

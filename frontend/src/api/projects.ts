@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import type { CreateProjectValues, PlanCreation, Project } from "../types";
+import type { CreateProjectValues, ImageGenerationJob, ImageModelId, PlanCreation, Project, ReviewSceneTakePayload, VideoModelId } from "../types";
 
 function appendIfPresent(formData: FormData, key: string, value: string): void {
   const trimmed = value.trim();
@@ -10,6 +10,7 @@ function appendIfPresent(formData: FormData, key: string, value: string): void {
 
 export async function createProject(values: CreateProjectValues): Promise<Project> {
   const formData = new FormData();
+  formData.append("workflow_type", values.workflowType);
   formData.append("product_name", values.productName.trim());
   appendIfPresent(formData, "product_category", values.productCategory);
   appendIfPresent(formData, "product_description", values.productDescription);
@@ -28,6 +29,14 @@ export async function listProjects(): Promise<Project[]> {
 
 export async function getProject(id: string): Promise<Project> {
   const response = await apiClient.get<Project>(`/api/projects/${id}`);
+  return response.data;
+}
+
+export async function updateProject(
+  id: string,
+  payload: { product_description?: string | null; brief?: string | null },
+): Promise<Project> {
+  const response = await apiClient.patch<Project>(`/api/projects/${id}`, payload);
   return response.data;
 }
 
@@ -96,8 +105,21 @@ export async function selectKeyframeCandidate(
   return response.data;
 }
 
-export async function generateReferenceAssetImage(id: string, assetType: "character" | "location"): Promise<Project> {
-  const response = await apiClient.post<Project>(`/api/projects/${id}/reference-assets/${assetType}/generate`);
+export async function generateReferenceAssetImage(
+  id: string,
+  assetType: "character" | "location",
+  model: ImageModelId,
+): Promise<Project> {
+  const response = await apiClient.post<Project>(`/api/projects/${id}/reference-assets/${assetType}/generate`, { model });
+  return response.data;
+}
+
+export async function enqueueReferenceAssetImage(
+  id: string,
+  assetType: "character" | "location",
+  model: ImageModelId,
+): Promise<ImageGenerationJob> {
+  const response = await apiClient.post<ImageGenerationJob>(`/api/projects/${id}/reference-assets/${assetType}/generate-async`, { model });
   return response.data;
 }
 
@@ -115,8 +137,38 @@ export async function uploadReferenceAssetImage(id: string, assetType: "characte
   return response.data;
 }
 
-export async function generateKeyframeSlotImage(id: string, sceneIndex: number, slotId: string): Promise<Project> {
-  const response = await apiClient.post<Project>(`/api/projects/${id}/scenes/${sceneIndex}/keyframe-slots/${slotId}/generate`);
+export async function generateKeyframeSlotImage(
+  id: string,
+  sceneIndex: number,
+  slotId: string,
+  model: ImageModelId,
+): Promise<Project> {
+  const response = await apiClient.post<Project>(`/api/projects/${id}/scenes/${sceneIndex}/keyframe-slots/${slotId}/generate`, { model });
+  return response.data;
+}
+
+export async function enqueueKeyframeSlotImage(
+  id: string,
+  sceneIndex: number,
+  slotId: string,
+  model: ImageModelId,
+): Promise<ImageGenerationJob> {
+  const response = await apiClient.post<ImageGenerationJob>(
+    `/api/projects/${id}/scenes/${sceneIndex}/keyframe-slots/${slotId}/generate-async`,
+    { model },
+  );
+  return response.data;
+}
+
+export async function getImageGenerationJob(id: string, jobId: string): Promise<ImageGenerationJob> {
+  const response = await apiClient.get<ImageGenerationJob>(`/api/projects/${id}/image-generation-jobs/${jobId}`);
+  return response.data;
+}
+
+export async function listImageGenerationJobs(id: string, activeOnly = false): Promise<ImageGenerationJob[]> {
+  const response = await apiClient.get<ImageGenerationJob[]>(`/api/projects/${id}/image-generation-jobs`, {
+    params: { active_only: activeOnly },
+  });
   return response.data;
 }
 
@@ -129,8 +181,13 @@ export async function uploadKeyframeSlotImage(id: string, sceneIndex: number, sl
   return response.data;
 }
 
-export async function generateSceneVideo(id: string, sceneIndex: number): Promise<Project> {
-  const response = await apiClient.post<Project>(`/api/projects/${id}/scenes/${sceneIndex}/video`);
+export async function generateSceneVideo(id: string, sceneIndex: number, model: VideoModelId): Promise<Project> {
+  const response = await apiClient.post<Project>(`/api/projects/${id}/scenes/${sceneIndex}/video`, { model });
+  return response.data;
+}
+
+export async function pollSceneVideo(id: string, sceneIndex: number): Promise<Project> {
+  const response = await apiClient.get<Project>(`/api/projects/${id}/scenes/${sceneIndex}/video-status`);
   return response.data;
 }
 
@@ -140,6 +197,11 @@ export async function uploadSceneVideo(id: string, sceneIndex: number, file: Fil
   const response = await apiClient.post<Project>(`/api/projects/${id}/scenes/${sceneIndex}/video/upload`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
+  return response.data;
+}
+
+export async function reviewSceneTake(id: string, sceneIndex: number, payload: ReviewSceneTakePayload): Promise<Project> {
+  const response = await apiClient.post<Project>(`/api/projects/${id}/scenes/${sceneIndex}/take-review`, payload);
   return response.data;
 }
 
