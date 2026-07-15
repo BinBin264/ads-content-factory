@@ -79,7 +79,6 @@ class ShopAIKeyVideoProvider:
     SUPPORTED_MODEL_IDS = {
         "veo3.1-pro",
         "veo3.1-fast",
-        "veo3.1-fast-components",
         "grok-video-3",
         "grok-video-3-10s",
     }
@@ -205,15 +204,6 @@ class ShopAIKeyVideoProvider:
             raise VideoProviderError(f"Unsupported video model '{selected_model}'. Supported models: {supported}.")
 
         selected_duration = self._normalize_duration(duration)
-        if selected_model == "veo3.1-fast-components":
-            return VideoModelProfile(
-                model_id=selected_model,
-                family="veo",
-                ratio="16:9",
-                duration=selected_duration,
-                mode="components",
-                resolution="provider upsample" if self.enable_upsample else "provider default",
-            )
         if selected_model.startswith("grok-video"):
             return VideoModelProfile(
                 model_id=selected_model,

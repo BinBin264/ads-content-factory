@@ -8,6 +8,7 @@ from app.models.schemas import (
     GenerateSceneVideoRequest,
     ImageGenerationJob,
     Project,
+    ReviewKeyframeRequest,
     ReviewSceneTakeRequest,
     RewriteSceneRequest,
     SelectKeyframeCandidateRequest,
@@ -89,6 +90,16 @@ def select_keyframe_candidate(
     payload: SelectKeyframeCandidateRequest,
 ) -> Project:
     return project_service.select_keyframe_candidate(project_id, scene_index, slot_id, payload)
+
+
+@router.post("/{project_id}/scenes/{scene_index}/keyframe-slots/{slot_id}/review", response_model=Project)
+def review_keyframe(
+    project_id: str,
+    scene_index: int,
+    slot_id: str,
+    payload: ReviewKeyframeRequest,
+) -> Project:
+    return project_service.review_keyframe(project_id, scene_index, slot_id, payload)
 
 
 @router.post("/{project_id}/reference-assets/{asset_type}/generate", response_model=Project)
@@ -194,7 +205,25 @@ def generate_scene_video(
     scene_index: int,
     payload: GenerateSceneVideoRequest | None = None,
 ) -> Project:
-    return project_service.generate_scene_video(project_id, scene_index, payload.model if payload else None)
+    return project_service.generate_scene_video(
+        project_id,
+        scene_index,
+        payload.model if payload else None,
+        force=payload.force if payload else False,
+    )
+
+
+@router.post("/{project_id}/scenes/{scene_index}/video/regenerate", response_model=Project)
+def regenerate_scene_video(
+    project_id: str,
+    scene_index: int,
+    payload: GenerateSceneVideoRequest | None = None,
+) -> Project:
+    return project_service.regenerate_scene_video(
+        project_id,
+        scene_index,
+        payload.model if payload else None,
+    )
 
 
 @router.get("/{project_id}/scenes/{scene_index}/video-status", response_model=Project)

@@ -53,17 +53,17 @@ VIDEO_REFERENCE_LIMIT=1
 VIDEO_REQUEST_TIMEOUT_SECONDS=90
 ```
 
-`VIDEO_MODEL_ID` is the default for requests without a model. The Phase 3 selector can override it with `veo3.1-pro`, `veo3.1-fast`, `veo3.1-fast-components`, `grok-video-3`, or `grok-video-3-10s`.
+`VIDEO_MODEL_ID` is the default for requests without a model. The Phase 3 selector can override it with `veo3.1-pro`, `veo3.1-fast`, `grok-video-3`, or `grok-video-3-10s`.
 
-Automation mode must select `nano-banana`, `nano-banana-2`, `nano-banana-pro`, `gpt-image-1-mini`, `gpt-image-1`, `gpt-image-1.5`, or `gpt-image-2` for each character, location, or keyframe job. There is no env model fallback. The selected model is captured by the queued job, so changing the selector does not alter jobs already running. Nano Banana requests use `/images/google/generations` and preserve the requested `9:16` canvas. GPT Image requests use `/images/openai/generations`, upload up to four mapped references through `image_urls`, and generate on the supported `1024x1536` portrait canvas with a centered `9:16` safe-crop instruction.
+Automation mode must select `nano-banana`, `nano-banana-2`, `nano-banana-pro`, `gpt-image-1`, `gpt-image-1.5`, `gpt-image-2`, or `gpt-image-2-all` for each character, location, or keyframe job. There is no env model fallback. The selected model is captured by the queued job, so changing the selector does not alter jobs already running. Nano Banana requests use `/images/google/generations` and preserve the requested `9:16` canvas. GPT Image requests use `/images/openai/generations`, upload up to four mapped references through `image_urls`, and generate on the supported `1024x1536` portrait canvas with a centered `9:16` safe-crop instruction.
 
 Plan Creation, uploaded image understanding, scene rewrites, and final prompt regeneration use Gemini exclusively. `GEMINI_MODEL` selects the model and `GEMINI_API_KEYS` supplies the rotating key pool.
 
 There is no mock fallback.
 
-Image provider env is optional and independent from Gemini planning. With `IMAGE_PROVIDER_NAME=shopaikey-google`, reference generation calls `POST /images/google/generations`. Storyboard keyframes first upload the mapped local character, location, and at most one relevant product/app image through `POST /upload/images`, then pass those public URLs in `image_urls`. Uploaded URLs are cached per file while the backend process is running. Async image endpoints return a job immediately, expose phase-based percentage progress, run up to `IMAGE_GENERATION_CONCURRENCY` jobs at once, queue overflow, and retry temporary `429/503` failures serially with exponential backoff. Set its credential only through `IMAGE_PROVIDER_API_KEY`. If configuration is missing, generation fails clearly and does not create placeholder images.
+Image provider env is optional and independent from Gemini planning. With `IMAGE_PROVIDER_NAME=shopaikey-google`, reference generation calls `POST /images/google/generations`. Storyboard keyframes upload only the minimum routed references through `POST /upload/images`: product/UI close-ups use one product reference; actor-plus-product shots use product plus character; actor-only shots use character plus location. Uploaded URLs are cached per file while the backend process is running. Async image endpoints return a job immediately, expose phase-based percentage progress, run up to `IMAGE_GENERATION_CONCURRENCY` jobs at once, queue overflow, and retry temporary `429`, `503`, timeout, and `524` failures serially with exponential backoff. `IMAGE_GENERATION_MAX_RETRIES=3` means three retries after the initial request. Set its credential only through `IMAGE_PROVIDER_API_KEY`. If configuration is missing, generation fails clearly and does not create placeholder images.
 
-Video automation uses ShopAIKey only. The scene endpoint uploads the selected keyframe to `POST /upload/images`, sends its URL as the single item in `metadata.images` to `POST /v1/video/generations`, and polls `GET /v1/video/generations/{task_id}` until `SUCCESS` exposes `result_url`. The default model is `veo3.1-pro` in `9:16` first-frame mode, prompt enhancement is disabled to preserve the compiled production prompt, and provider upsampling is enabled. The Components reference mode is not used for portrait generation because the current ShopAIKey channel rejects Components with `9:16`. ShopAIKey's public Veo contract does not expose a duration parameter, so `scene.durationSec` remains the editorial target rather than a submitted API field. Missing configuration fails clearly and never creates mock video.
+Video automation uses ShopAIKey only. The scene endpoint uploads the selected keyframe to `POST /upload/images`, sends its URL as the single item in `metadata.images` to `POST /v1/video/generations`, and polls `GET /v1/video/generations/{task_id}` until `SUCCESS` exposes `result_url`. The default model is `veo3.1-pro` in `9:16` first-frame mode, prompt enhancement is disabled to preserve the compiled production prompt, and provider upsampling is enabled. ShopAIKey's public Veo contract does not expose a duration parameter, so `scene.durationSec` remains the editorial target rather than a submitted API field. Missing configuration fails clearly and never creates mock video.
 
 ## Main Endpoints
 
@@ -82,9 +82,11 @@ Video automation uses ShopAIKey only. The scene endpoint uploads the selected ke
 - `GET /api/projects/{project_id}/image-generation-jobs` - list queued/running/completed image jobs and progress
 - `GET /api/projects/{project_id}/image-generation-jobs/{job_id}` - poll one image job
 - `POST /api/projects/{project_id}/scenes/{scene_index}/keyframe-slots/{slot_id}/select` - select a keyframe reference image
-- `POST /api/projects/{project_id}/scenes/{scene_index}/video` - submit one real ShopAIKey Veo or Grok clip from the selected first frame; the optional `model` request field overrides `VIDEO_MODEL_ID`; no mock output
+- `POST /api/projects/{project_id}/scenes/{scene_index}/keyframe-slots/{slot_id}/review` - accept or reject the selected keyframe; automated video generation requires acceptance tied to the current candidate, and acceptance locks prompt/image replacement until rejection
+- `POST /api/projects/{project_id}/scenes/{scene_index}/video` - submit one real ShopAIKey Veo or Grok clip from the accepted Phase 2 keyframe; optional fields are `model` and `force`; `force=true` replaces only the current clip; no mock output
+- `POST /api/projects/{project_id}/scenes/{scene_index}/video/regenerate` - dedicated replacement endpoint used by `Regenerate Clip`; always clears the current scene clip/task before submitting the selected model
 - `GET /api/projects/{project_id}/scenes/{scene_index}/video-status` - poll one ShopAIKey task and store the provider's real `progress` percentage
-- `POST /api/projects/{project_id}/scenes/{scene_index}/take-review` - review a generated/uploaded take and update sequence canon only when accepted
+- `POST /api/projects/{project_id}/scenes/{scene_index}/take-review` - accept a generated/uploaded clip with `{ "verdict": "keep" }`; acceptance marks only that clip complete and does not rewrite later keyframes or prompts
 - `DELETE /api/projects/{project_id}` - delete project and uploaded files
 
 Main endpoint flow:
@@ -112,9 +114,9 @@ The endpoint stores output in `project.creative_plan` and returns the same objec
 - `qualityStrategy`
 - `sequenceState`
 
-Each scene has a `durationSec` selected from `4`, `6`, `8`, or `10` based on action complexity. It includes action, product moment, camera, voice lines, overlay text, timing beats, one keyframe prompt slot, final video prompt, negative rules, stale flags, selected keyframe reference state, provider status fields, directorial intent, a shot contract, prompt QC, and optional take review.
+Each scene has a `durationSec` selected from `4`, `6`, `8`, or `10` based on action complexity. It includes an opening state, one motion delta, product moment, camera, native/post voice lines, overlay text, timing beats, one keyframe prompt slot with a review gate, final video prompt, negative rules, stale flags, selected keyframe reference state, provider status fields, directorial intent, a shot contract, prompt QC, and optional take review.
 
-`ProductionOrchestrator` treats the structured plan as source of truth and compiles a compact natural-language prompt for only the current Veo scene. Canonical character/location/product references are separated from transient take state. Reference bindings declare what each image transfers and what it must ignore. Only accepted observed footage can update the next scene handoff; rejected takes never become canon.
+`ProductionOrchestrator` treats the structured plan as source of truth and compiles a compact natural-language prompt for only the current Veo scene. Canonical character/location/product references are separated from clip approval state. Reference bindings declare what each image transfers and what it must ignore. Phase 2 keyframes remain fixed while Phase 3 clips are accepted or regenerated independently.
 
 Video generation does not create fake output. If no provider is configured, the scene video endpoint returns:
 

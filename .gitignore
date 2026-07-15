@@ -28,8 +28,6 @@ frontend/dist/
 **/.codex-*.log
 backend/*.log
 frontend/*.log
-backend/logs/
-frontend/logs/
 /logs/
 
 # OS / editor

@@ -129,10 +129,12 @@ In addition to product/reference/scene fields, `PlanCreation` now includes:
 - `worldBible`: canonical character, location, product, visual, lighting, atmosphere, and anti-drift locks.
 - `surfaceProfile`: conservative Google Veo generation constraints.
 - `safetyPlan`: unsupported-claim and authorized-reference rules.
-- `qualityStrategy`: take verdicts, attempt budget, and one-variable retake rule.
-- `sequenceState`: state/canon revisions, current scene, and take history.
+- `qualityStrategy`: `Accept Clip` / `Regenerate Clip` behavior and the clip attempt budget.
+- `sequenceState`: workflow revision, current scene, and clip acceptance history.
 
-Each scene may include `direction`, `shotContract`, `promptQuality`, and `takeReview`. The final provider prompt is compiled from the current scene contract only; it does not contain the whole project JSON.
+Each scene may include `openingState`, `direction`, `shotContract`, `promptQuality`, and `takeReview`. `openingState` is the frozen frame-0 state before scene motion begins. The selected keyframe carries static visual state; the final provider prompt contains only the current motion/audio delta and does not contain the whole project JSON.
+
+`voiceLines[].generationMode` is either `native` or `post_voiceover`. The planner keeps at most one short line within the native speech budget; longer or multi-line narration is preserved for post-production so adjacent clips do not repeat or overlap dialogue.
 
 ## PlanCreation Shape
 
@@ -182,6 +184,7 @@ Each scene may include `direction`, `shotContract`, `promptQuality`, and `takeRe
       "title": "Found coin scan",
       "durationSec": 6,
       "sceneGoal": "Show why the user needs the app.",
+      "openingState": "The actor's empty hand rests beside the coin before reaching for it.",
       "visualAction": "Actor finds an old coin and reacts with curiosity.",
       "productMoment": "Coin and phone are visible as the product need is established.",
       "characterAction": "Primary actor reacts with curiosity.",
@@ -200,7 +203,8 @@ Each scene may include `direction`, `shotContract`, `promptQuality`, and `takeRe
           "actionState": "holding the old coin",
           "emotion": "curious",
           "delivery": "natural UGC",
-          "line": "I just found this old coin. What is it?"
+          "line": "I just found this old coin. What is it?",
+          "generationMode": "post_voiceover"
         }
       ],
       "ambientAudio": "soft room tone and coin handling sounds",
@@ -217,7 +221,14 @@ Each scene may include `direction`, `shotContract`, `promptQuality`, and `takeRe
           "stale": false,
           "candidates": [],
           "selectedCandidateId": null,
-          "selectedImageUrl": null
+          "selectedImageUrl": null,
+          "qualityGate": {
+            "status": "awaiting_image",
+            "acceptedCandidateId": null,
+            "defects": [],
+            "checks": ["exactly one primary actor is visible", "hands and prop ownership are valid"],
+            "repairRule": "Reject or reroll a structurally bad keyframe; do not ask the video model to repair it."
+          }
         }
       ],
       "finalVideoPrompt": "Scene video prompt using the selected keyframe as the visual anchor. Duration, aspect ratio, and model mode are provider parameters, not prompt text.",
@@ -250,32 +261,24 @@ Each scene may include `direction`, `shotContract`, `promptQuality`, and `takeRe
 - `PATCH /api/projects/{project_id}/scenes/{scene_index}/video-prompt` - manually update final video prompt.
 - `POST /api/projects/{project_id}/scenes/{scene_index}/video-prompt/regenerate` - regenerate final video prompt with the configured Gemini model.
 - `PATCH /api/projects/{project_id}/scenes/{scene_index}/keyframe-slots/{slot_id}` - edit a keyframe prompt slot.
-- `POST /api/projects/{project_id}/reference-assets/{asset_type}/generate` - generate primary character or location reference image when an image provider is configured. `asset_type` is `character` or `location`. The required JSON body is `{ "model": "nano-banana-2" }`; allowed models are `nano-banana`, `nano-banana-2`, `nano-banana-pro`, `gpt-image-1-mini`, `gpt-image-1`, `gpt-image-1.5`, and `gpt-image-2`. Nano Banana uses the Google image endpoint at exact `9:16`; GPT Image uses the OpenAI image endpoint at `1024x1536` with a centered `9:16` safe-crop prompt.
+- `POST /api/projects/{project_id}/reference-assets/{asset_type}/generate` - generate primary character or location reference image when an image provider is configured. `asset_type` is `character` or `location`. The required JSON body is `{ "model": "nano-banana-2" }`; allowed models are `nano-banana`, `nano-banana-2`, `nano-banana-pro`, `gpt-image-1`, `gpt-image-1.5`, `gpt-image-2`, and `gpt-image-2-all`. Nano Banana uses the Google image endpoint at exact `9:16`; GPT Image uses the OpenAI image endpoint at `1024x1536` with a centered `9:16` safe-crop prompt.
 - `POST /api/projects/{project_id}/reference-assets/{asset_type}/generate-async` - enqueue reference generation and return `ImageGenerationJob` immediately. The same required model body is accepted and the job records it as `model_id`.
 - `POST /api/projects/{project_id}/scenes/{scene_index}/keyframe-slots/{slot_id}/generate` - generate one keyframe candidate image for a slot with the required image model body. ShopAIKey uploads and supplies only the mapped primary character, primary location, and at most one scene-relevant product/app reference in `image_urls`; unrelated project uploads are excluded.
 - `POST /api/projects/{project_id}/scenes/{scene_index}/keyframe-slots/{slot_id}/generate-async` - enqueue keyframe generation with the selected model without blocking generation buttons for other scenes.
 - `GET /api/projects/{project_id}/image-generation-jobs` - list image jobs. Use `active_only=true` to return only `queued`, `running`, or `retrying` jobs.
 - `GET /api/projects/{project_id}/image-generation-jobs/{job_id}` - poll phase-based `progress`, `phase`, retry attempt, completion, or error state.
 - `POST /api/projects/{project_id}/scenes/{scene_index}/keyframe-slots/{slot_id}/select` - select an uploaded/generated image as the keyframe reference for that slot.
-- `POST /api/projects/{project_id}/scenes/{scene_index}/video` - submit one real ShopAIKey clip task and return the stored `task_id` immediately. Optional body: `{ "model": "veo3.1-pro" }`. Supported values are `veo3.1-pro`, `veo3.1-fast`, `veo3.1-fast-components`, `grok-video-3`, and `grok-video-3-10s`; omitting the body uses `VIDEO_MODEL_ID`. The backend uploads only the selected keyframe and maps provider fields by model: Veo uses `metadata.aspect_ratio`, while Grok uses `metadata.ratio`, `metadata.duration`, and `metadata.resolution`. `veo3.1-fast-components` is forced to `16:9`; the portrait models use `9:16` for Veo or `2:3` for Grok.
+- `POST /api/projects/{project_id}/scenes/{scene_index}/keyframe-slots/{slot_id}/review` - accept or reject the currently selected keyframe. Body: `{ "verdict": "accept" }` or `{ "verdict": "reject", "defects": ["duplicate_actor", "bad_hands"], "notes": "optional operator note" }`. Acceptance is tied to `selectedCandidateId` and locks prompt edits, generation, candidate selection, and upload replacement. Reject the keyframe first to unlock those actions.
+- `POST /api/projects/{project_id}/scenes/{scene_index}/video` - submit one real ShopAIKey clip task and return the stored `task_id` immediately. The selected Phase 2 keyframe must first pass the keyframe review endpoint with `verdict=accept`; clips do not depend on review state from previous scenes. Optional body: `{ "model": "veo3.1-pro", "force": false }`. Set `force=true` to discard the current clip task/output and generate a replacement without changing its keyframe or any later scene. Supported model values are `veo3.1-pro`, `veo3.1-fast`, `grok-video-3`, and `grok-video-3-10s`; omitting `model` uses `VIDEO_MODEL_ID`. The backend uploads only the selected keyframe and maps provider fields by model: Veo uses `metadata.aspect_ratio`, while Grok uses `metadata.ratio`, `metadata.duration`, and `metadata.resolution`. The portrait models use `9:16` for Veo or `2:3` for Grok.
+- `POST /api/projects/{project_id}/scenes/{scene_index}/video/regenerate` - always discard the current scene clip/task state and submit a replacement with the selected model. The main frontend uses this dedicated endpoint for `Regenerate Clip` so replacement cannot fall through to the idempotent existing-video response.
 - `GET /api/projects/{project_id}/scenes/{scene_index}/video-status` - poll ShopAIKey once with the stored `task_id`. The project scene stores the provider's real `data.progress` value as `videoProgress`; the frontend calls this endpoint every five seconds until `VIDEO_READY` or `FAILED`.
-- `POST /api/projects/{project_id}/scenes/{scene_index}/take-review` - record the operator verdict and observed take state. `keep` and `fix_in_post` update canon and hand the observed end state to the next scene. `edit`, `reroll`, `rewrite`, and `reject` do not update canon.
+- `POST /api/projects/{project_id}/scenes/{scene_index}/take-review` - accept the current generated/uploaded clip. The body is `{ "verdict": "keep" }`. Acceptance marks only the current clip complete; it does not collect an observed end state, recompile later prompts, alter Phase 2 keyframes, or gate generation of other clips.
 
 Example take review:
 
 ```json
 {
-  "verdict": "keep",
-  "observed_end_state": {
-    "actorPose": "phone in right hand",
-    "productState": "coin held in left palm",
-    "cameraState": "stable phone close-up"
-  },
-  "completed_beats": ["Scan the coin"],
-  "continuity_breaks": [],
-  "accepted_deviations": [],
-  "evidence": "Primary product proof is readable and identity is stable.",
-  "observation_confidence": "high"
+  "verdict": "keep"
 }
 ```
 

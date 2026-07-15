@@ -7,6 +7,7 @@ import type {
   PlanCreation,
   ProductReference,
   ReferenceAsset,
+  ReviewKeyframePayload,
   ReviewSceneTakePayload,
   StorytellingScene,
   UploadedFileInfo,
@@ -48,6 +49,13 @@ const IMAGE_MODEL_OPTIONS: Array<{
     buttonLabel: "Nano Banana",
   },
   {
+    id: "gpt-image-2-all",
+    group: "OpenAI / GPT Image",
+    label: "GPT Image 2 All",
+    summary: "Generation and editing model for reference-guided images on a 2:3 portrait canvas with a centered 9:16 safe crop.",
+    buttonLabel: "GPT Image 2 All",
+  },
+  {
     id: "gpt-image-2",
     group: "OpenAI / GPT Image",
     label: "GPT Image 2",
@@ -68,13 +76,6 @@ const IMAGE_MODEL_OPTIONS: Array<{
     summary: "Base GPT Image model with image-to-image references and a 2:3 portrait output canvas.",
     buttonLabel: "GPT Image 1",
   },
-  {
-    id: "gpt-image-1-mini",
-    group: "OpenAI / GPT Image",
-    label: "GPT Image 1 Mini",
-    summary: "Lower-cost GPT Image draft model using the same reference mapping and portrait safe-crop rules.",
-    buttonLabel: "GPT Image Mini",
-  },
 ];
 
 const VIDEO_MODEL_OPTIONS: Array<{
@@ -94,12 +95,6 @@ const VIDEO_MODEL_OPTIONS: Array<{
     label: "Veo 3.1 Fast",
     summary: "9:16 portrait, first-frame image-to-video, faster Veo generation.",
     buttonLabel: "Veo Fast",
-  },
-  {
-    id: "veo3.1-fast-components",
-    label: "Veo 3.1 Fast Components",
-    summary: "Components/reference mode. ShopAIKey currently requires 16:9 landscape for this model.",
-    buttonLabel: "Veo Components",
   },
   {
     id: "grok-video-3",
@@ -170,9 +165,10 @@ interface PlanCreationCardProps {
   selectedImageModel: ImageModelId;
   onSelectedImageModelChange: (model: ImageModelId) => void;
   onSelectedVideoModelChange: (model: VideoModelId) => void;
-  onGenerateClip?: (sceneIndex: number, prompt: string, model: VideoModelId) => void;
+  onGenerateClip?: (sceneIndex: number, prompt: string, model: VideoModelId, force?: boolean) => void;
   onGenerateKeyframe?: (sceneIndex: number, slotId: string, prompt: string, model: ImageModelId) => void;
   onGenerateReferenceAsset?: (assetType: ReferenceAssetType, imagePrompt: string, model: ImageModelId) => void;
+  onReviewKeyframe?: (sceneIndex: number, slotId: string, payload: ReviewKeyframePayload) => void;
   onUploadClip?: (sceneIndex: number, file: File) => void;
   onUploadKeyframe?: (sceneIndex: number, slotId: string, file: File) => void;
   onUploadReferenceAsset?: (assetType: ReferenceAssetType, file: File) => void;
@@ -315,21 +311,26 @@ function keyframeSourcePrompt(value: string): string {
 }
 
 function buildKeyframePromptText(scene: StorytellingScene, prompt: KeyframePrompt, referenceMentions: string[], productMentions: Map<string, string>): string {
-  const referenceBlock = [
-    "Reference images to attach / mention in Flow:",
-    "- @character_reference.png: use for the same actor identity and outfit.",
-    "- @location_reference.png: use for the same generated/selected location, layout, lighting, and recurring props.",
-    ...referenceMentions.map((mention) => `- ${mention}: use for the relevant product/app screen or product detail.`),
-  ].join("\n");
+  const routedBindings = (prompt.referenceBindings || []).filter((binding) => binding.stage === "keyframe");
+  const fallbackMentions = referenceMentions.map((mention) => ({
+    tag: mention,
+    transfer: "the relevant product/app state only",
+    ignore: "hands, people, background, camera, motion, and unrelated screen states",
+  }));
+  const referenceLines = (routedBindings.length ? routedBindings : fallbackMentions).map(
+    (binding) => `- ${binding.tag}: transfer only ${binding.transfer}; ignore ${binding.ignore}.`,
+  );
+  const referenceBlock = referenceLines.length
+    ? ["Reference images to attach / mention in Flow:", ...referenceLines].join("\n")
+    : "No reference image is required for this opening keyframe.";
   const parts = [
     referenceBlock,
+    scene.openingState ? `Opening frame state: ${replaceReferenceIds(scene.openingState, productMentions)}` : "",
     replaceReferenceIds(keyframeSourcePrompt(prompt.prompt), productMentions),
-    scene.visualAction ? `Action: ${replaceReferenceIds(scene.visualAction, productMentions)}` : "",
-    scene.productMoment ? `Product moment: ${replaceReferenceIds(scene.productMoment, productMentions)}` : "",
-    scene.camera?.selected || scene.camera?.movement
-      ? `Camera: ${[scene.camera?.selected, scene.camera?.movement].filter(Boolean).join(", ")}`
+    scene.camera?.selected || scene.camera?.composition
+      ? `Still camera and composition: ${[scene.camera?.selected, scene.camera?.composition].filter(Boolean).join(", ")}`
       : "",
-    "Preservation rule: keep uploaded product/app/user references unchanged. Do not redesign UI layout, text, colors, packaging, product shape, coin details, logo, or any visible reference.",
+    "Opening-keyframe rules: show frame 0 before the action begins. Exactly one primary actor when present, two natural hands total, one clear owner per prop, and one product/UI state. Do not show the completed scene action, duplicate a person, mirror handedness, create a collage, or redesign any routed reference.",
   ];
   return parts.filter(Boolean).join("\n\n");
 }
@@ -381,11 +382,13 @@ function productReferenceMentionLookup(references: ProductReference[] | undefine
 }
 
 function CopyBlock({
+  disabled = false,
   label,
   value,
   tone = "light",
   variant = "default",
 }: {
+  disabled?: boolean;
   label: string;
   value?: string;
   tone?: "dark" | "light";
@@ -404,7 +407,8 @@ function CopyBlock({
         <button
           className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
             isDark ? "bg-white/10 text-white hover:bg-white/15" : "border border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:text-blue-700"
-          }`}
+          } disabled:cursor-not-allowed disabled:opacity-40`}
+          disabled={disabled}
           onClick={() => void copyText(value)}
           type="button"
         >
@@ -639,6 +643,7 @@ function KeyframePromptCard({
   isUploading,
   mode,
   onGenerate,
+  onReview,
   onUpload,
   prompt,
   index,
@@ -653,6 +658,7 @@ function KeyframePromptCard({
   isUploading?: boolean;
   mode: PlanProductionMode;
   onGenerate?: (sceneIndex: number, slotId: string, prompt: string, model: ImageModelId) => void;
+  onReview?: (sceneIndex: number, slotId: string, payload: ReviewKeyframePayload) => void;
   onUpload?: (sceneIndex: number, slotId: string, file: File) => void;
   prompt: KeyframePrompt;
   index: number;
@@ -667,17 +673,25 @@ function KeyframePromptCard({
   const [editablePrompt, setEditablePrompt] = useState(buildKeyframePromptText(scene, prompt, productReferenceMentions, productMentions));
   const outputName = `scene_${String(sceneIndex).padStart(2, "0")}_keyframe_${String(index + 1).padStart(2, "0")}.png`;
   const selectedModelOption = imageModelOption(selectedImageModel);
+  const qualityStatus = prompt.qualityGate?.status || (prompt.selectedImageUrl ? "review_required" : "awaiting_image");
+  const isAccepted = Boolean(
+    prompt.selectedImageUrl
+      && prompt.selectedCandidateId
+      && !prompt.stale
+      && qualityStatus === "accepted"
+      && prompt.qualityGate?.acceptedCandidateId === prompt.selectedCandidateId,
+  );
 
   useEffect(() => {
     setEditablePrompt(buildKeyframePromptText(scene, prompt, productReferenceMentions, productMentions));
   }, [
     prompt.prompt,
     prompt.productReferenceIds.join("|"),
+    JSON.stringify(prompt.referenceBindings || []),
     prompt.selectedImageUrl,
-    scene.visualAction,
-    scene.productMoment,
+    scene.openingState,
     scene.camera?.selected,
-    scene.camera?.movement,
+    scene.camera?.composition,
   ]);
 
   return (
@@ -711,12 +725,46 @@ function KeyframePromptCard({
           </div>
 
           <div className="mt-3 flex flex-wrap gap-2">
-            <ReferenceChip>@character_reference.png</ReferenceChip>
-            <ReferenceChip>@location_reference.png</ReferenceChip>
-            {prompt.productReferenceIds.map((id) => productMentions.get(id) || `@${productLabels.get(id) || id}`).map((item) => (
-              <ReferenceChip key={item}>{item}</ReferenceChip>
+            {(prompt.referenceBindings || []).filter((binding) => binding.stage === "keyframe").map((binding) => (
+              <ReferenceChip key={`${binding.stage}-${binding.tag}`}>{binding.tag}</ReferenceChip>
             ))}
           </div>
+
+          {prompt.selectedImageUrl ? (
+            <div className={`mt-3 rounded-xl border p-3 ${isAccepted ? "border-emerald-200 bg-emerald-50" : qualityStatus === "rejected" ? "border-rose-200 bg-rose-50" : "border-amber-200 bg-amber-50"}`}>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="field-label">Keyframe quality gate</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-700">
+                    {isAccepted
+                      ? "Accepted as the visual source for this scene."
+                      : qualityStatus === "rejected"
+                        ? "Rejected. Adjust the prompt or references, then generate or upload a replacement."
+                        : "Check identity count, hands, handedness, prop ownership, UI fidelity, and opening-state timing before continuing."}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    className="btn-secondary"
+                    disabled={!onReview}
+                    type="button"
+                    onClick={() => onReview?.(sceneIndex, prompt.id, { verdict: "reject", defects: ["manual_quality_review_failed"] })}
+                  >
+                    Reject
+                  </button>
+                  <button
+                    className="btn-primary"
+                    disabled={!onReview || isAccepted || Boolean(prompt.stale)}
+                    title={prompt.stale ? "Generate or upload a fresh keyframe before accepting it." : undefined}
+                    type="button"
+                    onClick={() => onReview?.(sceneIndex, prompt.id, { verdict: "accept" })}
+                  >
+                    {isAccepted ? "Accepted" : "Accept keyframe"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
 
           {prompt.stale ? (
             <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
@@ -727,21 +775,28 @@ function KeyframePromptCard({
           {mode === "automation" ? (
             <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
               <label className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500" htmlFor={`scene-${sceneIndex}-${prompt.id}-prompt`}>
-                Editable keyframe prompt
+                {isAccepted ? "Accepted keyframe prompt" : "Editable keyframe prompt"}
               </label>
               <textarea
                 id={`scene-${sceneIndex}-${prompt.id}-prompt`}
-                className="mt-3 h-36 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15"
+                className={`mt-3 h-36 w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm leading-6 outline-none transition ${
+                  isAccepted
+                    ? "cursor-default bg-slate-100 text-slate-600"
+                    : "bg-white text-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15"
+                }`}
+                readOnly={isAccepted}
                 value={editablePrompt}
                 onChange={(event) => setEditablePrompt(event.target.value)}
               />
-              <GenerationButton
-                disabled={!onGenerate || !editablePrompt.trim()}
-                isSubmitting={isSubmitting}
-                job={generationJob}
-                label={`Generate with ${selectedModelOption.buttonLabel}`}
-                onClick={() => onGenerate?.(sceneIndex, prompt.id, keyframeSourcePrompt(editablePrompt), selectedImageModel)}
-              />
+              {!isAccepted ? (
+                <GenerationButton
+                  disabled={!onGenerate || !editablePrompt.trim()}
+                  isSubmitting={isSubmitting}
+                  job={generationJob}
+                  label={`Generate with ${selectedModelOption.buttonLabel}`}
+                  onClick={() => onGenerate?.(sceneIndex, prompt.id, keyframeSourcePrompt(editablePrompt), selectedImageModel)}
+                />
+              ) : null}
               {prompt.generationModel ? (
                 <p className="mt-2 text-xs text-slate-500">Current image generated with {imageModelOption(prompt.generationModel as ImageModelId).label}.</p>
               ) : null}
@@ -751,29 +806,31 @@ function KeyframePromptCard({
               <div className="mt-4">
                 <CopyBlock label="Prompt to paste into Flow" value={editablePrompt} variant="compact" />
               </div>
-              <div className="mt-auto pt-4">
-                <input
-                  ref={uploadInputRef}
-                  className="hidden"
-                  type="file"
-                  accept="image/*"
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
-                    event.currentTarget.value = "";
-                    if (file) {
-                      onUpload?.(sceneIndex, prompt.id, file);
-                    }
-                  }}
-                />
-                <button
-                  className="btn-secondary w-full"
-                  disabled={isUploading || !onUpload}
-                  type="button"
-                  onClick={() => uploadInputRef.current?.click()}
-                >
-                  {isUploading ? "Uploading..." : "Upload keyframe image"}
-                </button>
-              </div>
+              {!isAccepted ? (
+                <div className="mt-auto pt-4">
+                  <input
+                    ref={uploadInputRef}
+                    className="hidden"
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      event.currentTarget.value = "";
+                      if (file) {
+                        onUpload?.(sceneIndex, prompt.id, file);
+                      }
+                    }}
+                  />
+                  <button
+                    className="btn-secondary w-full"
+                    disabled={isUploading || !onUpload}
+                    type="button"
+                    onClick={() => uploadInputRef.current?.click()}
+                  >
+                    {isUploading ? "Uploading..." : "Upload keyframe image"}
+                  </button>
+                </div>
+              ) : null}
             </>
           )}
         </div>
@@ -787,6 +844,7 @@ function KeyframesStep({
   isUploadingKeyframe,
   mode,
   onGenerateKeyframe,
+  onReviewKeyframe,
   onSelectedImageModelChange,
   onUploadKeyframe,
   planCreation,
@@ -798,6 +856,7 @@ function KeyframesStep({
   isUploadingKeyframe?: boolean;
   mode: PlanProductionMode;
   onGenerateKeyframe?: (sceneIndex: number, slotId: string, prompt: string, model: ImageModelId) => void;
+  onReviewKeyframe?: (sceneIndex: number, slotId: string, payload: ReviewKeyframePayload) => void;
   onSelectedImageModelChange: (model: ImageModelId) => void;
   onUploadKeyframe?: (sceneIndex: number, slotId: string, file: File) => void;
   planCreation: PlanCreation;
@@ -848,6 +907,7 @@ function KeyframesStep({
                 isUploading={isUploadingKeyframe}
                 mode={mode}
                 onGenerate={onGenerateKeyframe}
+                onReview={onReviewKeyframe}
                 onUpload={onUploadKeyframe}
                 productLabels={productLabels}
                 productMentions={productMentions}
@@ -864,145 +924,49 @@ function KeyframesStep({
   );
 }
 
-function TextList({ items }: { items?: string[] }) {
-  if (!items?.length) {
-    return <p className="mt-2 text-sm text-slate-500">None specified.</p>;
-  }
-
-  return (
-    <ul className="mt-2 space-y-1 text-sm leading-6 text-slate-700">
-      {items.map((item) => (
-        <li key={item}>- {item}</li>
-      ))}
-    </ul>
-  );
-}
-
-function stateSummary(value?: Record<string, unknown> | null): string {
-  if (!value) {
-    return "Not recorded";
-  }
-  const parts = Object.entries(value)
-    .filter(([, item]) => typeof item === "string" && item.trim())
-    .map(([key, item]) => `${key.replace(/([A-Z])/g, " $1").toLowerCase()}: ${item}`);
-  return parts.join("; ") || "Not recorded";
-}
-
-function DirectionContract({ scene }: { scene: StorytellingScene }) {
-  const direction = scene.direction;
-  const contract = scene.shotContract;
-  const quality = scene.promptQuality;
-  if (!direction && !contract && !quality) {
-    return null;
-  }
-
-  return (
-    <section className="mt-4 border-y border-slate-200 py-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="field-label">Shot contract</p>
-          <p className="mt-1 text-sm font-semibold text-slate-950">{direction?.feltIntent || scene.sceneGoal}</p>
-        </div>
-        {quality ? (
-          <span
-            className={`rounded-full px-3 py-1 text-xs font-semibold ${
-              quality.status === "blocked"
-                ? "bg-rose-100 text-rose-800"
-                : quality.status === "warning"
-                  ? "bg-amber-100 text-amber-800"
-                  : "bg-emerald-100 text-emerald-800"
-            }`}
-          >
-            Prompt QC {quality.score}/100
-          </span>
-        ) : null}
-      </div>
-      <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <div>
-          <p className="field-label">Value shift</p>
-          <p className="mt-1 text-sm leading-6 text-slate-700">{direction?.valueShift || "Not specified"}</p>
-        </div>
-        <div>
-          <p className="field-label">Primary spend</p>
-          <p className="mt-1 text-sm leading-6 text-slate-700">{contract?.primarySpend?.replace(/_/g, " ") || "Not specified"}</p>
-        </div>
-        <div>
-          <p className="field-label">Light + atmosphere</p>
-          <p className="mt-1 max-h-20 overflow-auto text-sm leading-6 text-slate-700">
-            {[direction?.lighting, direction?.atmosphere].filter(Boolean).join(" ") || "Not specified"}
-          </p>
-        </div>
-        <div>
-          <p className="field-label">End state</p>
-          <p className="mt-1 max-h-20 overflow-auto text-sm leading-6 text-slate-700">{stateSummary(contract?.plannedEndState)}</p>
-        </div>
-      </div>
-      {quality?.hardFailures?.length || quality?.warnings?.length ? (
-        <p className="mt-3 text-xs leading-5 text-amber-800">{[...(quality.hardFailures || []), ...(quality.warnings || [])].join(" ")}</p>
-      ) : null}
-    </section>
-  );
-}
-
-function TakeReviewForm({
+function ClipReviewActions({
+  canAccept,
+  canRegenerate,
+  isRegenerating,
   isReviewing,
-  onReview,
+  onAccept,
+  onRegenerate,
   scene,
 }: {
+  canAccept: boolean;
+  canRegenerate: boolean;
+  isRegenerating?: boolean;
   isReviewing?: boolean;
-  onReview?: (sceneIndex: number, payload: ReviewSceneTakePayload) => void;
+  onAccept: () => void;
+  onRegenerate: () => void;
   scene: StorytellingScene;
 }) {
-  const [verdict, setVerdict] = useState<ReviewSceneTakePayload["verdict"]>("keep");
-  const [observedEnd, setObservedEnd] = useState("");
-  const [evidence, setEvidence] = useState("");
-
   if (!scene.videoUrl) {
     return null;
   }
 
+  const accepted = Boolean(scene.takeReview?.accepted ?? scene.takeReview?.canonAccepted);
+
   return (
     <section className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="field-label">Take review</p>
-          <h6 className="mt-1 text-sm font-semibold text-slate-950">Decide whether this clip becomes continuity canon</h6>
-          {scene.takeReview ? <p className="mt-1 text-xs leading-5 text-slate-600">{scene.takeReview.nextAction}</p> : null}
+          <p className="field-label">Clip review</p>
+          <h6 className="mt-1 text-sm font-semibold text-slate-950">
+            {accepted ? "Clip accepted" : "Approve this clip or generate a replacement"}
+          </h6>
+          <p className="mt-1 text-xs leading-5 text-slate-600">
+            Acceptance only marks this clip complete. It does not change later keyframes or prompts.
+          </p>
         </div>
-        {scene.takeReview ? (
-          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${scene.takeReview.canonAccepted ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}>
-            {scene.takeReview.verdict.replace(/_/g, " ")}
-          </span>
-        ) : null}
-      </div>
-      <div className="mt-3 grid gap-3 md:grid-cols-[180px_minmax(0,1fr)]">
-        <select className="input-control" value={verdict} onChange={(event) => setVerdict(event.target.value as ReviewSceneTakePayload["verdict"])}>
-          <option value="keep">Keep as canon</option>
-          <option value="fix_in_post">Fix in post</option>
-          <option value="edit">Edit one layer</option>
-          <option value="reroll">Re-roll same prompt</option>
-          <option value="rewrite">Rewrite one clause</option>
-          <option value="reject">Reject take</option>
-        </select>
-        <input className="input-control" placeholder="Observed end state: pose, prop, screen, camera, motion..." value={observedEnd} onChange={(event) => setObservedEnd(event.target.value)} />
-      </div>
-      <div className="mt-3 flex gap-3">
-        <input className="input-control flex-1" placeholder="Evidence or the single flaw to fix" value={evidence} onChange={(event) => setEvidence(event.target.value)} />
-        <button
-          className="btn-secondary shrink-0"
-          disabled={isReviewing || !onReview}
-          type="button"
-          onClick={() =>
-            onReview?.(scene.sceneIndex, {
-              verdict,
-              observed_end_state: observedEnd.trim() ? { visibleState: observedEnd.trim() } : {},
-              evidence: evidence.trim(),
-              observation_confidence: "medium",
-            })
-          }
-        >
-          {isReviewing ? "Saving..." : "Save review"}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button className="btn-primary" disabled={!canAccept || accepted || isReviewing} type="button" onClick={onAccept}>
+            {isReviewing ? "Accepting..." : accepted ? "Accepted" : "Accept Clip"}
+          </button>
+          <button className="btn-secondary" disabled={!canRegenerate || isRegenerating} type="button" onClick={onRegenerate}>
+            {isRegenerating ? "Regenerating..." : "Regenerate Clip"}
+          </button>
+        </div>
       </div>
     </section>
   );
@@ -1025,7 +989,7 @@ function SceneClipPromptCard({
   isReviewing?: boolean;
   isUploading?: boolean;
   mode: PlanProductionMode;
-  onGenerate?: (sceneIndex: number, prompt: string, model: VideoModelId) => void;
+  onGenerate?: (sceneIndex: number, prompt: string, model: VideoModelId, force?: boolean) => void;
   onReview?: (sceneIndex: number, payload: ReviewSceneTakePayload) => void;
   onUpload?: (sceneIndex: number, file: File) => void;
   productLabels: Map<string, string>;
@@ -1039,29 +1003,31 @@ function SceneClipPromptCard({
   const [editablePrompt, setEditablePrompt] = useState(buildClipPromptText(scene));
   const [promptError, setPromptError] = useState<string | null>(null);
   const selectedModelOption = videoModelOption(selectedVideoModel);
-  const providerLabel = [scene.videoProvider || "ShopAIKey", scene.videoModel || selectedVideoModel, scene.videoRatio || "pending", `${scene.videoDuration || sceneDuration(scene)}s`, scene.videoMode || "image-to-video"]
-    .filter(Boolean)
-    .join(" / ");
-
+  const keyframesAccepted = primaryKeyframes(scene).length > 0 && primaryKeyframes(scene).every(
+    (slot) => Boolean(slot.selectedImageUrl)
+      && !slot.stale
+      && slot.qualityGate?.status === "accepted"
+      && slot.qualityGate.acceptedCandidateId === slot.selectedCandidateId,
+  );
   useEffect(() => {
     setEditablePrompt(buildClipPromptText(scene));
     setPromptError(null);
   }, [scene.finalVideoPrompt]);
 
-  const handleGenerateClick = () => {
+  const submitGeneration = (force = false) => {
     const cleanedPrompt = editablePrompt.trim();
     if (!cleanedPrompt) {
       setPromptError("Video prompt is empty. Regenerate the scene prompt or type a prompt before generating.");
       return;
     }
     setPromptError(null);
-    onGenerate?.(scene.sceneIndex, cleanedPrompt, selectedVideoModel);
+    onGenerate?.(scene.sceneIndex, cleanedPrompt, selectedVideoModel, force);
   };
 
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="grid gap-5 xl:grid-cols-[minmax(320px,0.95fr)_minmax(0,1.05fr)]">
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <div className="grid items-start gap-5 xl:grid-cols-[minmax(320px,0.95fr)_minmax(0,1.05fr)]">
+        <div className="self-start rounded-xl border border-slate-200 bg-slate-50 p-3">
           {scene.videoUrl ? (
             <video className="h-[360px] w-full rounded-lg bg-slate-950 object-cover" controls src={toApiUrl(scene.videoUrl)} />
           ) : (
@@ -1074,6 +1040,39 @@ function SceneClipPromptCard({
               Open uploaded clip
             </a>
           ) : null}
+
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <div className="min-h-36 rounded-xl border border-slate-200 bg-white p-3">
+              <p className="field-label">Voice / subtitle</p>
+              {scene.voiceLines?.length ? (
+                <div className="mt-3 max-h-40 space-y-2 overflow-auto">
+                  {scene.voiceLines.map((line) => (
+                    <div key={`${line.timing}-${line.line}`} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{line.timing} / {line.emotion}</p>
+                        <span
+                          className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wide ${
+                            line.generationMode === "post_voiceover"
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-emerald-100 text-emerald-800"
+                          }`}
+                        >
+                          {line.generationMode === "post_voiceover" ? "Post voiceover" : "Native in clip"}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-sm font-semibold leading-6 text-slate-900">{line.line}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-slate-500">No voice line specified.</p>
+              )}
+            </div>
+            <div className="min-h-36 rounded-xl border border-amber-200 bg-amber-50 p-3">
+              <p className="field-label text-amber-700">Overlay text</p>
+              <p className="mt-2 text-sm font-semibold leading-6 text-slate-900">{scene.onScreenText || "No overlay text"}</p>
+            </div>
+          </div>
         </div>
 
         <div className="flex min-w-0 flex-col">
@@ -1095,37 +1094,11 @@ function SceneClipPromptCard({
           {scene.videoError ? (
             <p className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800">{scene.videoError}</p>
           ) : null}
-          {scene.videoJobId || scene.videoProvider || scene.status === "PROCESSING" ? (
-            <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-900">
-              <span className="font-semibold">Provider:</span> {providerLabel}
-              {scene.videoJobId ? (
-                <>
-                  <br />
-                  <span className="font-semibold">Job:</span> {scene.videoJobId}
-                </>
-              ) : null}
-              {scene.status ? (
-                <>
-                  <br />
-                  <span className="font-semibold">Status:</span> {scene.status}
-                </>
-              ) : null}
-              {typeof scene.videoProgress === "number" ? (
-                <div className="mt-2">
-                  <div className="mb-1 flex items-center justify-between font-semibold">
-                    <span>Provider progress</span>
-                    <span>{scene.videoProgress}%</span>
-                  </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-blue-100">
-                    <div className="h-full rounded-full bg-blue-600 transition-[width] duration-300" style={{ width: `${scene.videoProgress}%` }} />
-                  </div>
-                </div>
-              ) : null}
-            </div>
+          {!keyframesAccepted ? (
+            <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
+              Review and accept this scene&apos;s keyframe before generating or manually using the clip prompt.
+            </p>
           ) : null}
-
-          <DirectionContract scene={scene} />
-
           {mode === "automation" ? (
             <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
               <label className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500" htmlFor={`scene-${scene.sceneIndex}-clip-prompt`}>
@@ -1143,20 +1116,28 @@ function SceneClipPromptCard({
               {promptError ? (
                 <p className="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800">{promptError}</p>
               ) : null}
-              <GenerationButton
-                disabled={!onGenerate}
-                isGenerating={isGenerating}
-                label={`Generate with ${selectedModelOption.buttonLabel}`}
-                loadingLabel={`Generating with ${selectedModelOption.buttonLabel}...`}
-                onClick={handleGenerateClick}
-                providerProgress={scene.videoProgress}
-                providerStatus={scene.status}
-              />
+              {!scene.videoUrl ? (
+                <GenerationButton
+                  disabled={!onGenerate || !keyframesAccepted}
+                  isGenerating={isGenerating}
+                  label={`Generate with ${selectedModelOption.buttonLabel}`}
+                  loadingLabel={`Generating with ${selectedModelOption.buttonLabel}...`}
+                  onClick={() => submitGeneration(false)}
+                  providerProgress={scene.videoProgress}
+                  providerStatus={scene.status}
+                />
+              ) : null}
             </div>
           ) : (
             <>
               <div className="mt-4">
-                <CopyBlock label="Prompt to paste into Flow / Kling / video model" value={editablePrompt} tone="dark" />
+                {keyframesAccepted ? (
+                  <CopyBlock label="Prompt to paste into Flow / Kling / video model" value={editablePrompt} tone="dark" />
+                ) : (
+                  <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50 p-5 text-sm font-semibold text-amber-800">
+                    Accept this scene&apos;s fresh keyframe before using its video prompt.
+                  </div>
+                )}
               </div>
               <div className="mt-auto pt-4">
                 <input
@@ -1172,39 +1153,28 @@ function SceneClipPromptCard({
                     }
                   }}
                 />
-                <button className="btn-secondary w-full" disabled={isUploading || !onUpload} type="button" onClick={() => uploadInputRef.current?.click()}>
-                  {isUploading ? "Uploading..." : `Upload ${sceneDuration(scene)}s clip`}
+                <button className="btn-secondary w-full" disabled={isUploading || !onUpload || !keyframesAccepted} type="button" onClick={() => uploadInputRef.current?.click()}>
+                  {isUploading
+                    ? "Uploading..."
+                    : scene.videoUrl
+                      ? "Upload replacement clip"
+                      : `Upload ${sceneDuration(scene)}s clip`}
                 </button>
               </div>
             </>
           )}
 
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-              <p className="field-label">Voice / subtitle</p>
-              {scene.voiceLines?.length ? (
-                <div className="mt-3 max-h-32 space-y-2 overflow-auto">
-                  {scene.voiceLines.map((line) => (
-                    <div key={`${line.timing}-${line.line}`} className="rounded-lg border border-slate-200 bg-white p-3">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{line.timing} / {line.emotion}</p>
-                      <p className="mt-1 text-sm font-semibold leading-6 text-slate-900">{line.line}</p>
-                    </div>
-                  ))}
-                </div>
-            ) : (
-              <p className="mt-2 text-sm text-slate-500">No voice line specified.</p>
-            )}
-            </div>
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
-              <p className="field-label text-amber-700">Overlay text</p>
-              <p className="mt-2 text-sm font-semibold leading-6 text-slate-900">{scene.onScreenText || "No overlay text"}</p>
-            </div>
-            <div className="rounded-xl border border-rose-200 bg-rose-50 p-3">
-              <p className="field-label text-rose-700">Avoid</p>
-              <TextList items={scene.negativeRules} />
-            </div>
-          </div>
-          <TakeReviewForm isReviewing={isReviewing} onReview={onReview} scene={scene} />
+          {mode === "automation" ? (
+            <ClipReviewActions
+              canAccept={Boolean(onReview)}
+              canRegenerate={Boolean(onGenerate && keyframesAccepted)}
+              isRegenerating={isGenerating}
+              isReviewing={isReviewing}
+              onAccept={() => onReview?.(scene.sceneIndex, { verdict: "keep" })}
+              onRegenerate={() => submitGeneration(true)}
+              scene={scene}
+            />
+          ) : null}
         </div>
       </div>
     </article>
@@ -1230,7 +1200,7 @@ function SceneClipsStep({
   isReviewingTake?: boolean;
   isUploadingClip?: boolean;
   mode: PlanProductionMode;
-  onGenerateClip?: (sceneIndex: number, prompt: string, model: VideoModelId) => void;
+  onGenerateClip?: (sceneIndex: number, prompt: string, model: VideoModelId, force?: boolean) => void;
   onReviewTake?: (sceneIndex: number, payload: ReviewSceneTakePayload) => void;
   onUploadClip?: (sceneIndex: number, file: File) => void;
   onSelectedVideoModelChange: (model: VideoModelId) => void;
@@ -1310,6 +1280,7 @@ export default function PlanCreationCard({
   onGenerateClip,
   onGenerateKeyframe,
   onGenerateReferenceAsset,
+  onReviewKeyframe,
   onReviewTake,
   onUploadClip,
   onUploadKeyframe,
@@ -1361,6 +1332,7 @@ export default function PlanCreationCard({
         isUploadingKeyframe={isUploadingKeyframe}
         mode={mode}
         onGenerateKeyframe={onGenerateKeyframe}
+        onReviewKeyframe={onReviewKeyframe}
         onSelectedImageModelChange={onSelectedImageModelChange}
         onUploadKeyframe={onUploadKeyframe}
         planCreation={planCreation}

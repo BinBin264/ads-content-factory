@@ -12,6 +12,8 @@ import {
   getProject,
   listImageGenerationJobs,
   pollSceneVideo,
+  regenerateSceneVideo,
+  reviewKeyframe,
   reviewSceneTake,
   updateKeyframePromptSlot,
   updateReferenceAsset,
@@ -23,7 +25,7 @@ import {
   updateProject,
 } from "../api/projects";
 import { getApiErrorMessage, toApiUrl } from "../api/client";
-import type { ImageGenerationJob, ImageModelId, Project, ReviewSceneTakePayload, VideoModelId } from "../types";
+import type { ImageGenerationJob, ImageModelId, Project, ReviewKeyframePayload, ReviewSceneTakePayload, VideoModelId } from "../types";
 import { compactId, formatDate } from "../utils/format";
 
 type ActionName = "load" | "upload" | "saveBrief" | "planCreation" | "referenceAsset" | "keyframe" | "clip" | "review" | "delete";
@@ -129,6 +131,11 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
       const updates = results
         .filter((result): result is PromiseFulfilledResult<ImageGenerationJob> => result.status === "fulfilled")
         .map((result) => result.value);
+      const hasTerminalUpdate = updates.some((job) => job.status === "succeeded" || job.status === "failed");
+      const nextProject = hasTerminalUpdate ? await getProject(id) : null;
+      if (cancelled) {
+        return;
+      }
       if (updates.length) {
         setImageGenerationJobs((current) => {
           const next = { ...current };
@@ -138,11 +145,8 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
           return next;
         });
       }
-      if (updates.some((job) => job.status === "succeeded" || job.status === "failed")) {
-        const nextProject = await getProject(id);
-        if (!cancelled) {
-          setProject(nextProject);
-        }
+      if (nextProject) {
+        setProject(nextProject);
       }
     };
 
@@ -302,7 +306,23 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
     }
   };
 
-  const handleGenerateClip = async (sceneIndex: number, prompt: string, model: VideoModelId) => {
+  const handleReviewKeyframe = async (sceneIndex: number, slotId: string, payload: ReviewKeyframePayload) => {
+    if (!id) {
+      return;
+    }
+    setLoadingAction("keyframe");
+    setError(null);
+    try {
+      const nextProject = await reviewKeyframe(id, sceneIndex, slotId, payload);
+      setProject(nextProject);
+    } catch (err) {
+      setError(getApiErrorMessage(err));
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  const handleGenerateClip = async (sceneIndex: number, prompt: string, model: VideoModelId, force = false) => {
     if (!id) {
       return;
     }
@@ -311,7 +331,9 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
     setError(null);
     try {
       await updateSceneVideoPrompt(id, sceneIndex, prompt);
-      let nextProject = await generateSceneVideo(id, sceneIndex, model);
+      let nextProject = force
+        ? await regenerateSceneVideo(id, sceneIndex, model)
+        : await generateSceneVideo(id, sceneIndex, model);
       setProject(nextProject);
       while (isVideoJobActive(nextProject, sceneIndex)) {
         await new Promise((resolve) => window.setTimeout(resolve, VIDEO_POLL_INTERVAL_MS));
@@ -442,25 +464,67 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
   const workflowItems: Array<{ id: PlanWorkflowStep; label: string; description: string }> = [
     { id: "reference-assets", label: "Character + location refs", description: "Create or upload two base images" },
     { id: "keyframes", label: "Scene keyframes", description: "Create one anchor ref per scene" },
-    { id: "scene-clips", label: "Clip prompts", description: "Generate one timed clip per scene" },
+    {
+      id: "scene-clips",
+      label: "Scene clips",
+      description: planMode === "manual" ? "Upload one clip per scene" : "Generate and accept one clip at a time",
+    },
   ];
+  const planScenes = project?.creative_plan?.scenes || [];
+  const referenceAssetsComplete = Boolean(
+    project?.creative_plan?.primaryCharacter?.imageUrl
+      && project?.creative_plan?.primaryLocation?.imageUrl,
+  );
+  const keyframeSlots = project?.creative_plan?.scenes?.flatMap((scene) => scene.keyframePrompts || []) || [];
+  const allKeyframesAccepted = Boolean(
+    keyframeSlots.length
+      && keyframeSlots.every(
+        (slot) => Boolean(slot.selectedImageUrl)
+          && !slot.stale
+          && slot.qualityGate?.status === "accepted"
+          && slot.qualityGate.acceptedCandidateId === slot.selectedCandidateId,
+      ),
+  );
+  const allClipsReady = Boolean(
+    planScenes.length
+      && planScenes.every(
+        (scene) => Boolean(scene.videoUrl)
+          && (planMode === "manual" || Boolean(scene.takeReview?.accepted ?? scene.takeReview?.canonAccepted)),
+      ),
+  );
+  const workflowCompletion = [referenceAssetsComplete, allKeyframesAccepted, allClipsReady];
+  const workflowPrerequisites = [true, referenceAssetsComplete, referenceAssetsComplete && allKeyframesAccepted];
   const currentWorkflowIndex = Math.max(
     0,
     workflowItems.findIndex((item) => item.id === planWorkflowStep),
   );
-  const workflowState = (index: number): "current" | "complete" | "ready" => {
+  const workflowState = (index: number): "current" | "complete" | "ready" | "locked" => {
+    if (workflowCompletion[index]) {
+      return "complete";
+    }
+    if (!workflowPrerequisites[index]) {
+      return "locked";
+    }
     if (index === currentWorkflowIndex) {
       return "current";
-    }
-    if (index < currentWorkflowIndex) {
-      return "complete";
     }
     return "ready";
   };
   const previousWorkflowStep = workflowItems[currentWorkflowIndex - 1]?.id;
   const nextWorkflowStep = workflowItems[currentWorkflowIndex + 1]?.id;
   const activeWorkflowItem = workflowItems[currentWorkflowIndex] ?? workflowItems[0];
-  const completedWorkflowCount = Math.max(0, currentWorkflowIndex);
+  const completedWorkflowCount = workflowCompletion.filter(Boolean).length;
+  const currentStepComplete = workflowCompletion[currentWorkflowIndex];
+  const nextRequirement =
+    planWorkflowStep === "reference-assets" && !referenceAssetsComplete
+      ? "Add both character and location images to continue."
+      : planWorkflowStep === "keyframes" && !allKeyframesAccepted
+        ? "Every scene needs a fresh keyframe image that has been accepted."
+        : planWorkflowStep === "scene-clips" && !allClipsReady
+          ? planMode === "manual"
+            ? "Upload one clip for every scene."
+            : "Generate each clip, then review and accept it."
+          : null;
   const planHeaderPortal =
     phase === "plan-creation" && headerSlot
       ? createPortal(
@@ -743,8 +807,11 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
                             ? "border-rose-300/50 bg-rose-500/15"
                             : state === "complete"
                               ? "border-emerald-300/40 bg-emerald-500/10"
-                              : "border-white/10 bg-white/[0.04] hover:border-blue-300/50 hover:bg-white/[0.07]"
+                              : state === "locked"
+                                ? "cursor-not-allowed border-white/5 bg-white/[0.02] opacity-55"
+                                : "border-white/10 bg-white/[0.04] hover:border-blue-300/50 hover:bg-white/[0.07]"
                         }`}
+                        disabled={state === "locked"}
                         onClick={() => setPlanWorkflowStep(item.id)}
                         type="button"
                       >
@@ -758,7 +825,7 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
                           </span>
                           <span>
                             <span className={`block text-[11px] font-semibold uppercase tracking-[0.14em] ${state === "current" ? "text-rose-200" : state === "complete" ? "text-emerald-200" : "text-slate-500"}`}>
-                              {state === "current" ? "In progress" : state === "complete" ? "Complete" : "Ready"}
+                              {state === "current" ? "In progress" : state === "complete" ? "Complete" : state === "locked" ? "Locked" : "Ready"}
                             </span>
                             <span className="mt-1 block text-sm font-semibold text-white">{item.label}</span>
                             <span className="mt-1 block text-xs leading-5 text-slate-400">{item.description}</span>
@@ -809,9 +876,10 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
                       selectedVideoModel={selectedVideoModel}
                       onSelectedImageModelChange={setSelectedImageModel}
                       onSelectedVideoModelChange={setSelectedVideoModel}
-                      onGenerateClip={(sceneIndex, prompt, model) => void handleGenerateClip(sceneIndex, prompt, model)}
+                      onGenerateClip={(sceneIndex, prompt, model, force) => void handleGenerateClip(sceneIndex, prompt, model, force)}
                       onGenerateKeyframe={(sceneIndex, slotId, prompt, model) => void handleGenerateKeyframe(sceneIndex, slotId, prompt, model)}
                       onGenerateReferenceAsset={(assetType, imagePrompt, model) => void handleGenerateReferenceAsset(assetType, imagePrompt, model)}
+                      onReviewKeyframe={(sceneIndex, slotId, payload) => void handleReviewKeyframe(sceneIndex, slotId, payload)}
                       onReviewTake={(sceneIndex, payload) => void handleReviewTake(sceneIndex, payload)}
                       onUploadClip={(sceneIndex, file) => void handleUploadClip(sceneIndex, file)}
                       onUploadKeyframe={(sceneIndex, slotId, file) => void handleUploadKeyframe(sceneIndex, slotId, file)}
@@ -830,11 +898,18 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
                       >
                         Back
                       </button>
-                      <div className="text-sm font-bold text-slate-500">
-                        {completedWorkflowCount} / {workflowItems.length} complete
+                      <div className="text-center text-sm font-bold text-slate-500">
+                        <span>{completedWorkflowCount} / {workflowItems.length} complete</span>
+                        {nextRequirement ? <span className="mt-1 block text-xs font-medium text-amber-700">{nextRequirement}</span> : null}
                       </div>
                       {nextWorkflowStep ? (
-                        <button className="btn-primary" type="button" onClick={() => setPlanWorkflowStep(nextWorkflowStep)}>
+                        <button
+                          className="btn-primary"
+                          disabled={!currentStepComplete}
+                          title={nextRequirement || undefined}
+                          type="button"
+                          onClick={() => setPlanWorkflowStep(nextWorkflowStep)}
+                        >
                           Next
                         </button>
                       ) : (

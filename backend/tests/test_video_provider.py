@@ -3,7 +3,7 @@ from typing import Any
 
 import pytest
 
-from app.services.video_provider import ShopAIKeyVideoProvider, VideoReferenceInput, VideoTaskFailedError
+from app.services.video_provider import ShopAIKeyVideoProvider, VideoProviderError, VideoReferenceInput, VideoTaskFailedError
 
 
 def test_shopaikey_video_uses_one_keyframe_in_metadata_images(
@@ -118,21 +118,14 @@ def test_shopaikey_terminal_failure_uses_typed_error() -> None:
         )
 
 
-def test_veo_fast_components_forces_landscape_components_profile() -> None:
+def test_removed_veo_fast_components_model_is_rejected() -> None:
     provider = ShopAIKeyVideoProvider(
         provider_name="shopaikey",
         api_key="shared-key",
-        ratio="9:16",
-        enable_upsample=True,
     )
 
-    profile = provider.get_model_profile(model_id="veo3.1-fast-components", duration="8")
-
-    assert profile.model_id == "veo3.1-fast-components"
-    assert profile.family == "veo"
-    assert profile.ratio == "16:9"
-    assert profile.mode == "components"
-    assert profile.duration == "8"
+    with pytest.raises(VideoProviderError, match="Unsupported video model"):
+        provider.get_model_profile(model_id="veo3.1-fast-components", duration="8")
 
 
 def test_grok_video_uses_grok_metadata_fields(

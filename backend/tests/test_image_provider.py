@@ -140,7 +140,8 @@ def test_shopaikey_rejects_unsupported_image_model() -> None:
         provider.generate_image(prompt="Storyboard", model_id="seedream-5")
 
 
-def test_shopaikey_gpt_image_uses_openai_endpoint_and_reference_urls(tmp_path) -> None:
+@pytest.mark.parametrize("model_id", ["gpt-image-1", "gpt-image-2-all"])
+def test_shopaikey_gpt_image_uses_openai_endpoint_and_reference_urls(tmp_path, model_id) -> None:
     reference_path = tmp_path / "character_reference.png"
     reference_path.write_bytes(b"reference-image")
 
@@ -149,7 +150,7 @@ def test_shopaikey_gpt_image_uses_openai_endpoint_and_reference_urls(tmp_path) -
             return FakeResponse(json.dumps({"url": "https://cdn.example/character.png"}).encode())
         if request.full_url.endswith("/images/openai/generations"):
             payload = json.loads(request.data.decode())
-            assert payload["model"] == "gpt-image-1"
+            assert payload["model"] == model_id
             assert payload["size"] == "1024x1536"
             assert payload["image_urls"] == ["https://cdn.example/character.png"]
             assert "centered 9:16 safe area" in payload["prompt"]
@@ -167,7 +168,7 @@ def test_shopaikey_gpt_image_uses_openai_endpoint_and_reference_urls(tmp_path) -
     with patch("urllib.request.urlopen", side_effect=fake_urlopen):
         generated = provider.generate_image(
             prompt="Create a portrait keyframe.",
-            model_id="gpt-image-1",
+            model_id=model_id,
             reference_images=[
                 ImageReference(
                     id="character_file",
@@ -181,7 +182,7 @@ def test_shopaikey_gpt_image_uses_openai_endpoint_and_reference_urls(tmp_path) -
 
     assert generated.content == b"generated-gpt-image"
     assert generated.warning == (
-        "gpt-image-1 returned its supported 2:3 portrait canvas. "
+        f"{model_id} returned its supported 2:3 portrait canvas. "
         "The prompt reserved a centered 9:16 safe area for the video crop."
     )
 
@@ -275,5 +276,51 @@ def test_keyframe_reference_mapping_excludes_unrelated_product_uploads() -> None
         slot={"productReferenceIds": ["result_file", "home_file"]},
     )
 
-    assert [reference.id for reference in references] == ["result_file", "character_file", "location_file"]
+    assert [reference.id for reference in references] == ["result_file", "character_file"]
     assert "pixel-locked product/app UI" in references[0].role
+
+
+def test_product_ui_closeup_spends_reference_budget_only_on_selected_screen() -> None:
+    uploads = [
+        SimpleNamespace(
+            id="character_file",
+            file_name="character_reference.png",
+            url="/uploads/project/character.png",
+            path="C:/tmp/character.png",
+            content_type="image/png",
+        ),
+        SimpleNamespace(
+            id="location_file",
+            file_name="location_reference.png",
+            url="/uploads/project/location.png",
+            path="C:/tmp/location.png",
+            content_type="image/png",
+        ),
+        SimpleNamespace(
+            id="home_file",
+            file_name="product_ref_01_home.png",
+            url="/uploads/project/home.png",
+            path="C:/tmp/home.png",
+            content_type="image/png",
+        ),
+    ]
+    project = SimpleNamespace(uploaded_files=uploads)
+    plan = SimpleNamespace(
+        primaryCharacter={"imageUrl": "/uploads/project/character.png"},
+        primaryLocation={"imageUrl": "/uploads/project/location.png"},
+        productReferences=[{"id": "home_file", "referenceLabel": "product_ref_01_home"}],
+    )
+    service = object.__new__(ProjectService)
+
+    references = service._build_keyframe_image_references(
+        project,
+        plan,
+        scene={
+            "camera": {"shot": "phone screen close-up", "composition": "screen readable"},
+            "characterAction": "Only the actor's hands hold the phone.",
+            "productMoment": "The app home screen is readable.",
+        },
+        slot={"prompt": "Phone screen close-up at frame 0.", "productReferenceIds": ["home_file"]},
+    )
+
+    assert [reference.id for reference in references] == ["home_file"]

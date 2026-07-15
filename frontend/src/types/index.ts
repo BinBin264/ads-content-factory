@@ -54,6 +54,7 @@ export interface VoiceLine {
   emotion: string;
   delivery: string;
   line: string;
+  generationMode?: "native" | "post_voiceover" | string;
 }
 
 export interface KeyframePrompt {
@@ -104,10 +105,10 @@ export type ImageModelId =
   | "nano-banana"
   | "nano-banana-2"
   | "nano-banana-pro"
-  | "gpt-image-1-mini"
   | "gpt-image-1"
   | "gpt-image-1.5"
-  | "gpt-image-2";
+  | "gpt-image-2"
+  | "gpt-image-2-all";
 
 export interface StorytellingScene {
   sceneIndex: number;
@@ -115,6 +116,7 @@ export interface StorytellingScene {
   title: string;
   durationSec: number;
   sceneGoal: string;
+  openingState?: string;
   visualAction: string;
   productMoment: string;
   characterAction: string;
@@ -160,7 +162,6 @@ export interface StorytellingScene {
 export type VideoModelId =
   | "veo3.1-pro"
   | "veo3.1-fast"
-  | "veo3.1-fast-components"
   | "grok-video-3"
   | "grok-video-3-10s";
 
@@ -176,6 +177,15 @@ export interface QualityGate {
   status: string;
   checks: string[];
   repairRule: string;
+  acceptedCandidateId?: string | null;
+  defects?: string[];
+  notes?: string | null;
+}
+
+export interface ReviewKeyframePayload {
+  verdict: "accept" | "reject";
+  defects?: string[];
+  notes?: string;
 }
 
 export interface SceneDirection {
@@ -189,6 +199,8 @@ export interface SceneDirection {
 export interface ShotContract {
   generationMode: string;
   shotStructure: string;
+  keyframeRole?: string;
+  sourceCarriesState?: boolean;
   primarySpend: string;
   secondarySpend: string;
   economize: string[];
@@ -197,7 +209,14 @@ export interface ShotContract {
   reservedForLater: string[];
   plannedStartState: Record<string, unknown>;
   plannedEndState: Record<string, unknown>;
-  observedHandoff?: Record<string, unknown> | null;
+  subjectContract?: Record<string, unknown>;
+  handContract?: string;
+  completedDialogue?: string[];
+  activeDialogue?: string[];
+  postVoiceover?: string[];
+  audioPhase?: string;
+  nativeDialogueWordCount?: number;
+  nativeDialogueWordBudget?: number;
   continuityLocks: string[];
   allowedChanges: string[];
   referenceBindings: ReferenceBinding[];
@@ -217,17 +236,9 @@ export interface PromptQuality {
 
 export interface TakeReview {
   takeId: string;
-  verdict: string;
-  canonAccepted: boolean;
-  observedStartState: Record<string, unknown>;
-  observedEndState: Record<string, unknown>;
-  completedBeats: string[];
-  continuityBreaks: string[];
-  acceptedDeviations: string[];
-  changedVariable?: string;
-  evidence?: string;
-  observationConfidence: string;
-  notes?: string;
+  verdict: "keep";
+  accepted?: boolean;
+  canonAccepted?: boolean;
   reviewedAt: string;
   nextAction: string;
 }
@@ -263,16 +274,7 @@ export interface PlanCreation {
 }
 
 export interface ReviewSceneTakePayload {
-  verdict: "keep" | "fix_in_post" | "edit" | "reroll" | "rewrite" | "reject";
-  observed_start_state?: Record<string, unknown>;
-  observed_end_state?: Record<string, unknown>;
-  completed_beats?: string[];
-  continuity_breaks?: string[];
-  accepted_deviations?: string[];
-  changed_variable?: string;
-  evidence?: string;
-  observation_confidence?: "low" | "medium" | "high";
-  notes?: string;
+  verdict: "keep";
 }
 
 export interface VisionAnalysis {

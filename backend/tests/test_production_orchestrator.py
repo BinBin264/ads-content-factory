@@ -1,5 +1,7 @@
 import unittest
 
+import pytest
+
 from app.models.schemas import CreativePlan, Project
 from app.services.production_orchestrator import ProductionOrchestrator
 
@@ -74,25 +76,110 @@ class ProductionOrchestratorTests(unittest.TestCase):
         self.assertEqual(prepared.scenes[0]["promptQuality"]["status"], "ready")
         self.assertEqual(len(prepared.scenes[0]["shotContract"]["thisClipOnly"]), 1)
 
-    def test_only_accepted_take_updates_next_scene_handoff(self) -> None:
+    def test_accepting_clip_does_not_rewrite_next_scene(self) -> None:
         project, plan = build_plan()
         orchestrator = ProductionOrchestrator()
         prepared = orchestrator.prepare_plan(project, plan)
+        next_prompt = prepared.scenes[1]["finalVideoPrompt"]
+        next_start = prepared.scenes[1]["shotContract"]["plannedStartState"]
         orchestrator.review_take(
             prepared,
             prepared.scenes[0],
-            {
-                "verdict": "keep",
-                "observed_end_state": {"actorPose": "phone now in right hand", "coinPosition": "left palm"},
-                "completed_beats": ["Find the coin"],
-                "observation_confidence": "high",
-            },
+            {"verdict": "keep"},
         )
 
-        handoff = prepared.scenes[1]["shotContract"]["observedHandoff"]
-        self.assertEqual(handoff["actorPose"], "phone now in right hand")
-        self.assertTrue(prepared.scenes[0]["takeReview"]["canonAccepted"])
-        self.assertEqual(prepared.sequenceState["canonRevision"], 2)
+        self.assertTrue(prepared.scenes[0]["takeReview"]["accepted"])
+        self.assertEqual(prepared.scenes[1]["finalVideoPrompt"], next_prompt)
+        self.assertEqual(prepared.scenes[1]["shotContract"]["plannedStartState"], next_start)
+
+    def test_accepting_clip_requires_no_manual_end_state(self) -> None:
+        project, plan = build_plan()
+        orchestrator = ProductionOrchestrator()
+        prepared = orchestrator.prepare_plan(project, plan)
+
+        orchestrator.review_take(prepared, prepared.scenes[0], {"verdict": "keep"})
+
+        self.assertEqual(prepared.scenes[0]["status"], "ACCEPTED")
+
+    def test_rejected_review_verdicts_are_not_supported(self) -> None:
+        project, plan = build_plan()
+        orchestrator = ProductionOrchestrator()
+        prepared = orchestrator.prepare_plan(project, plan)
+
+        with pytest.raises(ValueError, match="Only keep"):
+            orchestrator.review_take(prepared, prepared.scenes[0], {"verdict": "reject"})
+
+    def test_long_dialogue_is_moved_to_post_and_not_sent_to_video_model(self) -> None:
+        project, plan = build_plan()
+        scene = plan.scenes[0]
+        scene["durationSec"] = 4
+        scene["voiceLines"] = [
+            {
+                "speaker": "Primary actor",
+                "timing": "0-4s",
+                "emotion": "reflective",
+                "delivery": "natural Spanish",
+                "line": "En el mercado siempre hay tesoros pero no quiero que nadie vuelva a enganarme hoy.",
+            }
+        ]
+
+        prepared = ProductionOrchestrator().prepare_plan(project, plan)
+        prepared_scene = prepared.scenes[0]
+        prompt = prepared_scene["finalVideoPrompt"]
+
+        self.assertEqual(prepared_scene["voiceLines"][0]["generationMode"], "post_voiceover")
+        self.assertEqual(prepared_scene["shotContract"]["audioPhase"], "post_voiceover")
+        self.assertIn("Generate no speech or lip-sync", prompt)
+        self.assertNotIn("En el mercado", prompt)
+
+    def test_keyframe_contract_is_opening_state_before_action(self) -> None:
+        project, plan = build_plan()
+        plan.scenes[0]["openingState"] = "The actor's empty right hand rests beside the coin."
+
+        prepared = ProductionOrchestrator().prepare_plan(project, plan)
+        scene = prepared.scenes[0]
+
+        self.assertEqual(scene["shotContract"]["keyframeRole"], "opening_state_before_action")
+        self.assertEqual(scene["keyframePrompts"][0]["keyframeRole"], "frame_0_before_action")
+        self.assertIn("empty right hand", scene["shotContract"]["plannedStartState"]["visibleOpening"])
+
+    def test_product_closeup_routes_only_the_product_reference(self) -> None:
+        project, plan = build_plan()
+        plan.productReferences = [
+            {
+                "id": "home_screen",
+                "referenceLabel": "product_ref_01_home",
+                "lockPrompt": "Keep the home screen pixels unchanged.",
+            }
+        ]
+        scene = plan.scenes[1]
+        scene["camera"]["shot"] = "phone screen close-up"
+        scene["camera"]["composition"] = "UI readable"
+        scene["keyframePrompts"][0]["productReferenceIds"] = ["home_screen"]
+
+        prepared = ProductionOrchestrator().prepare_plan(project, plan)
+        tags = [
+            binding["tag"]
+            for binding in prepared.scenes[1]["keyframePrompts"][0]["referenceBindings"]
+        ]
+
+        self.assertEqual(tags, ["@product_ref_01_home"])
+
+    def test_keyframe_acceptance_is_tied_to_selected_candidate(self) -> None:
+        project, plan = build_plan()
+        slot = plan.scenes[0]["keyframePrompts"][0]
+        slot["selectedCandidateId"] = "candidate_7"
+        slot["selectedImageUrl"] = "/uploads/keyframe.png"
+        slot["qualityGate"] = {"status": "accepted", "acceptedCandidateId": "candidate_7"}
+
+        prepared = ProductionOrchestrator().prepare_plan(project, plan)
+        prepared_slot = prepared.scenes[0]["keyframePrompts"][0]
+        self.assertEqual(prepared_slot["qualityGate"]["status"], "accepted")
+
+        prepared_slot["selectedCandidateId"] = "candidate_8"
+        ProductionOrchestrator().refresh_scene(prepared, prepared.scenes[0], compile_prompt=True)
+        self.assertEqual(prepared_slot["qualityGate"]["status"], "review_required")
+        self.assertIsNone(prepared_slot["qualityGate"]["acceptedCandidateId"])
 
 
 if __name__ == "__main__":

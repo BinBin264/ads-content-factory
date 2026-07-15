@@ -525,20 +525,20 @@ class GenerateSceneVideoRequest(BaseModel):
     model: Literal[
         "veo3.1-pro",
         "veo3.1-fast",
-        "veo3.1-fast-components",
         "grok-video-3",
         "grok-video-3-10s",
     ] | None = None
+    force: bool = False
 
 
 ImageModelId = Literal[
     "nano-banana",
     "nano-banana-2",
     "nano-banana-pro",
-    "gpt-image-1-mini",
     "gpt-image-1",
     "gpt-image-1.5",
     "gpt-image-2",
+    "gpt-image-2-all",
 ]
 
 
@@ -547,33 +547,7 @@ class GenerateImageRequest(BaseModel):
 
 
 class ReviewSceneTakeRequest(BaseModel):
-    verdict: str
-    observed_start_state: dict[str, Any] = Field(default_factory=dict)
-    observed_end_state: dict[str, Any] = Field(default_factory=dict)
-    completed_beats: list[str] = Field(default_factory=list)
-    continuity_breaks: list[str] = Field(default_factory=list)
-    accepted_deviations: list[str] = Field(default_factory=list)
-    changed_variable: str | None = None
-    evidence: str | None = None
-    observation_confidence: str = "medium"
-    notes: str | None = None
-
-    @field_validator("verdict")
-    @classmethod
-    def validate_verdict(cls, value: str) -> str:
-        normalized = value.strip().lower().replace(" ", "_")
-        allowed = {"keep", "fix_in_post", "edit", "reroll", "rewrite", "reject"}
-        if normalized not in allowed:
-            raise ValueError(f"verdict must be one of: {', '.join(sorted(allowed))}")
-        return normalized
-
-    @field_validator("observation_confidence")
-    @classmethod
-    def validate_observation_confidence(cls, value: str) -> str:
-        normalized = value.strip().lower()
-        if normalized not in {"low", "medium", "high"}:
-            raise ValueError("observation_confidence must be low, medium, or high")
-        return normalized
+    verdict: Literal["keep"] = "keep"
 
 
 class UpdateKeyframePromptSlotRequest(BaseModel):
@@ -597,7 +571,7 @@ class ImageGenerationJob(BaseModel):
     progress: int = 0
     phase: str = "Queued"
     attempt: int = 0
-    max_attempts: int = 3
+    max_attempts: int = 4
     error: str | None = None
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
@@ -614,6 +588,20 @@ class SelectKeyframeCandidateRequest(BaseModel):
     imageUrl: str | None = None
     fileId: str | None = None
     candidateId: str | None = None
+
+
+class ReviewKeyframeRequest(BaseModel):
+    verdict: str
+    defects: list[str] = Field(default_factory=list)
+    notes: str | None = None
+
+    @field_validator("verdict")
+    @classmethod
+    def validate_verdict(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        if normalized not in {"accept", "reject"}:
+            raise ValueError("verdict must be accept or reject")
+        return normalized
 
 
 class HealthResponse(BaseModel):

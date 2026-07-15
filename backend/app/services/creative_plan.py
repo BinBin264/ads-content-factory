@@ -17,6 +17,7 @@ from app.services.production_orchestrator import ProductionOrchestrator
 DEFAULT_SCENE_CLIP_SECONDS = 8
 ALLOWED_SCENE_CLIP_SECONDS = (4, 6, 8, 10)
 KEYFRAMES_PER_SCENE = 1
+NATIVE_DIALOGUE_WORDS_PER_SECOND = 2.0
 
 
 class BriefNormalizer:
@@ -132,6 +133,7 @@ class CreativePlanService:
                         "title": {"type": "string"},
                         "durationSec": {"type": "integer"},
                         "sceneGoal": {"type": "string"},
+                        "openingState": {"type": "string"},
                         "visualAction": {"type": "string"},
                         "productMoment": {"type": "string"},
                         "characterAction": {"type": "string"},
@@ -158,8 +160,9 @@ class CreativePlanService:
                                     "emotion": {"type": "string"},
                                     "delivery": {"type": "string"},
                                     "line": {"type": "string"},
+                                    "generationMode": {"type": "string"},
                                 },
-                                "required": ["speaker", "timing", "actionState", "emotion", "delivery", "line"],
+                                "required": ["speaker", "timing", "actionState", "emotion", "delivery", "line", "generationMode"],
                             },
                         },
                         "ambientAudio": {"type": "string"},
@@ -191,6 +194,7 @@ class CreativePlanService:
                         "title",
                         "durationSec",
                         "sceneGoal",
+                        "openingState",
                         "visualAction",
                         "productMoment",
                         "characterAction",
@@ -307,11 +311,11 @@ class CreativePlanService:
             else "4. Use storytelling structure across the scene list: hook, setup, product/app introduction, proof/demo, result/reaction, CTA. Do not compress discovery, scan, result, reaction, payment, and CTA into one scene if they can be separated into clearer keyframes.\n"
         )
         reference_policy = (
-            "- Visual reference policy: each keyframe may use zero or one uploaded visual reference, plus the generated character/location references. "
-            "Do not attach multiple unrelated references to one keyframe. If a scene needs multiple distinct visual states, split those into separate scenes/keyframes.\n"
+            "- Visual reference policy: each keyframe may use zero or one uploaded visual reference and only the minimum canonical character/location reference needed for that shot. "
+            "Do not attach all references by default. If a scene needs multiple distinct visual states, split those into separate scenes/keyframes.\n"
             if is_content_creation
-            else "- Product/app reference policy: each keyframe may use zero or one uploaded product/app reference. "
-            "Do not attach multiple app screens to one keyframe. If a scene needs the home screen, scan screen, and result screen, split those into separate scenes/keyframes.\n"
+            else "- Product/app reference policy: each keyframe may use zero or one uploaded product/app reference and only the minimum canonical character/location reference needed for that shot. "
+            "Do not attach all references or multiple app screens to one keyframe. If a scene needs the home screen, scan screen, and result screen, split those into separate scenes/keyframes.\n"
         )
         reference_rule = (
             "9. Visual reference handling: analyze each uploaded reference independently and preserve its existing id. Preserve each uploaded file_name or stable uploaded name exactly in productReferences.name when available. Use only the one relevant visual reference for each keyframe prompt, or use none if no uploaded reference is visibly needed. Do not dump every reference into every keyframe prompt.\n"
@@ -348,7 +352,7 @@ class CreativePlanService:
             f"{workflow_note}"
             "- The brief may contain a user script/timeline, character brief, location brief, target duration, spoken lines, subtitles, translations, or notes. Treat those as user constraints when present.\n"
             "- Aspect ratio: 9:16. This is a provider parameter; do not repeat aspect ratio or vertical format inside finalVideoPrompt.\n"
-            "- Voice mode: native_video_audio\n"
+            "- Voice mode: hybrid. Use native video speech only when one short line fits naturally; otherwise preserve the exact line as post_voiceover and generate ambience only in the video model.\n"
             "- Planning/output language: English for scene titles, scene goals, keyframe prompts, final video prompts, product locks, and production instructions unless the user explicitly asks the whole plan to be in another language.\n"
             "- Voice language: use the exact dialogue language requested in the brief only for voiceLines.line and onScreenText when relevant. Preserve user-supplied spoken lines exactly. If the brief includes Spanish dialogue snippets, keep those snippets in Spanish but do not translate the entire plan into Spanish.\n"
             "- Overlay mode: enabled\n"
@@ -384,13 +388,13 @@ class CreativePlanService:
             '  "primaryCharacter": {\n'
             '    "name": "Primary actor",\n'
             '    "description": "single consistent actor description suitable for ads",\n'
-            '    "imagePrompt": "prompt to generate one clean reference image of this actor",\n'
+            '    "imagePrompt": "prompt to generate one clean reference image containing exactly one actor on a neutral background with relaxed hands and no props",\n'
             '    "consistencyPrompt": "identity lock text for later keyframes"\n'
             "  },\n"
             '  "primaryLocation": {\n'
             '    "name": "Primary setting",\n'
             '    "description": "single consistent environment description with cinematic mood plus concise recurring props and layout anchors",\n'
-            '    "imagePrompt": "prompt to generate one attractive cinematic location reference image, using a natural three-quarter commercial view with readable recurring props; not a blueprint, survey shot, doorway view, or empty symmetrical room",\n'
+            '    "imagePrompt": "prompt to generate one attractive cinematic location reference image with no primary actor; background extras only when necessary and with indistinct unrelated faces; use a natural three-quarter commercial view with recurring props",\n'
             '    "consistencyPrompt": "location lock text for later keyframes: fixed layout, prop relationships, window/light direction, background anchors, and how props should appear from same, side, top-down, or opposite camera angles"\n'
             "  },\n"
             '  "scenes": [\n'
@@ -400,20 +404,21 @@ class CreativePlanService:
             '      "title": "short scene title",\n'
             f'      "durationSec": {DEFAULT_SCENE_CLIP_SECONDS},\n'
             '      "sceneGoal": "why this scene exists in the ad",\n'
+            '      "openingState": "the frozen visible state at frame 0 immediately before this scene action starts; no result or completed action",\n'
             '      "dramaticFunction": "introduce | deepen | turn | payoff",\n'
             '      "arcPosition": "open | rising | turn | climax | release",\n'
             '      "direction": {"valueShift": "visible before-to-after shift", "feltIntent": "what the viewer should feel or notice", "lighting": "motivated lighting choice serving that intent", "atmosphere": "environment and sound density serving that intent", "performanceSubtext": "truth expressed through one visible behavior"},\n'
-            '      "visualAction": "continuous action chain with an opening state and 2-4 connected visible actions",\n'
+            '      "visualAction": "one simple motion delta that begins after openingState and ends at one visible outcome",\n'
             '      "productMoment": "how the uploaded product/app references are shown inside this clip without redesigning them; mention @suggested_reference_label or @file_name when a product reference is visible",\n'
             '      "characterAction": "what the primary character does inside this clip, including visible facial expression, body language, hands, and gaze",\n'
             '      "locationUse": "how the primary location appears inside this clip, including camera viewpoint relative to the location reference",\n'
             '      "camera": {"selected": "stable eye-level medium shot", "shot": "medium shot", "movement": "connected camera movement", "composition": "product/app visible and readable at the important moment", "alternatives": ["over-the-shoulder phone close-up"]},\n'
-            '      "voiceLines": [{"speaker": "Primary actor", "timing": "0-[durationSec]s", "actionState": "visible action or state while speaking", "emotion": "natural emotion", "delivery": "voice style in requested language", "line": "exact spoken line"}],\n'
+            '      "voiceLines": [{"speaker": "Primary actor", "timing": "0-[durationSec]s", "actionState": "visible action or state while speaking", "emotion": "natural emotion", "delivery": "voice style in requested language", "line": "exact spoken line", "generationMode": "native | post_voiceover"}],\n'
             '      "ambientAudio": "room tone and useful SFX for this video segment",\n'
             '      "onScreenText": "short overlay text only when Overlay mode is enabled; otherwise empty string",\n'
             '      "timingBeats": ["0-2s: ...", "2-[durationSec]s: ..."],\n'
-            f'      "keyframePrompts": [{{"id": "kf_main", "label": "Main keyframe", "timing": "0s", "purpose": "single visual anchor for this scene: exact actor pose/expression, product/app state, location viewpoint, composition, camera, and the most important readable product/UI detail", "prompt": "image generation prompt for the scene keyframe that preserves uploaded product/app references exactly and mentions at most one visible product reference as @suggested_reference_label or @file_name, never internal file ids", "productReferenceIds": ["zero_or_one_uploaded_product_ref_id"]}}],\n'
-            '      "finalVideoPrompt": "self-contained video prompt with action, camera, dialogue/audio, product/character/location locks, reference mapping using the single keyframe as visual anchor, overlay intent, continuity handoff, and negative rules; do not mention duration, vertical format, or 9:16",\n'
+            f'      "keyframePrompts": [{{"id": "kf_main", "label": "Opening keyframe", "timing": "0s", "purpose": "frame 0 before the scene action: one actor instance, one simple stable pose, explicit hand/prop ownership, one product/app state, fixed location viewpoint, and no completed outcome", "prompt": "still-image prompt showing openingState only; preserve references exactly, mention at most one visible product reference as @suggested_reference_label or @file_name, and reserve visualAction for video motion", "productReferenceIds": ["zero_or_one_uploaded_product_ref_id"]}}],\n'
+            '      "finalVideoPrompt": "motion-only video prompt that treats the keyframe as frame 0, advances one action to one endpoint, uses one camera move, contains only active native dialogue or a no-speech/post_voiceover instruction, and never repeats static source details",\n'
             '      "negativeRules": ["do not redesign the product/app", "no unreadable UI text"]\n'
             "    }\n"
             "  ]\n"
@@ -427,22 +432,23 @@ class CreativePlanService:
             f"{structure_rule}"
             "5. Use one primaryCharacter and one primaryLocation. They are first-class reference-image prompts for the next production step. If the brief includes character or location instructions, primaryCharacter and primaryLocation must follow them.\n"
             "6. Include camera terms for every scene.\n"
-            "7. Use structured voiceLines, not one short voiceLine string. A scene may have multiple spoken lines if they fit the continuous action naturally.\n"
-            "8. Voice handling: all production planning fields must stay in Planning/output language. voiceLines.line may use the requested dialogue language from the brief. Treat quoted spoken dialogue in the brief as spoken line exactly. Do not paraphrase, translate, shorten, soften, or rewrite spoken lines. Text marked as subtitles, translations, Vietsub, notes, or parenthetical non-spoken explanations is not spoken unless the user explicitly says it should be spoken.\n"
+            "7. Use structured voiceLines, not one short voiceLine string. Budget native speech at no more than about 2 words per second and one speaker/line per generated clip. If exact dialogue exceeds that budget or multiple lines must be preserved, set generationMode to post_voiceover instead of forcing rushed native speech.\n"
+            "8. Voice handling: all production planning fields must stay in Planning/output language. voiceLines.line may use the requested dialogue language from the brief. Treat quoted spoken dialogue in the brief as spoken line exactly. Do not paraphrase, translate, shorten, soften, or rewrite spoken lines. Text marked as subtitles, translations, Vietsub, notes, or parenthetical non-spoken explanations is not spoken unless the user explicitly says it should be spoken. Each spoken sentence belongs to one scene only; never repeat a previous scene's line in a later scene.\n"
             f"{reference_rule}"
             "9a. For each uploaded product reference, keep sourceFileName and referenceLabel aligned with the real uploaded file so the user can match the plan back to the uploaded image. Do not invent unrelated reference names.\n"
             "9b. productReferenceIds must contain at most one id. Use [] for actor-only, location-only, coin-only, reaction, payment, or CTA shots where the uploaded app/product UI is not visible and readable. A phone as a prop is not enough to attach an app-screen reference; attach an app reference only when the screen content should be preserved.\n"
             "9c. For app references, choose exactly one screen state per keyframe: home/start screen OR scan/camera screen OR result/detail/price screen. Never combine home, scan, and result screenshots in the same keyframe prompt.\n"
             "9d. Assign every reference one role and an exclusion boundary. Character references carry identity and wardrobe only; location references carry environment geometry and light direction only; product references carry exact product or UI appearance only. Never let one reference overwrite unrelated identity, location, camera, motion, or audio.\n"
-            "10. Each scene must have exactly 1 keyframePrompts item with id kf_main. This keyframe is the manual quality gate for that scene's video clip. If the keyframe would be hard to judge, split the story into another scene instead of adding more keyframes inside the same scene.\n"
+            "10. Each scene must have exactly 1 keyframePrompts item with id kf_main. It is frame 0 immediately BEFORE visualAction starts, never a summary or the scene endpoint. The attached keyframe carries static state; the video prompt carries only the motion delta. If the keyframe would be hard to judge, split the story into another scene instead of adding more keyframes inside the same scene.\n"
             "10a. Keyframe prompts and finalVideoPrompt must preserve uploaded product/app/user references exactly: do not redesign UI layout, text, colors, packaging, product shape, coin details, logo, actor identity, outfit, location layout, or any user-provided visual reference. If the scene needs readable UI or readable text, the relevant keyframe prompt must make the phone/UI/product reference large enough and angled for readability, not a tiny background prop.\n"
             "10b. Never write internal file ids like file_xxx inside keyframe prompt text or finalVideoPrompt. Use @suggested_reference_label or @file_name in human-readable prompt text, while productReferenceIds keeps the exact uploaded reference id.\n"
-            "10c. Keyframe prompts must include visible performance direction when an actor is present: facial expression, body posture, hand action, and gaze. Do not use abstract emotion alone.\n"
-            "10d. The keyframe must show the exact state the video should preserve: actor identity, face, outfit, hand position, product/app state, location geometry, lighting direction, camera viewpoint, and any readable UI/product detail.\n"
-            "11. finalVideoPrompt must be self-contained and must map the single keyframe image as the scene's visual anchor. Include action chain, camera shot, movement, composition, dialogue/audio intent, product lock, character lock, location lock, overlay intent, continuity handoff to the next scene, and negative rules. Explicitly say the model should continue naturally from the keyframe, not create a slideshow, montage, jump cut, or unrelated camera reset.\n"
-            "12. Choose durationSec from exactly one of 4, 6, 8, or 10. Use 4s for one simple visual beat, 6s for one action plus reaction, 8s for two connected actions or a product demo, and 10s only when the scene has a complex continuous action or multiple spoken lines. finalVideoPrompt must NOT mention duration, seconds, vertical format, portrait mode, or 9:16 because those are provider parameters.\n"
+            "10c. When an actor is present, openingState and the keyframe prompt must define one frozen pose: facial expression, body posture, gaze, and explicit prop ownership. Keep both hands anatomically simple. Never ask the still image to show tapping, grabbing, passing, pocketing, turning, pointing, and reacting simultaneously.\n"
+            "10d. The keyframe must show the exact opening state the video should preserve: exactly one primary actor instance, face, outfit, left/right orientation, hand position, one product/app state, location geometry, lighting direction, camera viewpoint, and any selected readable UI detail. Background extras must not copy the primary actor's face or outfit.\n"
+            "10e. Reference allocation is a fidelity budget. For a product/UI close-up, use only that one product reference unless the actor's face must be visible. For an actor-plus-product shot, use product plus character and carry location through text. For an actor-only shot, use character plus location. Never use all references by default.\n"
+            "11. finalVideoPrompt must treat the selected keyframe as frame 0 and the sole visual source of truth. Do not re-describe static details already visible. Include only the current motion delta, one motivated camera move, active native dialogue or an explicit post_voiceover/no-speech instruction, ambient audio, one endpoint, future-beat exclusions, and preservation rules. Explicitly forbid replaying the opening action, restarting previous dialogue, duplicating the actor, mirroring handedness, or changing prop ownership.\n"
+            "12. Choose durationSec from exactly one of 4, 6, 8, or 10. Use 4s for one simple motion, 6s for one action plus a small reaction, 8s for two tightly connected motions or a product demo, and 10s only when the continuous physical action needs it. Long narration is post_voiceover, not a reason to overload native video speech. finalVideoPrompt must NOT mention duration, seconds, vertical format, portrait mode, or 9:16 because those are provider parameters.\n"
             "13. If Overlay mode is disabled, set onScreenText to an empty string and say No overlay text in finalVideoPrompt. If enabled, onScreenText must be no more than 6 words.\n"
-            "14. primaryLocation.imagePrompt must create a natural, attractive commercial reference image with depth, warm lighting, and a usable filming surface. Its consistencyPrompt must define fixed world-space layout, recurring props, physical relationships, window/light direction, background anchors, and the chosen reference view.\n"
+            "14. primaryLocation.imagePrompt must create a natural, attractive commercial reference image with depth, motivated lighting, and a usable filming surface. It must not contain the primary actor. Any necessary background extras have indistinct faces and must look different from the primary actor. Its consistencyPrompt must define fixed world-space layout, recurring props, physical relationships, window/light direction, background anchors, and the chosen reference view.\n"
             "14a. Each keyframe prompt must state the camera viewpoint relative to the location reference: same reference view, left side angle, right side angle, top-down view, or opposite side view. If a scene uses an opposite or side angle, explicitly say it is the same fixed layout viewed from that new angle.\n"
             "14b. Smooth scene continuity: each scene's main keyframe should visually hand off from the previous scene and into the next scene through matching actor posture, screen/product state, gaze direction, hand position, camera angle, or motion direction. Avoid hard resets unless the brief needs a deliberate cut.\n"
             "14c. Treat each generated scene as an intentional editorial shot opened from canonical references. Do not build an unlimited output-to-output chain. Accepted footage may inform the next scene's opening state, but character, wardrobe, product geometry, location layout, and style must re-anchor from the canonical references.\n"
@@ -590,12 +596,18 @@ class CreativePlanService:
 
     def _coerce_scene_clips(self, scenes: list[Any], product_references: list[dict[str, Any]]) -> list[dict[str, Any]]:
         coerced_scenes: list[dict[str, Any]] = []
+        previous_outcome = ""
         for index, raw_scene in enumerate(scenes):
             if not isinstance(raw_scene, dict):
                 continue
             scene = dict(raw_scene)
             scene["sceneIndex"] = index + 1
             scene["durationSec"] = self._normalize_scene_duration(scene.get("durationSec"))
+            scene["openingState"] = self._string(scene.get("openingState")) or (
+                previous_outcome
+                or "A stable neutral pose immediately before this scene's action begins; no action result is visible yet."
+            )
+            scene["voiceLines"] = self._coerce_voice_lines(scene.get("voiceLines"), scene["durationSec"])
             for text_key in ("visualAction", "productMoment", "characterAction", "locationUse"):
                 if scene.get(text_key):
                     scene[text_key] = self._replace_reference_aliases(str(scene.get(text_key) or ""), product_references)
@@ -604,23 +616,34 @@ class CreativePlanService:
                 scene["finalVideoPrompt"] = self._replace_reference_aliases(self._clean_video_prompt(final_prompt), product_references)
             scene["keyframePrompts"] = self._coerce_keyframe_slots(scene, product_references)
             coerced_scenes.append(scene)
+            previous_outcome = self._string(scene.get("visualAction")) or self._string(scene.get("sceneGoal"))
         return coerced_scenes
+
+    def _coerce_voice_lines(self, value: Any, duration_seconds: int) -> list[dict[str, Any]]:
+        lines = [dict(item) for item in value or [] if isinstance(item, dict)] if isinstance(value, list) else []
+        total_words = sum(len(re.findall(r"\b[\w'-]+\b", self._string(item.get("line")), flags=re.UNICODE)) for item in lines)
+        speakers = {self._string(item.get("speaker")) for item in lines if self._string(item.get("speaker"))}
+        native_budget = max(1, int(duration_seconds * NATIVE_DIALOGUE_WORDS_PER_SECOND))
+        force_post = len(lines) > 1 or len(speakers) > 1 or total_words > native_budget
+        for item in lines:
+            item["timing"] = f"0-{duration_seconds}s"
+            requested_mode = self._string(item.get("generationMode")).lower()
+            item["generationMode"] = "post_voiceover" if requested_mode == "post_voiceover" or force_post else "native"
+        return lines
 
     def _coerce_keyframe_slots(self, scene: dict[str, Any], product_references: list[dict[str, Any]]) -> list[dict[str, Any]]:
         raw_slots = scene.get("keyframePrompts") if isinstance(scene.get("keyframePrompts"), list) else []
         slots = [slot for slot in raw_slots if isinstance(slot, dict)][:KEYFRAMES_PER_SCENE]
         while len(slots) < KEYFRAMES_PER_SCENE:
             slot_id = "kf_main"
-            label = "Main keyframe"
+            label = "Opening keyframe"
             timing = "0s"
-            purpose = "Single visual anchor and manual quality gate for this scene before video generation."
+            purpose = "Frame 0 immediately before the scene action begins; no completed action or endpoint is visible."
             prompt = " ".join(
                 str(value or "")
                 for value in [
                     scene.get("title"),
-                    scene.get("visualAction"),
-                    scene.get("productMoment"),
-                    scene.get("characterAction"),
+                    scene.get("openingState"),
                     scene.get("locationUse"),
                     scene.get("camera", {}).get("composition") if isinstance(scene.get("camera"), dict) else "",
                     purpose,
@@ -641,9 +664,9 @@ class CreativePlanService:
         for index, slot in enumerate(slots):
             normalized_slot = dict(slot)
             normalized_slot["id"] = "kf_main"
-            normalized_slot["label"] = self._string(normalized_slot.get("label")) or "Main keyframe"
+            normalized_slot["label"] = self._string(normalized_slot.get("label")) or "Opening keyframe"
             normalized_slot["timing"] = "0s"
-            normalized_slot["purpose"] = self._string(normalized_slot.get("purpose")) or "Single visual anchor and manual quality gate for this scene before video generation."
+            normalized_slot["purpose"] = self._string(normalized_slot.get("purpose")) or "Frame 0 immediately before the scene action begins; no completed action or endpoint is visible."
             normalized_slot["prompt"] = self._replace_reference_aliases(str(normalized_slot.get("prompt") or ""), product_references)
             normalized_slot["productReferenceIds"] = self._normalize_slot_product_reference_ids(scene, normalized_slot, product_references)
             normalized_slots.append(normalized_slot)

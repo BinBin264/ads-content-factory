@@ -12,9 +12,16 @@ class FakeStorage:
 
 
 class FakeProjectService:
-    def __init__(self, *, fail_once: bool = False) -> None:
+    def __init__(
+        self,
+        *,
+        fail_once: bool = False,
+        failures_before_success: int = 0,
+        failure_message: str = "Image provider HTTP 429: rate limit",
+    ) -> None:
         self.storage = FakeStorage()
-        self.fail_once = fail_once
+        self.failures_before_success = max(failures_before_success, 1 if fail_once else 0)
+        self.failure_message = failure_message
         self.calls = 0
         self.started = threading.Event()
         self.release = threading.Event()
@@ -23,8 +30,8 @@ class FakeProjectService:
     def generate_reference_asset_image(self, project_id, asset_type, *, model_id=None, progress_callback=None):
         self.calls += 1
         self.models.append(model_id)
-        if self.fail_once and self.calls == 1:
-            raise ImageProviderError("Image provider HTTP 429: rate limit")
+        if self.calls <= self.failures_before_success:
+            raise ImageProviderError(self.failure_message)
         if asset_type == "character":
             self.started.set()
             self.release.wait(timeout=2)
@@ -84,5 +91,25 @@ def test_rate_limited_image_job_retries_automatically() -> None:
         assert completed.attempt == 2
         assert completed.progress == 100
         assert service.calls == 2
+    finally:
+        queue.shutdown()
+
+
+def test_http_524_image_job_retries_three_times_after_initial_attempt() -> None:
+    service = FakeProjectService(
+        failures_before_success=4,
+        failure_message="Image provider GPT image generation HTTP 524: error code: 524",
+    )
+    service.release.set()
+    queue = ImageGenerationQueue(service, concurrency=1, max_attempts=4, retry_base_seconds=0)
+    try:
+        job = queue.submit_reference_asset("project_1", "character", "gpt-image-2-all")
+        completed = wait_for_terminal(queue, "project_1", job.id)
+
+        assert completed.status == "failed"
+        assert completed.attempt == 4
+        assert completed.max_attempts == 4
+        assert service.calls == 4
+        assert "HTTP 524" in (completed.error or "")
     finally:
         queue.shutdown()

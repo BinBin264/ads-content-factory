@@ -47,10 +47,10 @@ class OpenAICompatibleImageProvider:
     SHOPAIKEY_PROVIDER_NAMES = {"shopaikey", "shopaikey-google", "shopaikey_google", "nano-banana"}
     SHOPAIKEY_GOOGLE_MODEL_IDS = frozenset({"nano-banana", "nano-banana-2", "nano-banana-pro"})
     SHOPAIKEY_OPENAI_MODEL_IDS = frozenset({
-        "gpt-image-1-mini",
         "gpt-image-1",
         "gpt-image-1.5",
         "gpt-image-2",
+        "gpt-image-2-all",
     })
 
     def __init__(

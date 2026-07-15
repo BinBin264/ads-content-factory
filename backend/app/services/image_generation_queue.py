@@ -37,7 +37,7 @@ class _JobState:
     progress: int = 0
     phase: str = "Queued"
     attempt: int = 0
-    max_attempts: int = IMAGE_GENERATION_MAX_RETRIES
+    max_attempts: int = IMAGE_GENERATION_MAX_RETRIES + 1
     error: str | None = None
     created_at: datetime = field(default_factory=_now)
     updated_at: datetime = field(default_factory=_now)
@@ -49,7 +49,7 @@ class ImageGenerationQueue:
         project_service: ProjectService,
         *,
         concurrency: int = IMAGE_GENERATION_CONCURRENCY,
-        max_attempts: int = IMAGE_GENERATION_MAX_RETRIES,
+        max_attempts: int = IMAGE_GENERATION_MAX_RETRIES + 1,
         retry_base_seconds: float = IMAGE_GENERATION_RETRY_BASE_SECONDS,
     ) -> None:
         self.project_service = project_service
@@ -146,7 +146,7 @@ class ImageGenerationQueue:
                 self._update(
                     job_id,
                     status="retrying",
-                    phase=f"Retry {attempt}/{self.max_attempts}: waiting for provider slot",
+                    phase=f"Retry {attempt - 1}/{self.max_attempts - 1}: waiting for provider slot",
                     attempt=attempt,
                 )
             with retry_guard:
@@ -187,7 +187,7 @@ class ImageGenerationQueue:
                         self._update(
                             job_id,
                             status="retrying",
-                            phase=f"Provider busy; retry {attempt + 1}/{self.max_attempts} in {delay:g}s",
+                            phase=f"Provider busy; retry {attempt}/{self.max_attempts - 1} in {delay:g}s",
                             error=message,
                         )
                         time.sleep(delay)
@@ -235,4 +235,7 @@ class ImageGenerationQueue:
         if not isinstance(exc, ImageProviderError):
             return False
         message = str(exc).lower()
-        return any(token in message for token in ("http 429", "http 503", "timed out", "temporarily", "rate limit", "unavailable"))
+        return any(
+            token in message
+            for token in ("http 429", "http 503", "http 524", "timed out", "temporarily", "rate limit", "unavailable")
+        )

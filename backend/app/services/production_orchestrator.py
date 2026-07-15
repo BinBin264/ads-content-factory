@@ -11,6 +11,7 @@ from app.models.schemas import CreativePlan, Project
 
 PROMPT_BUDGET_CHARS = 2200
 MAX_PRODUCT_REFERENCES_PER_KEYFRAME = 1
+NATIVE_DIALOGUE_WORDS_PER_SECOND = 2.0
 
 
 class ProductionOrchestrator:
@@ -29,21 +30,14 @@ class ProductionOrchestrator:
         plan.sequenceState = {
             "schemaVersion": "1.0",
             "stateRevision": int(existing_state.get("stateRevision") or 1),
-            "canonRevision": int(existing_state.get("canonRevision") or 1),
             "providerProfile": "google_veo",
             "currentSceneIndex": int(existing_state.get("currentSceneIndex") or 1),
             "takeHistory": take_history,
             "updatedAt": existing_state.get("updatedAt") or self._now(),
         }
 
-        accepted_handoff: dict[str, Any] | None = None
         for index, scene in enumerate(scenes):
-            self._prepare_scene(plan, scene, index, scenes, accepted_handoff, compile_prompts=compile_prompts)
-            review = scene.get("takeReview") if isinstance(scene.get("takeReview"), dict) else None
-            if review and review.get("canonAccepted"):
-                accepted_handoff = self._dict(review.get("observedEndState")) or self._dict(scene.get("shotContract", {}).get("plannedEndState"))
-            else:
-                accepted_handoff = None
+            self._prepare_scene(plan, scene, index, scenes, None, compile_prompts=compile_prompts)
 
         plan.scenes = scenes
         self._refresh_current_scene(plan)
@@ -55,26 +49,29 @@ class ProductionOrchestrator:
             index = scenes.index(scene)
         except ValueError:
             index = max(int(scene.get("sceneIndex") or 1) - 1, 0)
-        prior_end_state = None
-        if index > 0:
-            previous = scenes[index - 1]
-            review = previous.get("takeReview") if isinstance(previous.get("takeReview"), dict) else {}
-            prior_end_state = self._dict(review.get("observedEndState")) or self._dict(previous.get("shotContract", {}).get("plannedEndState"))
-        self._prepare_scene(plan, scene, index, scenes, prior_end_state, compile_prompts=compile_prompt)
+        self._prepare_scene(plan, scene, index, scenes, None, compile_prompts=compile_prompt)
 
     def compile_scene_prompt(self, plan: CreativePlan, scene: dict[str, Any]) -> str:
         contract = self._dict(scene.get("shotContract"))
         camera = self._dict(scene.get("camera"))
         direction = self._dict(scene.get("direction"))
-        voice_lines = [item for item in scene.get("voiceLines") or [] if isinstance(item, dict)]
+        native_voice_lines, post_voice_lines, _, _ = self._speech_plan(scene)
         negative_rules = self._strings(scene.get("negativeRules"))
-        continuity_locks = self._strings(contract.get("continuityLocks"))
         reserved = self._strings(contract.get("reservedForLater"))
-        endpoint = self._state_text(contract.get("plannedEndState"))
-        opening = self._state_text(contract.get("observedHandoff"))
+        planned_end = self._dict(contract.get("plannedEndState"))
+        endpoint = self._text(planned_end.get("visibleOutcome")) or self._state_text(planned_end)
+        completed_dialogue = self._strings(contract.get("completedDialogue"))
+        subject_contract = self._dict(contract.get("subjectContract"))
+        primary_actor_count = int(subject_contract.get("primaryActorCount") or 0)
+        subject_rule = (
+            "Keep exactly one instance of the primary actor and the same number of background people visible in frame 0"
+            if primary_actor_count == 1
+            else "Do not introduce a person who is not already visible in frame 0"
+        )
 
         clauses = [
-            "Use the selected keyframe as the visual source of truth; continue from it naturally without a collage, slideshow, or visual reset.",
+            "Use the selected keyframe as frame 0 and the sole visual source of truth; it already carries the static actor, wardrobe, location, product/UI state, framing, lighting, handedness, and prop ownership; generate only the motion delta below without recreating, restaging, mirroring, or resetting the opening image.",
+            f"{subject_rule}. Preserve natural anatomy, limb count, left/right orientation, and which hand owns each prop; allow only one simple hand interaction in this clip.",
         ]
         felt_intent = self._text(direction.get("feltIntent"))
         value_shift = self._text(direction.get("valueShift"))
@@ -85,11 +82,9 @@ class ProductionOrchestrator:
             clauses.append(f"Emotional progression: {value_shift}.")
         if primary_spend:
             clauses.append(f"Visual fidelity priority: {primary_spend}.")
-        if opening:
-            clauses.append(f"Open after the accepted previous state: {opening}.")
         current_action = self._first_text(contract.get("thisClipOnly")) or self._text(scene.get("visualAction"))
         if current_action:
-            clauses.append(f"This clip only: {current_action}")
+            clauses.append(f"This clip only, starting after frame 0: {current_action}")
         performance = self._text(scene.get("characterAction"))
         if performance:
             clauses.append(f"Performance: {performance}")
@@ -112,7 +107,7 @@ class ProductionOrchestrator:
             clauses.append(f"Light and atmosphere: {'; '.join(item for item in [light, atmosphere] if item)}.")
 
         dialogue_cues: list[str] = []
-        for item in voice_lines:
+        for item in native_voice_lines:
             line = self._text(item.get("line"))
             if not line:
                 continue
@@ -128,14 +123,19 @@ class ProductionOrchestrator:
             )
             dialogue_cues.append(f"{cue}: <{line}>" if cue else f"<{line}>")
         if dialogue_cues:
-            clauses.append(f"Spoken dialogue, preserve wording and cues exactly: {'; '.join(dialogue_cues)}.")
+            clauses.append(f"Active speech for this clip only; begin once and do not repeat: {'; '.join(dialogue_cues)}.")
+        elif post_voice_lines:
+            clauses.append("Generate no speech or lip-sync for this clip. The planned voiceover is added in post-production; generate ambience and action sound only.")
+        if completed_dialogue:
+            clauses.append("Previous-scene dialogue is complete. Start a new audio phase and do not carry over, echo, or restart earlier speech.")
         ambient_audio = self._text(scene.get("ambientAudio"))
         if ambient_audio:
             clauses.append(f"Native audio: {ambient_audio}.")
         if endpoint:
             clauses.append(f"Stop when: {endpoint}.")
-        if continuity_locks:
-            clauses.append(f"Preserve: {'; '.join(continuity_locks[:5])}.")
+        clauses.append(
+            "Preserve the keyframe's visible face, body, outfit, product/UI pixels, environment geometry, lighting direction, hand count, and prop ownership without adding a second copy of a person or object."
+        )
         if reserved:
             clauses.append(f"Do not yet show: {'; '.join(reserved[:3])}.")
 
@@ -187,6 +187,11 @@ class ProductionOrchestrator:
             warnings.append("Scene has no explicit endpoint for continuity handoff.")
         if len(self._strings(self._dict(scene.get("shotContract")).get("thisClipOnly"))) != 1:
             warnings.append("Scene should own exactly one visible beat.")
+        native_voice_lines, _, native_word_count, native_word_budget = self._speech_plan(scene)
+        if native_voice_lines and native_word_count > native_word_budget:
+            warnings.append(
+                f"Native dialogue has {native_word_count} words but this clip supports about {native_word_budget}; move it to post voiceover or increase duration."
+            )
 
         score = max(0, 100 - len(hard_failures) * 35 - len(warnings) * 8)
         return {
@@ -201,39 +206,26 @@ class ProductionOrchestrator:
     def review_take(self, plan: CreativePlan, scene: dict[str, Any], payload: dict[str, Any]) -> None:
         self.prepare_plan_for_review(plan)
         verdict = self._text(payload.get("verdict")).lower()
-        accepted = verdict in {"keep", "fix_in_post"}
+        if verdict != "keep":
+            raise ValueError("Only keep is supported. Regenerate the clip to replace a rejected take.")
         take_id = f"take_{uuid4().hex[:10]}"
         review = {
             "takeId": take_id,
-            "verdict": verdict,
-            "canonAccepted": accepted,
-            "observedStartState": self._dict(payload.get("observed_start_state")),
-            "observedEndState": self._dict(payload.get("observed_end_state")),
-            "completedBeats": self._strings(payload.get("completed_beats")),
-            "continuityBreaks": self._strings(payload.get("continuity_breaks")),
-            "acceptedDeviations": self._strings(payload.get("accepted_deviations")) if accepted else [],
-            "changedVariable": self._text(payload.get("changed_variable")),
-            "evidence": self._text(payload.get("evidence")),
-            "observationConfidence": self._text(payload.get("observation_confidence")) or "medium",
-            "notes": self._text(payload.get("notes")),
+            "verdict": "keep",
+            "accepted": True,
             "reviewedAt": self._now(),
-            "nextAction": self._next_action(verdict),
+            "nextAction": "Clip accepted.",
         }
         scene["takeReview"] = review
-        scene["status"] = "ACCEPTED" if accepted else "RETAKE_REQUIRED"
+        scene["status"] = "ACCEPTED"
 
         state = dict(plan.sequenceState or {})
         history = state.get("takeHistory") if isinstance(state.get("takeHistory"), list) else []
         history.append({"sceneIndex": scene.get("sceneIndex"), **deepcopy(review)})
         state["takeHistory"] = history[-50:]
         state["stateRevision"] = int(state.get("stateRevision") or 1) + 1
-        if accepted:
-            state["canonRevision"] = int(state.get("canonRevision") or 1) + 1
         state["updatedAt"] = self._now()
         plan.sequenceState = state
-
-        if accepted:
-            self._handoff_to_next_scene(plan, scene, review)
         self._refresh_current_scene(plan)
 
     def prepare_plan_for_review(self, plan: CreativePlan) -> None:
@@ -256,6 +248,7 @@ class ProductionOrchestrator:
         scene.setdefault("clipId", f"clip_{scene_index:02d}")
         scene.setdefault("arcPosition", self._arc_position(index, len(scenes)))
         scene.setdefault("dramaticFunction", self._text(scene.get("narrativePurpose")) or self._text(scene.get("sceneGoal")))
+        self._normalize_scene_audio(scene)
 
         direction = self._dict(scene.get("direction"))
         direction.setdefault("valueShift", self._value_shift(scene, index))
@@ -269,12 +262,20 @@ class ProductionOrchestrator:
         planned_predecessor = prior_end_state
         if planned_predecessor is None and index > 0:
             planned_predecessor = self._dict(scenes[index - 1].get("shotContract", {}).get("plannedEndState"))
-        planned_start = self._dict(previous_contract.get("plannedStartState")) or self._planned_start_state(plan, scene, planned_predecessor)
+        explicit_opening = self._text(scene.get("openingState"))
+        planned_start = (
+            self._planned_start_state(plan, scene, planned_predecessor)
+            if explicit_opening
+            else self._dict(previous_contract.get("plannedStartState")) or self._planned_start_state(plan, scene, planned_predecessor)
+        )
         planned_end = self._dict(previous_contract.get("plannedEndState")) or self._planned_end_state(scene)
         bindings = self._reference_bindings(plan, scene)
+        native_voice_lines, post_voice_lines, native_word_count, native_word_budget = self._speech_plan(scene)
         scene["shotContract"] = {
             "generationMode": "intentional_next_shot",
             "shotStructure": "compact_single_take",
+            "keyframeRole": "opening_state_before_action",
+            "sourceCarriesState": True,
             "primarySpend": self._primary_spend(scene),
             "secondarySpend": "identity_fidelity",
             "economize": self._economize(scene),
@@ -283,11 +284,18 @@ class ProductionOrchestrator:
             "reservedForLater": [self._text(item.get("title")) for item in scenes[index + 1 :] if self._text(item.get("title"))],
             "plannedStartState": planned_start,
             "plannedEndState": planned_end,
-            "observedHandoff": self._dict(previous_contract.get("observedHandoff")) or prior_end_state,
+            "subjectContract": self._subject_contract(scene),
+            "handContract": "Preserve the keyframe's left/right orientation and prop ownership. One hand performs at most one simple action; the other remains stable.",
+            "completedDialogue": self._completed_dialogue(scenes[:index]),
+            "activeDialogue": [self._text(item.get("line")) for item in native_voice_lines if self._text(item.get("line"))],
+            "postVoiceover": [self._text(item.get("line")) for item in post_voice_lines if self._text(item.get("line"))],
+            "audioPhase": "native_dialogue" if native_voice_lines else "post_voiceover" if post_voice_lines else "ambient_only",
+            "nativeDialogueWordCount": native_word_count,
+            "nativeDialogueWordBudget": native_word_budget,
             "continuityLocks": self._continuity_locks(plan, scene),
             "allowedChanges": ["actor pose", "facial expression", "camera framing", "action phase"],
             "referenceBindings": bindings,
-            "transitionIn": "canonical re-anchor" if index == 0 else "intentional editorial cut from accepted prior state",
+            "transitionIn": "canonical re-anchor" if index == 0 else "intentional editorial cut from the planned prior state",
             "transitionOut": "clean endpoint for the next planned scene",
             "extensionDepth": 0,
         }
@@ -295,12 +303,35 @@ class ProductionOrchestrator:
         slot = next((item for item in scene.get("keyframePrompts") or [] if isinstance(item, dict)), None)
         if slot is not None:
             slot["referenceBindings"] = [item for item in bindings if item.get("stage") == "keyframe"]
+            slot["openingState"] = planned_start
+            slot["keyframeRole"] = "frame_0_before_action"
+            existing_gate = self._dict(slot.get("qualityGate"))
+            selected_candidate_id = self._text(slot.get("selectedCandidateId"))
+            gate_status = self._text(existing_gate.get("status"))
+            accepted_current_candidate = (
+                gate_status == "accepted"
+                and selected_candidate_id
+                and not bool(slot.get("stale"))
+                and self._text(existing_gate.get("acceptedCandidateId")) == selected_candidate_id
+            )
+            if not slot.get("selectedImageUrl"):
+                gate_status = "awaiting_image"
+            elif slot.get("stale"):
+                gate_status = "review_required"
+            elif accepted_current_candidate:
+                gate_status = "accepted"
+            elif gate_status != "rejected":
+                gate_status = "review_required"
             slot["qualityGate"] = {
-                "status": "ready_for_manual_review" if slot.get("selectedImageUrl") else "awaiting_image",
+                **existing_gate,
+                "status": gate_status,
+                "acceptedCandidateId": selected_candidate_id if gate_status == "accepted" else None,
                 "checks": [
                     "identity and wardrobe match canonical character reference",
                     "location geometry and light direction match canonical location reference",
                     "hands, face, and product geometry are not deformed",
+                    "exactly one primary actor is visible; no duplicate face, body, reflection, or screen copy",
+                    "left/right orientation and prop ownership are unambiguous",
                     "only the routed product reference is visible",
                     "no invented UI, logo, label, or readable text",
                 ],
@@ -339,7 +370,7 @@ class ProductionOrchestrator:
             "atmosphereContinuity": existing.get("atmosphereContinuity") or "Keep ambience and recurring environmental cues consistent; unify music in post.",
             "antiDriftRules": existing.get("antiDriftRules") or [
                 "Re-anchor every scene from canonical character, location, and product references.",
-                "Use generated output only as an observed handoff, never as the sole identity source.",
+                "Use the accepted Phase 2 keyframe as each scene's visual source of truth; do not inherit identity from a prior generated clip.",
                 "Do not silently change face, wardrobe, product geometry, location layout, or exact reference names.",
             ],
         }
@@ -353,7 +384,7 @@ class ProductionOrchestrator:
             "durationOptionsSec": [4, 6, 8, 10],
             "aspectRatio": "9:16",
             "overlayPolicy": "render subtitles, CTA, and precise text in post-production",
-            "continuityPolicy": "canonical re-anchor per scene; accepted take state informs the next shot",
+            "continuityPolicy": "canonical Phase 2 keyframe re-anchor per scene; clip approval never rewrites another scene",
             "limitations": [
                 "Face and object consistency can be improved but cannot be guaranteed permanently by orchestration alone.",
                 "Exact UI and small readable text should come from a locked keyframe or post-production, not free generation.",
@@ -377,32 +408,37 @@ class ProductionOrchestrator:
 
     def _quality_strategy(self) -> dict[str, Any]:
         return {
-            "takeVerdicts": ["keep", "fix_in_post", "edit", "reroll", "rewrite", "reject"],
-            "oneVariableRule": "Change one prompt clause, seed, mode, or reference per retake.",
+            "clipActions": ["accept", "regenerate"],
             "defaultAttemptBudget": 5,
-            "rewriteThreshold": "Rewrite after the same flaw appears in two takes.",
-            "acceptanceRule": "Only accepted observed footage updates canon; rejected footage never becomes a continuation source.",
+            "acceptanceRule": "Accept marks only the current clip complete and never rewrites later keyframes or prompts.",
+            "regenerationRule": "Regenerate replaces only the current clip while preserving the accepted Phase 2 keyframe.",
         }
 
     def _reference_bindings(self, plan: CreativePlan, scene: dict[str, Any]) -> list[dict[str, Any]]:
-        bindings = [
-            {
+        bindings: list[dict[str, Any]] = []
+        slot = next((item for item in scene.get("keyframePrompts") or [] if isinstance(item, dict)), {})
+        reference_ids = self._strings(slot.get("productReferenceIds"))[:MAX_PRODUCT_REFERENCES_PER_KEYFRAME]
+        needs_character, needs_location = self.keyframe_reference_needs(
+            scene,
+            slot,
+            has_product_reference=bool(reference_ids),
+        )
+        if needs_character:
+            bindings.append({
                 "stage": "keyframe",
                 "tag": "@character_reference.png",
                 "role": "identity_and_wardrobe",
-                "transfer": "actor identity, face, body type, hair, and outfit only",
-                "ignore": "pose, camera, location, product, logo, and background from this reference",
-            },
-            {
+                "transfer": "one actor identity, face, body type, hair, and outfit only",
+                "ignore": "pose, hands, props, camera, location, product, logo, background, reflections, and any extra copy of the actor",
+            })
+        if needs_location:
+            bindings.append({
                 "stage": "keyframe",
                 "tag": "@location_reference.png",
                 "role": "environment",
                 "transfer": "location geometry, recurring props, and motivated light direction only",
-                "ignore": "people, identity, product, logos, and camera motion from this reference",
-            },
-        ]
-        slot = next((item for item in scene.get("keyframePrompts") or [] if isinstance(item, dict)), {})
-        reference_ids = self._strings(slot.get("productReferenceIds"))[:MAX_PRODUCT_REFERENCES_PER_KEYFRAME]
+                "ignore": "all people, faces, bodies, wardrobe, identity, product, logos, readable text, and camera motion from this reference",
+            })
         reference_by_id = {self._text(item.get("id")): item for item in plan.productReferences if isinstance(item, dict)}
         for reference_id in reference_ids:
             reference = reference_by_id.get(reference_id)
@@ -415,7 +451,7 @@ class ProductionOrchestrator:
                     "tag": tag,
                     "role": "product_or_ui_identity",
                     "transfer": self._text(reference.get("lockPrompt")) or "exact visible product or UI appearance only",
-                    "ignore": "actor identity, location, camera, motion, and unrelated screen states from this reference",
+                    "ignore": "hands, device pose, actor identity, people, location, camera, motion, background, and unrelated screen states from this reference",
                 }
             )
         bindings.append(
@@ -429,6 +465,64 @@ class ProductionOrchestrator:
         )
         return bindings
 
+    def keyframe_reference_needs(
+        self,
+        scene: dict[str, Any],
+        slot: dict[str, Any],
+        *,
+        has_product_reference: bool,
+    ) -> tuple[bool, bool]:
+        camera = self._dict(scene.get("camera"))
+        text = " ".join(
+            self._text(value).lower()
+            for value in (
+                slot.get("prompt"),
+                scene.get("openingState"),
+                scene.get("visualAction"),
+                scene.get("characterAction"),
+                scene.get("productMoment"),
+                camera.get("shot"),
+                camera.get("composition"),
+            )
+        )
+        actor_absent = any(
+            phrase in text
+            for phrase in ("no actor visible", "no person visible", "empty location", "environment only", "location only")
+        )
+        product_close_up = has_product_reference and any(
+            phrase in text
+            for phrase in (
+                "phone close-up",
+                "phone screen close-up",
+                "close-up on phone",
+                "close-up of the phone",
+                "close-up of a smartphone",
+                "extreme close-up",
+                "screen readable",
+                "ui readable",
+            )
+        )
+        face_visible = any(
+            phrase in text
+            for phrase in (
+                "face visible",
+                "actor's face",
+                "actor face",
+                "man's face",
+                "woman's face",
+                "facial expression",
+                "portrait",
+                "reaction shot",
+                "medium shot",
+                "medium close-up",
+            )
+        )
+        if has_product_reference:
+            if product_close_up and not face_visible:
+                return False, False
+            return (not actor_absent, False)
+        return (not actor_absent, True)
+
     def _continuity_locks(self, plan: CreativePlan, scene: dict[str, Any]) -> list[str]:
         locks = [
             self._text(plan.primaryCharacter.get("consistencyPrompt")),
@@ -439,15 +533,75 @@ class ProductionOrchestrator:
         return [item for item in locks if item]
 
     def _planned_start_state(self, plan: CreativePlan, scene: dict[str, Any], prior_end_state: dict[str, Any] | None) -> dict[str, Any]:
+        explicit_opening = self._text(scene.get("openingState"))
+        if explicit_opening:
+            return {
+                "visibleOpening": explicit_opening,
+                "actionPhase": "frozen frame immediately before this scene's action begins",
+                "camera": self._text(self._dict(scene.get("camera")).get("shot")),
+            }
         if prior_end_state:
             return deepcopy(prior_end_state)
         return {
             "actor": self._text(plan.primaryCharacter.get("description")),
             "location": self._text(plan.primaryLocation.get("description")),
-            "productState": self._text(scene.get("productMoment")),
-            "actionPhase": "opening pose shown by the selected keyframe",
+            "productState": "only the product state already established before this scene",
+            "actionPhase": "neutral opening pose immediately before the scene action",
             "camera": self._text(self._dict(scene.get("camera")).get("shot")),
         }
+
+    def _normalize_scene_audio(self, scene: dict[str, Any]) -> None:
+        lines = [item for item in scene.get("voiceLines") or [] if isinstance(item, dict)]
+        duration = self._duration_seconds(scene)
+        budget = max(1, int(duration * NATIVE_DIALOGUE_WORDS_PER_SECOND))
+        total_words = sum(self._word_count(self._text(item.get("line"))) for item in lines)
+        speakers = {self._text(item.get("speaker")) for item in lines if self._text(item.get("speaker"))}
+        force_post = len(lines) > 1 or len(speakers) > 1 or total_words > budget
+        for item in lines:
+            requested_mode = self._text(item.get("generationMode")).lower()
+            if requested_mode == "post_voiceover" or force_post:
+                item["generationMode"] = "post_voiceover"
+            else:
+                item["generationMode"] = "native"
+        scene["voiceLines"] = lines
+
+    def _speech_plan(self, scene: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, Any]], int, int]:
+        lines = [item for item in scene.get("voiceLines") or [] if isinstance(item, dict)]
+        duration = self._duration_seconds(scene)
+        budget = max(1, int(duration * NATIVE_DIALOGUE_WORDS_PER_SECOND))
+        native = [item for item in lines if self._text(item.get("generationMode")).lower() != "post_voiceover"]
+        post = [item for item in lines if self._text(item.get("generationMode")).lower() == "post_voiceover"]
+        native_words = sum(self._word_count(self._text(item.get("line"))) for item in native)
+        return native, post, native_words, budget
+
+    def _completed_dialogue(self, scenes: list[dict[str, Any]]) -> list[str]:
+        return [
+            self._text(line.get("line"))
+            for scene in scenes
+            for line in scene.get("voiceLines") or []
+            if isinstance(line, dict) and self._text(line.get("line"))
+        ]
+
+    def _subject_contract(self, scene: dict[str, Any]) -> dict[str, Any]:
+        text = " ".join(
+            self._text(scene.get(key)).lower()
+            for key in ("openingState", "visualAction", "characterAction", "productMoment")
+        )
+        actor_absent = any(phrase in text for phrase in ("no actor visible", "no person visible", "empty location"))
+        return {
+            "primaryActorCount": 0 if actor_absent else 1,
+            "duplicatePolicy": "one instance only; never clone the primary actor into the background, reflection, poster, or screen",
+            "backgroundPeople": "may remain only when already visible in frame 0 and must not share the primary actor's face or outfit",
+        }
+
+    def _duration_seconds(self, scene: dict[str, Any]) -> int:
+        try:
+            return max(1, int(scene.get("durationSec") or 8))
+        except (TypeError, ValueError):
+            return 8
+
+    def _word_count(self, value: str) -> int:
+        return len(re.findall(r"\b[\w'-]+\b", value, flags=re.UNICODE))
 
     def _planned_end_state(self, scene: dict[str, Any]) -> dict[str, Any]:
         return {
@@ -457,31 +611,17 @@ class ProductionOrchestrator:
             "cameraState": self._text(self._dict(scene.get("camera")).get("composition")),
         }
 
-    def _handoff_to_next_scene(self, plan: CreativePlan, scene: dict[str, Any], review: dict[str, Any]) -> None:
-        scenes = [item for item in plan.scenes if isinstance(item, dict)]
-        try:
-            index = scenes.index(scene)
-        except ValueError:
-            return
-        if index + 1 >= len(scenes):
-            return
-        next_scene = scenes[index + 1]
-        contract = self._dict(next_scene.get("shotContract"))
-        observed_end = self._dict(review.get("observedEndState"))
-        if observed_end:
-            contract["observedHandoff"] = observed_end
-            contract["plannedStartState"] = deepcopy(observed_end)
-        completed = self._strings(review.get("completedBeats"))
-        if completed:
-            contract["alreadyHappened"] = list(dict.fromkeys([*self._strings(contract.get("alreadyHappened")), *completed]))
-        next_scene["shotContract"] = contract
-        next_scene["finalVideoPrompt"] = self.compile_scene_prompt(plan, next_scene)
-        next_scene["promptQuality"] = self.lint_scene_prompt(next_scene)
-
     def _refresh_current_scene(self, plan: CreativePlan) -> None:
         scenes = [item for item in plan.scenes if isinstance(item, dict)]
         current = next(
-            (int(item.get("sceneIndex") or 1) for item in scenes if not self._dict(item.get("takeReview")).get("canonAccepted")),
+            (
+                int(item.get("sceneIndex") or 1)
+                for item in scenes
+                if not (
+                    self._dict(item.get("takeReview")).get("accepted")
+                    or self._dict(item.get("takeReview")).get("canonAccepted")
+                )
+            ),
             len(scenes) if scenes else 1,
         )
         state = dict(plan.sequenceState or {})
@@ -539,16 +679,6 @@ class ProductionOrchestrator:
             return "turn"
         return "climax"
 
-    def _next_action(self, verdict: str) -> str:
-        return {
-            "keep": "Lock this take as canon and continue to the next scene.",
-            "fix_in_post": "Lock the footage as canon and record the post-production fix.",
-            "edit": "Keep this take as the edit source and change only the failing layer.",
-            "reroll": "Generate again with the same prompt and a new sample; do not change other variables.",
-            "rewrite": "Change one diagnosed prompt clause, then regenerate.",
-            "reject": "Do not update canon or use this take as a continuation source.",
-        }.get(verdict, "Review the take before continuing.")
-
     def _reference_tag(self, reference: dict[str, Any]) -> str:
         file_name = self._text(reference.get("sourceFileName")) or self._text(reference.get("name")) or self._text(reference.get("referenceLabel"))
         return f"@{file_name.lstrip('@')}" if file_name else "@product_reference"
@@ -558,7 +688,19 @@ class ProductionOrchestrator:
         if len(compact) <= PROMPT_BUDGET_CHARS:
             return compact
         sentences = re.split(r"(?<=[.!?])\s+", compact)
-        required_prefixes = ("Use the selected", "This clip only", "Stop when", "Preserve", "Do not yet", "Avoid")
+        required_prefixes = (
+            "Use the selected",
+            "Keep exactly",
+            "Do not introduce",
+            "This clip only",
+            "Active speech",
+            "Generate no speech",
+            "Previous-scene dialogue",
+            "Stop when",
+            "Preserve",
+            "Do not yet",
+            "Avoid",
+        )
         required = [item for item in sentences if item.startswith(required_prefixes)]
         optional = [item for item in sentences if item not in required]
         output: list[str] = []
@@ -570,8 +712,15 @@ class ProductionOrchestrator:
 
     def _state_text(self, value: Any) -> str:
         if isinstance(value, dict):
-            return "; ".join(f"{key}: {item}" for key, item in value.items() if self._text(item))
+            return "; ".join(
+                f"{key}: {self._inline_text(item)}"
+                for key, item in value.items()
+                if self._text(item)
+            )
         return self._text(value)
+
+    def _inline_text(self, value: Any) -> str:
+        return re.sub(r"(?<=[a-z0-9)\]])\.\s+", ", ", self._text(value), flags=re.IGNORECASE).rstrip(". ")
 
     def _first_text(self, value: Any) -> str:
         values = self._strings(value)

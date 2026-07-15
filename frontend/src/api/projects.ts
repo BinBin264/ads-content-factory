@@ -1,5 +1,14 @@
 import { apiClient } from "./client";
-import type { CreateProjectValues, ImageGenerationJob, ImageModelId, PlanCreation, Project, ReviewSceneTakePayload, VideoModelId } from "../types";
+import type {
+  CreateProjectValues,
+  ImageGenerationJob,
+  ImageModelId,
+  PlanCreation,
+  Project,
+  ReviewKeyframePayload,
+  ReviewSceneTakePayload,
+  VideoModelId,
+} from "../types";
 
 function appendIfPresent(formData: FormData, key: string, value: string): void {
   const trimmed = value.trim();
@@ -105,6 +114,19 @@ export async function selectKeyframeCandidate(
   return response.data;
 }
 
+export async function reviewKeyframe(
+  id: string,
+  sceneIndex: number,
+  slotId: string,
+  payload: ReviewKeyframePayload,
+): Promise<Project> {
+  const response = await apiClient.post<Project>(
+    `/api/projects/${id}/scenes/${sceneIndex}/keyframe-slots/${slotId}/review`,
+    payload,
+  );
+  return response.data;
+}
+
 export async function generateReferenceAssetImage(
   id: string,
   assetType: "character" | "location",
@@ -183,6 +205,11 @@ export async function uploadKeyframeSlotImage(id: string, sceneIndex: number, sl
 
 export async function generateSceneVideo(id: string, sceneIndex: number, model: VideoModelId): Promise<Project> {
   const response = await apiClient.post<Project>(`/api/projects/${id}/scenes/${sceneIndex}/video`, { model });
+  return response.data;
+}
+
+export async function regenerateSceneVideo(id: string, sceneIndex: number, model: VideoModelId): Promise<Project> {
+  const response = await apiClient.post<Project>(`/api/projects/${id}/scenes/${sceneIndex}/video/regenerate`, { model });
   return response.data;
 }
 
