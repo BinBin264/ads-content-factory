@@ -528,16 +528,16 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
   const planHeaderPortal =
     phase === "plan-creation" && headerSlot
       ? createPortal(
-          <div className="hidden min-w-0 items-center justify-end gap-4 xl:flex">
-            <div className="min-w-[260px] max-w-[340px]">
-              <div className="flex items-center justify-between gap-3">
+          <div className="hidden min-w-0 items-center justify-end gap-2 xl:flex">
+            <div className="w-[210px] min-w-0">
+              <div className="flex items-center justify-between gap-2">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-700">Plan Creation</p>
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
                   Step {currentWorkflowIndex + 1}/{workflowItems.length}
                 </span>
               </div>
               <p className="mt-1 truncate text-sm font-semibold text-slate-950">{activeWorkflowItem.label}</p>
-              <div className="mt-2 h-1 rounded-full bg-slate-100">
+              <div className="mt-1.5 h-1 rounded-full bg-slate-100">
                 <div
                   className="h-1 rounded-full bg-blue-500 transition-all"
                   style={{ width: `${((currentWorkflowIndex + 1) / workflowItems.length) * 100}%` }}
@@ -545,9 +545,9 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
               </div>
             </div>
 
-            <div className="grid w-56 grid-cols-2 rounded-xl border border-slate-200 bg-slate-100 p-1">
+            <div className="grid w-[168px] grid-cols-2 rounded-lg border border-slate-200 bg-slate-100 p-0.5">
               <button
-                className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                className={`rounded-md px-2 py-1.5 text-xs font-medium transition ${
                   planMode === "manual" ? "bg-slate-950 text-white shadow-sm" : "text-slate-600 hover:text-slate-950"
                 }`}
                 onClick={() => setPlanMode("manual")}
@@ -556,7 +556,7 @@ export default function ProjectDetailPage({ phase }: ProjectDetailPageProps) {
                 Manual
               </button>
               <button
-                className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                className={`rounded-md px-2 py-1.5 text-xs font-medium transition ${
                   planMode === "automation" ? "bg-slate-950 text-white shadow-sm" : "text-slate-600 hover:text-slate-950"
                 }`}
                 onClick={() => setPlanMode("automation")}
